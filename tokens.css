@@ -1,0 +1,946 @@
+/* Jitda — Design Renewal Prototype Tokens
+   Lifted from src/styles/cohere.css for visual continuity */
+
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+@import url('https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css');
+@import url('https://cdn.jsdelivr.net/gh/naver/d2codingfont@master/D2Coding-Ver1.3.2-20180524-all.css');
+
+:root {
+  --c-canvas: #ffffff;
+  --c-paper: #faf9f6;
+  --c-stone: #eeece7;
+  --c-stone-2: #e6e3dd;
+  --c-hairline: #e3e1da;
+  --c-hairline-strong: #cdc9c0;
+  --c-ink: #17171c;
+  --c-ink-2: #2a2a32;
+  --c-ink-3: #4a4a55;
+  --c-muted: #8c8c97;
+  --c-slate: #6f6f7c;
+
+  --c-deep: #003c33;
+  --c-blue: #1863dc;
+  --c-blue-soft: #e7eefc;
+  --c-amber: #b97e1a;
+  --c-amber-soft: #fbeacf;
+  --c-mint: #096c4d;
+  --c-mint-soft: #d6f1de;
+  --c-tutorial: #2e2c8a;
+  --c-tutorial-soft: #e1e0fa;
+
+  /* Helmet & stache — 짓다 공사장 브랜드 정체성. */
+  --c-helmet:       #ffce2b;
+  --c-helmet-deep:  #e6b500;
+  --c-helmet-soft:  #fff4c2;
+  --c-stache:       #14130f;
+
+  /* Safety orange — 위험/비가역 액션의 단일 컬러. 공사장 안전 테이프 컬러. */
+  --c-safety:       #ff6b1f;
+  --c-safety-soft:  #ffe0cf;
+  --c-safety-deep:  #cc4a0a;
+
+  /* Rebar — 철근 구릿빛. 보조 강조용 (현재 미사용, 향후 활용). */
+  --c-rebar:        #b87333;
+
+  /* Deprecated aliases — 단계적 마이그레이션용. 신규 코드는 위 토큰 직접 사용. */
+  --c-rose:         var(--c-safety);
+  --c-rose-soft:    var(--c-safety-soft);
+  --c-coral:        var(--c-helmet);
+  --c-coral-soft:   var(--c-helmet-soft);
+
+  /* Brand tape — 비-경고 데코 (helmet-soft + helmet, 36px 간격, 톤 다운) */
+  --gradient-brand-tape: repeating-linear-gradient(
+    -45deg,
+    var(--c-helmet-soft) 0px,
+    var(--c-helmet-soft) 36px,
+    var(--c-helmet)      36px,
+    var(--c-helmet)      40px
+  );
+
+  /* ============================================================
+     모션 토큰 — duration · easing 4단 스케일
+     ------------------------------------------------------------
+     Material 3 + Apple HIG 톤. 모든 상태 변화는 4단 중 하나로.
+     - instant(75ms): :active scale, 즉각 피드백
+     - fast(150ms): :hover 색·테두리, 칩 active 토글
+     - base(240ms): 모달 fade·scale, 탭 underline slide
+     - slow(360ms): 페이지 전환, emphasized 전환
+     ------------------------------------------------------------ */
+  --dur-instant: 75ms;
+  --dur-fast:    150ms;
+  --dur-base:    240ms;
+  --dur-slow:    360ms;
+
+  --ease-standard:    cubic-bezier(0.2, 0, 0, 1);
+  --ease-decelerate:  cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate:  cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring:      cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Transition presets — 인터랙티브 요소 기본값 */
+  --trans-hover:  background-color var(--dur-fast) var(--ease-standard),
+                  color var(--dur-fast) var(--ease-standard),
+                  border-color var(--dur-fast) var(--ease-standard),
+                  opacity var(--dur-fast) var(--ease-standard);
+  --trans-press:  transform var(--dur-instant) var(--ease-standard);
+  --trans-elev:   box-shadow var(--dur-fast) var(--ease-standard);
+
+  /* Legacy 별칭 (단계적 마이그레이션) */
+  --anim-glow-duration: 2.4s;
+
+  /* ============================================================
+     Focus ring — 키보드 접근성 단일 어휘
+     브랜드 컬러(helmet) 사용 — 짓다 정체성 유지하며 WCAG 2.4.7 충족
+     ------------------------------------------------------------ */
+  --focus-ring-color:  var(--c-helmet);
+  --focus-ring-width:  2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-soft:   0 0 0 3px rgba(255, 206, 43, 0.30);
+
+  /* ============================================================
+     Backdrop / Scrim — 3단 강도, z-index 스케일
+     ------------------------------------------------------------ */
+  --c-backdrop:        rgba(20, 19, 15, 0.40);  /* 기본 (E-4 투표·E-6 일시정지) */
+  --c-backdrop-strong: rgba(20, 19, 15, 0.55);  /* 위험 (B 종료 모달) */
+  --c-backdrop-soft:   rgba(20, 19, 15, 0.25);  /* 가벼움 (E-5 AI 선택지) */
+  --backdrop-blur:     2px;
+
+  --z-base:    1;
+  --z-sticky:  10;
+  --z-overlay: 50;
+  --z-modal:   100;
+  --z-popover: 150;
+  --z-toast:   200;
+
+  /* ============================================================
+     Elevation — 확장
+     ------------------------------------------------------------ */
+  --shadow-xs:      0 1px 1px rgba(15, 15, 20, 0.04);
+  --shadow-hover:   0 8px 20px rgba(15, 15, 20, 0.08), 0 2px 4px rgba(15, 15, 20, 0.04);
+  --shadow-popover: 0 8px 24px rgba(15, 15, 20, 0.12), 0 2px 6px rgba(15, 15, 20, 0.06);
+  --shadow-modal:   0 30px 80px rgba(0, 0, 0, 0.30), 0 12px 24px rgba(0, 0, 0, 0.16);
+
+  /* ============================================================
+     Modal width — 4단
+     ------------------------------------------------------------ */
+  --modal-w-sm: 420px;   /* 단순 확인 (E-1 미저장) */
+  --modal-w-md: 560px;   /* 표준 (E-1 설정, B 시작 확인) */
+  --modal-w-lg: 720px;   /* 풍부한 컨텐츠 (E-5 AI 선택지) */
+  --modal-w-xl: 920px;   /* 데이터 dense (B 종료 카운트다운) */
+
+  --font-display: 'Wanted Sans Variable', 'Wanted Sans', system-ui, sans-serif;
+  --font-body: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
+  --font-mono: 'D2Coding', 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
+
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-pill: 999px;
+
+  --shadow-sm: 0 1px 2px rgba(15, 15, 20, 0.04);
+  --shadow-md: 0 6px 22px rgba(15, 15, 20, 0.06), 0 1px 2px rgba(15, 15, 20, 0.04);
+  --shadow-lg: 0 16px 40px rgba(15, 15, 20, 0.10);
+}
+
+/* Reset within artboards */
+.jt-art *,
+.jt-art *::before,
+.jt-art *::after {
+  box-sizing: border-box;
+}
+
+.jt-art {
+  width: 100%;
+  height: 100%;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  line-height: 1.45;
+  overflow: hidden;
+  position: relative;
+}
+
+.jt-art h1,
+.jt-art h2,
+.jt-art h3,
+.jt-art h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  margin: 0;
+  color: var(--c-ink);
+}
+
+.jt-art button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.jt-mono { font-family: var(--font-mono); }
+.jt-display { font-family: var(--font-display); }
+
+/* Pill badge */
+.jt-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  font-size: 11.5px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.jt-pill .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+}
+
+.jt-pill-pending { background: var(--c-stone); color: var(--c-ink-3); }
+.jt-pill-tutorial { background: var(--c-tutorial-soft); color: var(--c-tutorial); }
+.jt-pill-started { background: var(--c-mint-soft); color: var(--c-mint); }
+.jt-pill-paused { background: var(--c-amber-soft); color: var(--c-amber); }
+.jt-pill-ended { background: #ebebec; color: var(--c-ink-3); }
+.jt-pill-danger { background: var(--c-rose-soft); color: var(--c-rose); }
+.jt-pill-info { background: var(--c-blue-soft); color: var(--c-blue); }
+
+/* ============================================================
+   Buttons — Size-locked height (2026-05-27)
+   ------------------------------------------------------------
+   원칙: SIZE가 높이를 결정. variant는 오직 색·테두리·shadow만.
+   - box-sizing: border-box → border 1px/2px가 높이에 영향 안 줌
+   - padding은 좌우만 — 상하는 height + line-height로 자동 정렬
+   - variant끼리 height 불일치 없음 (critical 2px border도 동일 높이)
+   ------------------------------------------------------------
+   Size scale (height) — 2026-05-27 한 단계 축소:
+   - sm: 28px (보조 액션)
+   - md: 36px (기본 — 거의 모든 액션. 52px 바 안에서 8px 여백으로 균형)
+   - lg: 44px (메인 CTA — A1 입장·해커톤 참여)
+   ============================================================ */
+.jt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;             /* SIZE LOCK */
+  padding: 0 16px;          /* 좌우만 — 상하는 height로 결정 */
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 600;
+  /* 2026-05-28: border shorthand → individual properties (variant border-color override 보존). */
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent;
+  box-sizing: border-box;   /* border가 높이 안 깎음 */
+  font-family: inherit;
+  line-height: 1;
+  white-space: nowrap;
+  transition: var(--trans-hover), var(--trans-press), var(--trans-elev);
+}
+.jt-btn:active:not([disabled]):not(.is-disabled) { transform: scale(0.97); }
+.jt-btn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/* Primary — ink 검정.
+   hover BG: ink(#17171c) → ink-3(#4a4a55)로 명확한 명도 점프 (L9→L29).
+   ink-2(#2a2a32)는 변화가 미세해서 사용자 hover 인지 실패 — 한 단계 더 밝게.
+   elevation 함께: shadow-sm → shadow-md. */
+.jt-btn-primary {
+  background: var(--c-ink);
+  color: #fff;
+  box-shadow: var(--shadow-sm);
+}
+.jt-btn-primary:hover {
+  background: var(--c-ink-3);
+  box-shadow: var(--shadow-md);
+}
+
+/* === Hover 시각 어휘 룰 (2026-05-27 정합화) ===
+   Filled (배경 솔리드): bg 톤 시프트 + elevation 들림(shadow-sm → shadow-md). 공구가 들려 올라옴.
+   Outlined/Ghost (배경 투명·옅음): bg 채워짐 + 테두리 진해짐. elevation 없음. 페인트가 칠해짐.
+   Critical: shine + shadow + helmet ring (다중 시그널, 비가역 강조). */
+
+/* Outlined — fill 메타포 (elevation 없음) */
+.jt-btn-secondary { background: var(--c-canvas); color: var(--c-ink); border-color: var(--c-hairline-strong); }
+.jt-btn-secondary:hover { background: var(--c-stone); border-color: var(--c-ink-3); }
+
+/* Ghost — bg만 (가장 가벼움) */
+.jt-btn-ghost { background: transparent; color: var(--c-ink-3); }
+.jt-btn-ghost:hover { background: var(--c-stone); color: var(--c-ink); }
+
+/* Filled — lift 메타포 */
+.jt-btn-danger { background: var(--c-safety); color: #fff; box-shadow: var(--shadow-sm); }
+.jt-btn-danger:hover { background: var(--c-safety-deep); box-shadow: var(--shadow-md); }
+
+/* Danger Outlined — 비가역 액션 중 강조 낮춰 실수 방지가 목적인 위치(예: B-2 헤더 [종료]).
+   default: transparent + safety 텍스트 + safety-soft border (옅은 윤곽).
+   hover: safety-soft 배경으로 살짝 채워지며 의도 확정.
+   active: safety로 강하게 채워져 직전 확인.
+   2026-05-27 추가 — operator.jsx 두 곳 인라인 패턴(transparent + rose + rose-soft) 표준화. */
+.jt-btn-danger-outlined {
+  background: transparent;
+  color: var(--c-safety);
+  border-color: var(--c-safety-soft);
+}
+.jt-btn-danger-outlined:hover {
+  background: var(--c-safety-soft);
+  border-color: var(--c-safety);
+  color: var(--c-safety-deep);
+}
+.jt-btn-danger-outlined:active:not([disabled]) {
+  background: var(--c-safety);
+  color: #fff;
+  border-color: var(--c-safety-deep);
+}
+.jt-btn-coral { background: var(--c-coral); color: #fff; box-shadow: var(--shadow-sm); }
+.jt-btn-coral:hover { background: var(--c-helmet-deep); color: var(--c-stache); box-shadow: var(--shadow-md); }
+
+/* === Dark Backdrop Variants (2026-05-28) ===
+   E-4 합의 투표/대기 등 풀스크린 다크 dim 위에서 쓰는 secondary 버튼.
+   라이트 backdrop variant(jt-btn-danger-outlined·jt-btn-ghost)의 hover 어휘를
+   다크 backdrop에 맞춰 거울 반전. Filled 어휘 X (다크 위 elevation 비효과), bg fill만. */
+.jt-btn-danger-outlined-dark {
+  background: transparent;
+  color: var(--c-safety-soft);
+  border-color: var(--c-safety);
+}
+.jt-btn-danger-outlined-dark:hover {
+  background: rgba(255, 107, 31, 0.18);
+  border-color: var(--c-safety-soft);
+  color: #fff;
+}
+.jt-btn-danger-outlined-dark:active:not([disabled]) {
+  background: var(--c-safety);
+  color: #fff;
+  border-color: var(--c-safety);
+}
+
+.jt-btn-ghost-dark {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+.jt-btn-ghost-dark:hover {
+  background: rgba(255, 255, 255, 0.10);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.55);
+}
+.jt-btn-ghost-dark:active:not([disabled]) {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* Helmet variant — 참가자 제출 CTA. Filled이므로 elevation 적용 (룰 부합). */
+.jt-btn-helmet {
+  background: var(--c-helmet);
+  color: var(--c-stache);
+  border: 2px solid var(--c-helmet);
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+.jt-btn-helmet:hover {
+  background: var(--c-helmet-deep);
+  border-color: var(--c-helmet-deep);
+  box-shadow: var(--shadow-md);
+}
+
+.jt-btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+.jt-btn-lg { height: 44px; padding: 0 20px; font-size: 14.5px; font-weight: 700; }
+.jt-btn[disabled], .jt-btn.is-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Icon button — 정사각 32px hit target */
+.jt-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--c-ink-3);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--trans-hover), var(--trans-press);
+}
+.jt-icon-btn:hover { background: var(--c-stone); color: var(--c-ink); }
+.jt-icon-btn:active { transform: scale(0.94); }
+.jt-icon-btn:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* Card */
+.jt-card {
+  background: var(--c-canvas);
+  border: 1px solid var(--c-hairline);
+  border-radius: var(--r-md);
+}
+/* Interactive card — opt-in으로 hover/active/focus 부여.
+   주의: 카드 컴포넌트들은 인라인 `border: '1px solid ...'` + `boxShadow: 'var(--shadow-sm)'`를
+   대부분 가지고 있어 specificity로 :hover 규칙이 가려진다(인라인 1,0,0,0 > class 0,0,1,1).
+   디자인 시스템 프리미티브 의도상 이 클래스를 붙이면 hover가 반드시 보여야 하므로 !important 부여. */
+.jt-card-interactive {
+  cursor: pointer;
+  transition: var(--trans-hover), var(--trans-elev), border-color var(--dur-fast) var(--ease-standard), transform var(--dur-instant) var(--ease-standard);
+}
+.jt-card-interactive:hover {
+  border-color: var(--c-ink-3) !important;
+  box-shadow: var(--shadow-hover) !important;
+  transform: translateY(-1px);
+}
+.jt-card-interactive:active {
+  transform: translateY(0) scale(0.998);
+  box-shadow: var(--shadow-sm) !important;
+}
+.jt-card-interactive:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* Inputs */
+.jt-input {
+  width: 100%;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--c-canvas);
+  border: 1px solid var(--c-hairline-strong);
+  border-radius: var(--r-sm);
+  color: var(--c-ink);
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease-standard),
+              box-shadow var(--dur-fast) var(--ease-standard),
+              background-color var(--dur-fast) var(--ease-standard);
+}
+.jt-input:hover:not(:focus) { border-color: var(--c-ink-3); }
+.jt-input:focus,
+.jt-input:focus-visible {
+  border-color: var(--c-ink);
+  box-shadow: var(--focus-ring-soft);
+}
+.jt-input.is-error {
+  border-color: var(--c-safety);
+  background: var(--c-safety-soft);
+}
+.jt-input.is-error:focus-visible {
+  box-shadow: 0 0 0 3px rgba(255, 107, 31, 0.25);
+}
+
+/* Helpers */
+.jt-row { display: flex; align-items: center; }
+.jt-col { display: flex; flex-direction: column; }
+.jt-spacer { flex: 1; }
+.jt-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+
+.jt-divider { height: 1px; background: var(--c-hairline); }
+
+/* Status dot indicator */
+.jt-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.jt-dot.live { background: var(--c-mint); box-shadow: 0 0 0 4px rgba(9, 108, 77, 0.12); }
+
+/* Avatar */
+.jt-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: var(--c-stone);
+  color: var(--c-ink);
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   A 영역 — 운영자 메타포 배경 (좌측 안내 패널 전용)
+   ------------------------------------------------------------
+   - .jt-blueprint-studio-bg  운영자(A-2/A-3): stone-2 콘크리트 + stache 도면 라인 (concrete pad)
+   참가자(A-1)는 기존 .jt-blueprint-bg(ink + 그리드)를 그대로 사용.
+   우측 폼 카드는 두 메타포 공통(paper)으로 유지해 입력 가독성 보호.
+   ============================================================ */
+.jt-blueprint-studio-bg {
+  background-color: var(--c-stone-2);
+  background-image:
+    radial-gradient(circle at 78% 22%, rgba(255, 206, 43, 0.08) 0%, transparent 45%),
+    linear-gradient(rgba(20, 19, 15, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 19, 15, 0.05) 1px, transparent 1px);
+  background-size: auto, 24px 24px, 24px 24px;
+}
+
+/* ============================================================
+   Brand & Critical Action — 브랜드 데코 + 비가역 액션 버튼
+   ------------------------------------------------------------
+   원칙:
+   - critical 버튼 shine 은 본문/라벨을 가로지르지 않고 절제된 강도
+   - brand-tape 데코는 헤더 underline·eyebrow 액센트 등 비-경고 맥락 한정
+   ============================================================ */
+
+/* === 브랜드 데코 (비-경고 맥락) === */
+
+/* 헤더/푸터 하단의 미묘한 사선 (1px helmet-soft) */
+.jt-brand-rule {
+  height: 1px;
+  background: var(--gradient-brand-tape);
+  background-size: 48px 1px;
+  opacity: 0.6;
+}
+
+/* Eyebrow 좌측 미니 helmet dot */
+.jt-eyebrow-tape::before {
+  content: "";
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: var(--c-helmet);
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* === Safety Tape — 공사장 주황 안전 테이프 ===
+   위험/비가역 액션의 단일 시각 어휘.
+   - 찢어진 양끝(clip-path polygon) + -1.5° 회전 + drop-shadow로 실제 테이프처럼.
+   - 라벨/배지/카운트다운 ring 등에 적용.
+   - 가독성: 본문은 항상 단색 stache on safety (대비 약 4.6:1, AA 통과). */
+.jt-tape {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  background: var(--c-safety);
+  color: var(--c-stache);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  white-space: nowrap;
+  transform: rotate(-1.5deg);
+  filter: drop-shadow(0 2px 3px rgba(20, 19, 15, 0.18));
+  /* 톱니 깊이 px 고정 — 테이프 길이와 무관하게 일정한 찢긴 모양 유지 */
+  clip-path: polygon(
+    2px 8%, 0 22%, 3px 38%, 0 55%, 4px 72%, 0 88%, 3px 100%,
+    calc(100% - 3px) 100%, 100% 88%, calc(100% - 4px) 72%, 100% 55%, calc(100% - 3px) 38%, 100% 22%, calc(100% - 2px) 8%, calc(100% - 5px) 0,
+    5px 0
+  );
+}
+
+/* 인라인 텍스트 강조용 — 회전 없음, 같은 줄에 자연스럽게 */
+.jt-tape-inline {
+  display: inline-block;
+  padding: 1px 10px;
+  background: var(--c-safety);
+  color: var(--c-stache);
+  font-weight: 700;
+  line-height: inherit;
+  clip-path: polygon(
+    3px 0, 0 50%, 3px 100%, calc(100% - 3px) 100%, 100% 50%, calc(100% - 3px) 0
+  );
+}
+
+/* 블록 라벨 — 더 큰 사이즈, 강한 회전 */
+.jt-tape-block {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 28px;
+  background: var(--c-safety);
+  color: var(--c-stache);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  transform: rotate(-2deg);
+  filter: drop-shadow(0 3px 6px rgba(20, 19, 15, 0.22));
+  /* 톱니 패턴은 .jt-tape와 동일한 7-edge zigzag(4개 톱니), 깊이만 ~1.4x 스케일업 (block 높이가 40px로 jt-tape 28px보다 큼) */
+  clip-path: polygon(
+    3px 8%, 0 22%, 4px 38%, 0 55%, 5px 72%, 0 88%, 4px 100%,
+    calc(100% - 4px) 100%, 100% 88%, calc(100% - 5px) 72%, 100% 55%, calc(100% - 4px) 38%, 100% 22%, calc(100% - 3px) 8%, calc(100% - 7px) 0,
+    7px 0
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* 회전은 모션이 아니므로 유지. 단, 그림자만 줄여 시각 강도 감소 */
+  .jt-tape, .jt-tape-block { filter: drop-shadow(0 1px 2px rgba(20, 19, 15, 0.15)); }
+}
+
+/* === Critical action button — 가독성 우선 ===
+   라벨은 항상 단색 helmet on stache (대비 12.7:1 AAA).
+   강조 이펙트: 사선(115°) 노란 빛띠가 왼쪽→오른쪽으로 슥 통과.
+   overflow:hidden 으로 버튼 외곽 안쪽에 가둠. */
+/* 비가역 액션 버튼 — 검정 배경 + 노랑 테두리/텍스트.
+   두 변형:
+   - critical-static (기본): 대부분의 비가역 액션 사용처. shine 없음.
+   - critical (shine sweep): 한 번에 한 화면에서 "가장 무게 있는 단일 액션"에만 사용.
+     사용처: B2 [튜토리얼 시작]·[해커톤 시작], B2-ended [갤러리 보기], E-4 [동의·AI 전송], C-1 종료 [갤러리로 가기].
+   상세 룰: Jitda Design System.html L1210. */
+/* 2026-05-27: 노란 테두리를 박스 OUTSIDE(box-shadow ring)로 이동.
+   이유: border 2px helmet + box-sizing: border-box → 검정 본체 영역을 4px(2 위+2 아래) 깎아먹어
+   secondary(1px border)보다 critical이 시각적으로 작아 보였음(강조 의도 정반대).
+   해결: border 1px stache(같은 검정) + box-shadow 0 0 0 2px helmet (박스 바깥).
+   결과: 본체 검정이 36px 전부 채우고, helmet ring은 박스 바깥에 추가 두께 → critical이 더 커 보임. */
+.jt-btn-critical,
+.jt-btn-critical-static {
+  background: var(--c-stache);
+  color: var(--c-helmet);
+  border: 1px solid var(--c-stache);
+  box-shadow: 0 0 0 2px var(--c-helmet);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+/* critical hover — pure black + 외곽 ring 유지 + elevation 추가 (라이트 backdrop 기본) */
+.jt-btn-critical:hover,
+.jt-btn-critical-static:hover {
+  background: #000;
+  box-shadow: 0 0 0 2px var(--c-helmet), 0 6px 20px rgba(20, 19, 15, 0.35);
+}
+
+/* 2026-05-28: critical + on-dark modifier — dark backdrop(E-4 합의 투표/대기 등)에서
+   기본 hover의 검정 elevation shadow가 안 보이는 문제 해소. helmet 노랑 halo glow로 대체.
+   사용: <button className="jt-btn jt-btn-critical on-dark"> */
+.jt-btn-critical.on-dark:hover,
+.jt-btn-critical-static.on-dark:hover {
+  background: #000;
+  box-shadow:
+    0 0 0 2px var(--c-helmet),
+    0 0 32px rgba(255, 206, 43, 0.55),
+    0 0 64px rgba(255, 206, 43, 0.22);
+}
+
+/* Success static — critical-static 의 mint 버전. E-4 응답 대기 상태("동의했어요·응답 완료") 등
+   완료/성공을 표시할 때 critical 과 동일 위계로 표시 (같은 크기·모양·glow, 색만 mint).
+   2026-05-28 v2: bg 를 stache(검정) 대신 ink-2(약간 밝은 회색)로 — "이미 완료/잠금" 상태를 흐릿하게 표현,
+   active critical(수락)과 시각 위계 차별화. */
+.jt-btn-success-static {
+  background: var(--c-ink-2);
+  color: var(--c-mint);
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--c-ink-2);
+  box-shadow: 0 0 0 2px var(--c-mint);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.jt-btn-success-static.on-dark {
+  box-shadow:
+    0 0 0 2px var(--c-mint),
+    0 0 24px rgba(34, 180, 135, 0.42),
+    0 0 48px rgba(34, 180, 135, 0.18);
+}
+
+/* Gauge shimmer — 거대 ring 게이지 위에 얹는 이글거리는 노랑 glow pulse.
+   2.5s 사인파 cycle 로 drop-shadow intensity 가 부드럽게 깜빡임. */
+.jt-gauge-shimmer {
+  animation: jt-gauge-shimmer 2.4s ease-in-out infinite;
+  will-change: filter;
+}
+@keyframes jt-gauge-shimmer {
+  0%, 100% { filter: drop-shadow(0 0 12px rgba(255,206,43,0.55)) drop-shadow(0 0 28px rgba(255,206,43,0.30)); }
+  50%      { filter: drop-shadow(0 0 22px rgba(255,206,43,0.85)) drop-shadow(0 0 50px rgba(255,206,43,0.52)); }
+}
+
+/* shine sweep — "한 화면 단일 핵심 액션" 룰에 따라 선별 사용 (위 주석 참고). */
+.jt-btn-critical {
+  position: relative;
+  overflow: hidden;
+}
+.jt-btn-critical::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(255, 206, 43, 0.55) 50%,
+    transparent 65%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  background-position: 130% 0;
+  animation: jt-btn-shine var(--anim-glow-duration) ease-in-out infinite;
+  pointer-events: none;
+}
+/* 키프레임: 130%(좌측 완전 바깥) → -30%(우측 완전 빠짐) sweep + dwell.
+   빛띠 폭 30% × bg-size 220% = container 너비의 66%. 시작/끝 모두 buffer 두어
+   "갑자기 화면에 나타나는" 부자연스러움 제거. */
+@keyframes jt-btn-shine {
+  0%   { background-position: 130% 0; }   /* shine 완전 좌측 바깥 (안 보임) */
+  55%  { background-position: -30% 0; }   /* 완전히 우측으로 빠짐 (안 보임) */
+  100% { background-position: -30% 0; }   /* dwell — 다음 cycle까지 안 보이게 정지 */
+}
+
+/* 카운트다운 원형 ring 글로우 */
+.jt-countdown-ring-critical {
+  animation: jt-ring-pulse var(--anim-glow-duration) ease-in-out infinite;
+}
+@keyframes jt-ring-pulse {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  50%      { filter: drop-shadow(0 0 12px var(--c-safety)); }
+}
+
+/* 모달 상단 스트립 — 12px (3 변형: 애니메이션 사선 / 고정 사선 / 단색 검정)
+   사선 패턴: 스트라이프 폭 10√2(=14.1421356)px → x축 1주기 = 정확히 40px. 솔기 없는 루프. */
+.jt-caution-strip,
+.jt-caution-strip-static,
+.jt-ink-strip {
+  height: 12px;
+  width: 100%;
+  flex-shrink: 0;
+}
+.jt-caution-strip,
+.jt-caution-strip-static {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--c-helmet) 0 14.1421356px,
+    var(--c-ink) 14.1421356px 28.2842712px
+  );
+  background-size: 40px 100%;
+}
+/* 애니메이션 버전 — 무한 스크롤 (한쪽 방향) */
+.jt-caution-strip {
+  animation: jt-caution-scroll 1.6s linear infinite;
+  will-change: background-position;
+}
+@keyframes jt-caution-scroll {
+  0%   { background-position: 0 0; }
+  100% { background-position: 40px 0; }
+}
+/* 단색 검정 스트립 — 톤 다운된 위계 표시 (위험 강조 없이 모달 경계만 명시) */
+.jt-ink-strip {
+  background: var(--c-ink);
+}
+
+/* 접근성 — 모션 감소 환경 */
+@media (prefers-reduced-motion: reduce) {
+  .jt-btn-critical {
+    box-shadow: 0 0 12px 2px rgba(255, 206, 43, 0.35);
+  }
+  .jt-btn-critical::after {
+    animation: none;
+    background-position: 50% 0;
+    opacity: 0.35;
+  }
+  .jt-countdown-ring-critical {
+    animation: none;
+    filter: drop-shadow(0 0 6px var(--c-safety));
+  }
+  .jt-tape, .jt-tape-block {
+    filter: drop-shadow(0 1px 2px rgba(20, 19, 15, 0.15));
+  }
+  .jt-caution-strip {
+    animation: none;
+  }
+}
+
+/* ============================================================
+   Spin · Pulse · Modal entrance — 공용 keyframe
+   ------------------------------------------------------------
+   - jt-spin: auth.jsx (A3 OAuth 로딩·실패), gallery.jsx (D-2 새로고침)
+   - jt-status-pulse: shared.jsx StatusPill 라이브 카운터 헤일로
+   - jt-modal-*: dialogs.jsx · operator.jsx 모달 진입
+   ============================================================ */
+@keyframes jt-spin {
+  to { transform: rotate(360deg); }
+}
+.jt-spin            { animation: jt-spin 1.2s linear infinite; }
+.jt-spin-once       { animation: jt-spin 600ms var(--ease-decelerate); }
+.jt-spin-slow       { animation: jt-spin 2.4s linear infinite; }
+
+@keyframes jt-status-pulse {
+  0%   { transform: scale(1);   opacity: 0.55; }
+  100% { transform: scale(1.8); opacity: 0;    }
+}
+.jt-status-pulse {
+  animation: jt-status-pulse 1.8s var(--ease-decelerate) infinite;
+}
+
+/* Modal entrance — backdrop fade + surface pop */
+@keyframes jt-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes jt-modal-pop-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1);    }
+}
+@keyframes jt-modal-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes jt-modal-slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* Modal primitives — dialogs.jsx · operator.jsx 모달 표준 */
+.jt-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: var(--c-backdrop);
+  animation: jt-backdrop-in var(--dur-base) var(--ease-decelerate);
+}
+.jt-modal-backdrop.is-strong { background: var(--c-backdrop-strong); }
+.jt-modal-backdrop.is-soft   { background: var(--c-backdrop-soft); }
+.jt-modal-backdrop.has-blur  { backdrop-filter: blur(var(--backdrop-blur)); -webkit-backdrop-filter: blur(var(--backdrop-blur)); }
+
+.jt-modal-surface {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--c-canvas);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-modal);
+  z-index: var(--z-modal);
+  animation: jt-modal-pop-in var(--dur-base) var(--ease-standard);
+  overflow: hidden;
+}
+.jt-modal-surface.is-fade  { animation: jt-modal-fade-in  var(--dur-base) var(--ease-decelerate); }
+.jt-modal-surface.is-slide { animation: jt-modal-slide-up var(--dur-base) var(--ease-decelerate); }
+
+/* Popover / dropdown — 더보기(⋯), tooltip */
+@keyframes jt-popover-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+.jt-popover {
+  background: var(--c-canvas);
+  border: 1px solid var(--c-hairline);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-popover);
+  z-index: var(--z-popover);
+  animation: jt-popover-in var(--dur-fast) var(--ease-decelerate);
+  transform-origin: top right;
+}
+
+/* Tooltip — 운영자 정보 아이콘·아바타 hover */
+.jt-tooltip {
+  position: absolute;
+  padding: 6px 10px;
+  background: var(--c-ink);
+  color: #fff;
+  font-size: 11.5px;
+  font-family: var(--font-mono);
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: var(--z-popover);
+  animation: jt-modal-fade-in var(--dur-fast) var(--ease-decelerate);
+  box-shadow: var(--shadow-popover);
+}
+
+/* Tab underline slide — D-2 정보·댓글 탭 */
+.jt-tab-underline {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background: var(--c-ink);
+  transition: left var(--dur-base) var(--ease-standard),
+              width var(--dur-base) var(--ease-standard);
+}
+
+/* ============================================================
+   Tab — 패널 내 정보/댓글 등 segmented navigation
+   ------------------------------------------------------------
+   inactive: slate 색 + 투명 underline (sleeping)
+   hover:    ink-3 색 + hairline-strong underline (awakened)
+   active:   ink 굵게 + ink underline 2px + canvas 배경 (selected)
+   focus-visible: helmet outline ring (키보드)
+   ============================================================ */
+.jt-tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--c-hairline);
+  background: var(--c-paper);
+  flex-shrink: 0;
+}
+.jt-tab {
+  flex: 1;
+  padding: 11px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--c-slate);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background-color var(--dur-fast) var(--ease-standard),
+              color var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard);
+}
+.jt-tab:hover {
+  color: var(--c-ink-3);
+  border-bottom-color: var(--c-hairline-strong);
+  background: rgba(20, 19, 15, 0.02);
+}
+.jt-tab.is-active {
+  background: var(--c-canvas);
+  color: var(--c-ink);
+  font-weight: 700;
+  border-bottom-color: var(--c-ink);
+}
+.jt-tab.is-active:hover {
+  /* active 탭은 이미 peak emphasis — hover 변화 없음 */
+  background: var(--c-canvas);
+  border-bottom-color: var(--c-ink);
+}
+.jt-tab:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: -2px;
+}
+
+/* Tab badge — 댓글 카운트 등 */
+.jt-tab-badge {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: var(--r-pill);
+  background: var(--c-stone);
+  color: var(--c-slate);
+  font-weight: 700;
+  line-height: 1.4;
+  transition: background-color var(--dur-fast) var(--ease-standard),
+              color var(--dur-fast) var(--ease-standard);
+}
+.jt-tab.is-active .jt-tab-badge {
+  background: var(--c-ink);
+  color: #fff;
+}
+
+/* prefers-reduced-motion — 모션 감소 환경 추가 */
+@media (prefers-reduced-motion: reduce) {
+  .jt-spin, .jt-spin-once, .jt-spin-slow,
+  .jt-status-pulse,
+  .jt-modal-backdrop, .jt-modal-surface,
+  .jt-popover, .jt-tooltip {
+    animation: none !important;
+  }
+  .jt-btn:active,
+  .jt-icon-btn:active,
+  .jt-card-interactive:active {
+    transform: none !important;
+  }
+  .jt-tab-underline { transition: none !important; }
+}

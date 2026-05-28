@@ -1,0 +1,1940 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>짓다 · 디자인 시스템</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css" />
+
+  <style>
+    :root {
+      --c-canvas: #ffffff;
+      --c-paper: #f4f2ec;
+      --c-stone: #e9e6dd;
+      --c-stone-2: #ddd9cd;
+      --c-hairline: #d9d5c9;
+      --c-hairline-strong: #b8b4a6;
+      --c-ink: #14130f;
+      --c-ink-2: #2a2823;
+      --c-ink-3: #4a473e;
+      --c-muted: #8a8779;
+      --c-slate: #69675c;
+
+      --c-helmet: #ffce2b;
+      --c-helmet-deep: #e6b500;
+      --c-helmet-soft: #fff4c2;
+      --c-stache: #14130f;
+      --c-rebar: #b87333;
+      --c-blueprint: #1f3a52;
+      --c-blueprint-soft: #dde4ec;
+      --c-safety: #ff6b1f;
+      --c-safety-soft: #ffe0cf;
+      --c-safety-deep: #cc4a0a;
+      --c-concrete: #c3bfb3;
+      --c-concrete-light: #ebe7dd;
+
+      --c-amber: #a06a0a;
+      --c-amber-soft: #fbeacf;
+      --c-mint: #096c4d;
+      --c-mint-soft: #d6f1de;
+
+      --c-rose: var(--c-safety);
+      --c-rose-soft: var(--c-safety-soft);
+      --c-coral: var(--c-helmet);
+      --c-coral-soft: var(--c-helmet-soft);
+
+      --font-display: 'Wanted Sans Variable', 'Wanted Sans', system-ui, sans-serif;
+      --font-body: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, 'Menlo', monospace;
+
+      --r-xs: 2px;
+      --r-sm: 4px;
+      --r-md: 6px;
+      --r-lg: 10px;
+
+      --shadow-sm: 0 1px 0 rgba(20, 19, 15, 0.04);
+      --shadow-md: 0 4px 16px rgba(20, 19, 15, 0.06), 0 1px 0 rgba(20, 19, 15, 0.04);
+      --shadow-lg: 0 12px 32px rgba(20, 19, 15, 0.10);
+
+      --gradient-brand-tape: repeating-linear-gradient(
+        -45deg,
+        var(--c-helmet-soft) 0px,
+        var(--c-helmet-soft) 36px,
+        var(--c-helmet)      36px,
+        var(--c-helmet)      40px
+      );
+      --anim-glow-duration: 2.4s;
+    }
+
+    /* Brand decoration + critical action button + caution strip (2026-05-26 부활) */
+    .jt-brand-rule { height: 1px; background: var(--gradient-brand-tape); background-size: 48px 1px; opacity: 0.6; }
+    .jt-eyebrow-tape::before { content: ""; display: inline-block; width: 8px; height: 8px; background: var(--c-helmet); margin-right: 8px; vertical-align: middle; }
+
+    /* 모달 상단 스트립 — 12px 3변형 (애니메이션 사선 / 고정 사선 / 단색 검정).
+       사선 패턴: 스트라이프 폭 10√2(=14.1421356)px → x축 1주기 = 정확히 40px → 솔기 없는 무한 루프. */
+    .jt-caution-strip, .jt-caution-strip-static, .jt-ink-strip { height: 12px; width: 100%; flex-shrink: 0; }
+    .jt-caution-strip, .jt-caution-strip-static {
+      background: repeating-linear-gradient(-45deg, var(--c-helmet) 0 14.1421356px, var(--c-ink) 14.1421356px 28.2842712px);
+      background-size: 40px 100%;
+    }
+    .jt-caution-strip { animation: jt-caution-scroll 1.6s linear infinite; will-change: background-position; }
+    @keyframes jt-caution-scroll { 0% { background-position: 0 0; } 100% { background-position: 40px 0; } }
+    .jt-ink-strip { background: var(--c-ink); }
+    /* 비가역 액션 버튼 — 검정+노랑테두리. 두 변형: critical(shine sweep) / -static(정적). */
+    .jt-btn-critical, .jt-btn-critical-static {
+      background: var(--c-stache); color: var(--c-helmet);
+      border: 2px solid var(--c-helmet); font-weight: 700; letter-spacing: 0.02em;
+      cursor: pointer; font-family: inherit;
+    }
+    .jt-btn-critical:hover, .jt-btn-critical-static:hover { background: #000; }
+    .jt-btn-critical { position: relative; overflow: hidden; }
+    .jt-btn-critical::after {
+      content: ""; position: absolute; inset: 0;
+      background: linear-gradient(115deg, transparent 35%, rgba(255, 206, 43, 0.55) 50%, transparent 65%);
+      background-size: 220% 100%; background-repeat: no-repeat; background-position: 130% 0;
+      animation: jt-btn-shine var(--anim-glow-duration) ease-in-out infinite; pointer-events: none;
+    }
+    /* 130%(좌측 완전 바깥) → -30%(우측 완전 빠짐) → dwell. 빛띠가 항상 버튼 바깥에서 시작 → 자연스러운 진입. */
+    @keyframes jt-btn-shine {
+      0%   { background-position: 130% 0; }
+      55%  { background-position: -30% 0; }
+      100% { background-position: -30% 0; }
+    }
+    .jt-countdown-ring-critical { animation: jt-ring-pulse var(--anim-glow-duration) ease-in-out infinite; }
+    @keyframes jt-ring-pulse {
+      0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+      50%      { filter: drop-shadow(0 0 12px var(--c-safety)); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .jt-btn-critical { box-shadow: 0 0 12px 2px rgba(255, 206, 43, 0.35); }
+      .jt-btn-critical::after { animation: none; background-position: 50% 0; opacity: 0.35; }
+      .jt-countdown-ring-critical { animation: none; filter: drop-shadow(0 0 6px var(--c-safety)); }
+      .jt-tape, .jt-tape-block { filter: drop-shadow(0 1px 2px rgba(20, 19, 15, 0.15)); }
+      .jt-caution-strip { animation: none; }
+    }
+
+    /* Safety Tape */
+    .jt-tape {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 18px;
+      background: var(--c-safety); color: var(--c-stache);
+      font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      line-height: 1.3; white-space: nowrap;
+      transform: rotate(-1.5deg);
+      filter: drop-shadow(0 2px 3px rgba(20, 19, 15, 0.18));
+      /* 톱니 깊이 px 고정 — 테이프 길이와 무관하게 일정한 찢긴 모양 */
+      clip-path: polygon(2px 8%, 0 22%, 3px 38%, 0 55%, 4px 72%, 0 88%, 3px 100%,
+        calc(100% - 3px) 100%, 100% 88%, calc(100% - 4px) 72%, 100% 55%, calc(100% - 3px) 38%, 100% 22%, calc(100% - 2px) 8%, calc(100% - 5px) 0, 5px 0);
+    }
+    .jt-tape-inline {
+      display: inline-block; padding: 1px 10px;
+      background: var(--c-safety); color: var(--c-stache);
+      font-weight: 700; line-height: inherit;
+      clip-path: polygon(3px 0, 0 50%, 3px 100%, calc(100% - 3px) 100%, 100% 50%, calc(100% - 3px) 0);
+    }
+    .jt-tape-block {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 10px 28px;
+      background: var(--c-safety); color: var(--c-stache);
+      font-family: var(--font-display); font-size: 18px; font-weight: 800;
+      letter-spacing: -0.01em; line-height: 1.2;
+      transform: rotate(-2deg);
+      filter: drop-shadow(0 3px 6px rgba(20, 19, 15, 0.22));
+      /* 톱니 깊이 px 고정 — block은 비율 18%(높이 ~40px 기준 8px 코너)로 .jt-tape와 동일 비례감 */
+      clip-path: polygon(3px 8%, 0 22%, 4px 38%, 0 55%, 5px 72%, 0 88%, 4px 100%,
+        calc(100% - 4px) 100%, 100% 88%, calc(100% - 5px) 72%, 100% 55%, calc(100% - 4px) 38%, 100% 22%, calc(100% - 3px) 8%, calc(100% - 7px) 0, 7px 0);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--c-paper);
+      color: var(--c-ink);
+      font-family: var(--font-body);
+      font-size: 14px;
+      line-height: 1.55;
+      letter-spacing: -0.005em;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      letter-spacing: -0.024em;
+      margin: 0;
+    }
+
+    .mono { font-family: var(--font-mono); }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 56px 56px 120px;
+      position: relative;
+    }
+    .page::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(20,19,15,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,19,15,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .page > * { position: relative; z-index: 1; }
+
+    /* Header */
+    .doc-header {
+      border-top: 6px solid var(--c-helmet);
+      padding-top: 28px;
+      margin-bottom: 56px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: end;
+    }
+    .doc-title {
+      font-size: 52px;
+      line-height: 1;
+      letter-spacing: -0.04em;
+    }
+    .doc-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--c-muted);
+      margin-bottom: 14px;
+    }
+    .doc-subtitle {
+      color: var(--c-slate);
+      font-size: 15px;
+      max-width: 600px;
+      margin-top: 12px;
+    }
+    .doc-meta {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      color: var(--c-slate);
+      letter-spacing: 0.06em;
+      text-align: right;
+    }
+    .doc-meta div + div { margin-top: 4px; }
+
+    /* Section */
+    section {
+      margin-bottom: 72px;
+    }
+    .sec-head {
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      margin-bottom: 28px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--c-hairline-strong);
+    }
+    .sec-num {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      color: var(--c-helmet-deep);
+      background: var(--c-ink);
+      color: var(--c-helmet);
+      padding: 4px 8px;
+      border-radius: var(--r-xs);
+    }
+    .sec-title {
+      font-size: 24px;
+    }
+    .sec-tag {
+      margin-left: auto;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--c-slate);
+      letter-spacing: 0.08em;
+    }
+    .sec-desc {
+      max-width: 720px;
+      color: var(--c-slate);
+      margin-bottom: 28px;
+      font-size: 13.5px;
+    }
+
+    /* Cards (specimen blocks) */
+    .grid { display: grid; gap: 16px; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-6 { grid-template-columns: repeat(6, 1fr); }
+    .grid-2-1 { grid-template-columns: 2fr 1fr; }
+
+    .spec {
+      background: var(--c-canvas);
+      border: 1px solid var(--c-hairline);
+      border-radius: var(--r-sm);
+      padding: 22px;
+      position: relative;
+    }
+    .spec-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .spec-sub {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      letter-spacing: 0.08em;
+      color: var(--c-muted);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    /* Colors */
+    .swatch {
+      background: var(--c-canvas);
+      border: 1px solid var(--c-hairline);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .swatch-color {
+      height: 110px;
+      position: relative;
+    }
+    .swatch-meta {
+      padding: 12px 14px;
+      border-top: 1px solid var(--c-hairline);
+    }
+    .swatch-name {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .swatch-token, .swatch-hex {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--c-slate);
+    }
+    .swatch-token { color: var(--c-muted); margin-top: 2px; letter-spacing: 0.04em; }
+    .swatch-corner {
+      position: absolute;
+      top: 8px; left: 8px;
+      font-family: var(--font-mono);
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      color: rgba(255,255,255,0.7);
+      text-transform: uppercase;
+    }
+    .swatch-corner.dark { color: rgba(20,19,15,0.5); }
+
+    /* Logo block */
+    .logo-display {
+      background: var(--c-paper);
+      border: 1px solid var(--c-hairline);
+      border-radius: var(--r-sm);
+      padding: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      min-height: 200px;
+      position: relative;
+    }
+    .logo-display.dark {
+      background: var(--c-ink);
+      color: #fff;
+    }
+    .logo-display.helmet {
+      background: var(--c-helmet);
+    }
+    .logo-tag {
+      position: absolute;
+      bottom: 12px;
+      left: 14px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      letter-spacing: 0.16em;
+      color: var(--c-muted);
+      text-transform: uppercase;
+    }
+    .dark .logo-tag { color: rgba(255,255,255,0.4); }
+
+    /* Type specimens */
+    .type-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 140px;
+      gap: 24px;
+      align-items: baseline;
+      padding: 18px 22px;
+      border-bottom: 1px dashed var(--c-hairline-strong);
+    }
+    .type-row:last-child { border-bottom: none; }
+    .type-name {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--c-muted);
+    }
+    .type-sample { font-family: var(--font-display); }
+    .type-meta {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      color: var(--c-slate);
+      letter-spacing: 0.04em;
+      text-align: right;
+    }
+
+    /* Buttons used in specimens */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: var(--r-sm);
+      font-size: 13.5px;
+      font-weight: 600;
+      border: 1px solid transparent;
+      font-family: inherit;
+      cursor: pointer;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .btn-helmet { background: var(--c-helmet); color: var(--c-ink); border-color: var(--c-helmet-deep); }
+    .btn-primary { background: var(--c-ink); color: #fff; }
+    .btn-secondary { background: var(--c-canvas); color: var(--c-ink); border-color: var(--c-hairline-strong); }
+    .btn-ghost { background: transparent; color: var(--c-ink-3); }
+    .btn-danger { background: var(--c-rose); color: #fff; }
+    .btn-sm { padding: 6px 12px; font-size: 12.5px; border-radius: var(--r-xs); }
+
+    /* Pills */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 500;
+      font-family: var(--font-mono);
+      letter-spacing: 0.02em;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .pill-pending { background: var(--c-stone); color: var(--c-ink-3); }
+    .pill-tutorial { background: var(--c-blueprint-soft); color: var(--c-blueprint); }
+    .pill-started { background: var(--c-mint-soft); color: var(--c-mint); }
+    .pill-paused { background: var(--c-amber-soft); color: var(--c-amber); }
+    .pill-ended { background: #ebebec; color: var(--c-ink-3); }
+    .pill-danger { background: var(--c-rose-soft); color: var(--c-rose); }
+    .pill-info { background: var(--c-blueprint-soft); color: var(--c-blueprint); }
+
+    /* Input */
+    .input {
+      width: 100%;
+      padding: 12px 14px;
+      font-family: inherit;
+      font-size: 14px;
+      background: var(--c-canvas);
+      border: 1px solid var(--c-hairline-strong);
+      border-radius: var(--r-xs);
+      color: var(--c-ink);
+      outline: none;
+    }
+    .input:focus { border-color: var(--c-ink); box-shadow: 0 0 0 2px var(--c-helmet); }
+
+    /* OTP cells */
+    .otp-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; max-width: 380px; }
+    .otp-cell {
+      aspect-ratio: 1 / 1.1;
+      border: 1.5px solid var(--c-hairline-strong);
+      border-radius: var(--r-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 700;
+      background: var(--c-paper);
+    }
+    .otp-cell.filled { border-color: var(--c-ink); background: var(--c-canvas); }
+    .otp-cell.focus { border-color: var(--c-helmet); border-width: 2px; background: var(--c-helmet-soft); box-shadow: 0 0 0 4px rgba(255,206,43,0.18); }
+
+    /* Pattern showcases */
+    .pattern-frame {
+      border: 1px solid var(--c-hairline);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+      background: var(--c-canvas);
+    }
+    .pattern-bar {
+      padding: 10px 14px;
+      background: var(--c-stone);
+      border-bottom: 1px solid var(--c-hairline);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      color: var(--c-slate);
+      display: flex;
+      justify-content: space-between;
+    }
+    .pattern-body {
+      padding: 28px;
+      position: relative;
+      min-height: 160px;
+    }
+
+    /* Brand-pattern textures */
+    .pattern-grid {
+      background-color: var(--c-paper);
+      background-image:
+        linear-gradient(rgba(20,19,15,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,19,15,0.04) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    .pattern-blueprint {
+      background-color: var(--c-ink);
+      background-image:
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+    .pattern-concrete-pad {
+      background-color: var(--c-stone-2);
+      background-image:
+        radial-gradient(circle at 78% 22%, rgba(255, 206, 43, 0.08) 0%, transparent 45%),
+        linear-gradient(rgba(20, 19, 15, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20, 19, 15, 0.05) 1px, transparent 1px);
+      background-size: auto, 24px 24px, 24px 24px;
+    }
+    .pattern-caution {
+      background: repeating-linear-gradient(
+        -45deg,
+        var(--c-helmet) 0 14px,
+        var(--c-ink) 14px 28px
+      );
+    }
+
+    /* Spacing scale */
+    .space-row {
+      display: grid;
+      grid-template-columns: 100px 1fr 80px;
+      gap: 16px;
+      align-items: center;
+      padding: 10px 22px;
+      border-bottom: 1px dashed var(--c-hairline);
+    }
+    .space-bar {
+      background: var(--c-ink);
+      height: 16px;
+      border-radius: var(--r-xs);
+    }
+    .space-label { font-family: var(--font-mono); font-size: 11.5px; color: var(--c-ink-2); }
+    .space-meta  { font-family: var(--font-mono); font-size: 11px; color: var(--c-slate); text-align: right; }
+
+    /* Radius */
+    .radius-row {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .radius-spec {
+      width: 130px;
+      text-align: center;
+    }
+    .radius-shape {
+      width: 100%;
+      height: 72px;
+      background: var(--c-stone);
+      border: 1.5px solid var(--c-hairline-strong);
+      margin-bottom: 10px;
+    }
+    .radius-name { font-family: var(--font-mono); font-size: 11px; color: var(--c-ink-2); }
+    .radius-val { font-family: var(--font-mono); font-size: 10.5px; color: var(--c-slate); margin-top: 2px; }
+
+    /* Token list */
+    .token-list {
+      background: var(--c-canvas);
+      border: 1px solid var(--c-hairline);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+    }
+    .token-row {
+      display: grid;
+      grid-template-columns: 220px 1fr 90px;
+      gap: 16px;
+      padding: 12px 18px;
+      border-bottom: 1px dashed var(--c-hairline);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      align-items: center;
+    }
+    .token-row:last-child { border-bottom: none; }
+    .token-name { color: var(--c-ink); }
+    .token-val { color: var(--c-slate); }
+    .token-chip {
+      width: 24px; height: 24px;
+      border-radius: var(--r-xs);
+      border: 1px solid var(--c-hairline-strong);
+      justify-self: end;
+    }
+
+    /* Pattern usage rules */
+    .rules {
+      background: var(--c-canvas);
+      border: 1px solid var(--c-hairline);
+      border-radius: var(--r-sm);
+      padding: 0;
+      overflow: hidden;
+    }
+    .rule {
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--c-hairline);
+    }
+    .rule:last-child { border-bottom: none; }
+    .rule-tag {
+      font-family: var(--font-mono);
+      font-size: 10.5px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .rule.do .rule-tag { color: var(--c-mint); }
+    .rule.dont .rule-tag { color: var(--c-rose); }
+    .rule-text { color: var(--c-ink-2); font-size: 13px; }
+
+    /* Footer */
+    .doc-footer {
+      margin-top: 80px;
+      padding-top: 24px;
+      border-top: 1px solid var(--c-hairline-strong);
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--c-muted);
+      letter-spacing: 0.06em;
+    }
+
+    /* Anchor nav */
+    .toc {
+      position: fixed;
+      top: 56px;
+      right: 24px;
+      background: var(--c-canvas);
+      border: 1px solid var(--c-hairline);
+      border-radius: var(--r-sm);
+      padding: 14px 16px;
+      width: 180px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      z-index: 10;
+    }
+    .toc-title {
+      color: var(--c-muted);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      font-size: 10px;
+    }
+    .toc a {
+      display: block;
+      padding: 4px 0;
+      color: var(--c-ink-2);
+      text-decoration: none;
+      border-bottom: 1px dashed transparent;
+    }
+    .toc a:hover { border-color: var(--c-ink); color: var(--c-ink); }
+    .toc a span { color: var(--c-muted); margin-right: 8px; }
+    @media (max-width: 1400px) {
+      .toc { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Floating TOC -->
+  <nav class="toc">
+    <div class="toc-title">SECTIONS</div>
+    <a href="#brand"><span>01</span>Brand</a>
+    <a href="#color"><span>02</span>Color</a>
+    <a href="#type"><span>03</span>Type</a>
+    <a href="#space"><span>04</span>Space</a>
+    <a href="#radius"><span>05</span>Radius</a>
+    <a href="#button"><span>06</span>Button</a>
+    <a href="#pill"><span>07</span>Status</a>
+    <a href="#input"><span>08</span>Input</a>
+    <a href="#pattern"><span>09</span>Pattern</a>
+    <a href="#live-frame"><span>09c</span>Frame</a>
+    <a href="#motion"><span>09d</span>Motion</a>
+    <a href="#overlay"><span>09e</span>Overlay</a>
+    <a href="#components"><span>09f</span>Library</a>
+    <a href="#rules"><span>10</span>Rules</a>
+    <a href="#copy"><span>11</span>Copy</a>
+    <a href="#layout"><span>12</span>Layout</a>
+  </nav>
+
+  <main class="page">
+    <!-- Header -->
+    <header class="doc-header">
+      <div>
+        <div class="doc-eyebrow">짓다 디자인 시스템 · v0.1 draft</div>
+        <h1 class="doc-title">JITDA<br/>DESIGN SYSTEM</h1>
+        <p class="doc-subtitle">
+          현장 240명이 동시에 사용하는 해커톤 운영 도구.
+          안전모를 쓴 콧수염, 모던 공사장 — 산업도면 톤의 정확함과 작업복의 친근함을 동시에.
+        </p>
+      </div>
+      <div class="doc-meta">
+        <div>DWG · DS-2026-05-21</div>
+        <div>FORM · DESKTOP / TABLET</div>
+        <div>STATUS · DRAFT</div>
+        <div>OWNER · DESIGN</div>
+      </div>
+    </header>
+
+    <!-- 01 BRAND -->
+    <section id="brand">
+      <div class="sec-head">
+        <span class="sec-num">01</span>
+        <h2 class="sec-title">Brand · 로고와 시그니처</h2>
+        <span class="sec-tag">SVG · 1 color / 2 color</span>
+      </div>
+      <p class="sec-desc">
+        안전모(헬멧 옐로우) 위에 핸들바 콧수염을 얹은 마크. "짓는다 = 만드는 일"을 의인화한 캐릭터로,
+        작업복처럼 친근하면서 산업 도면처럼 정확하게 읽혀야 합니다. 최소 노출 크기는 20px.
+      </p>
+
+      <div class="grid grid-3" style="margin-bottom: 16px;">
+        <div class="logo-display">
+          <svg width="120" height="100" viewBox="0 0 48 40">
+            <path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M 24 5 L 24 24" stroke="#14130f" stroke-width="2" stroke-linecap="round"/>
+            <path d="M 8 22 L 40 22 L 40 24 L 8 24 Z" fill="#e6b500"/>
+            <path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/>
+          </svg>
+          <span class="logo-tag">PRIMARY · LIGHT BG</span>
+        </div>
+        <div class="logo-display dark">
+          <svg width="120" height="100" viewBox="0 0 48 40">
+            <path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#f4f2ec" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M 24 5 L 24 24" stroke="#f4f2ec" stroke-width="2" stroke-linecap="round"/>
+            <path d="M 8 22 L 40 22 L 40 24 L 8 24 Z" fill="#e6b500"/>
+            <path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#f4f2ec" stroke-width="2" stroke-linejoin="round"/>
+            <path d="M 4 28 L 44 28" stroke="#e6b500" stroke-width="1.4"/>
+            <path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#f4f2ec"/>
+          </svg>
+          <span class="logo-tag">DARK BG</span>
+        </div>
+        <div class="logo-display helmet">
+          <svg width="120" height="100" viewBox="0 0 48 40">
+            <path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#14130f"/>
+            <path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#14130f"/>
+            <path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/>
+          </svg>
+          <span class="logo-tag" style="color: rgba(20,19,15,0.55);">MONO · KNOCKOUT</span>
+        </div>
+      </div>
+
+      <div class="grid grid-3">
+        <div class="spec">
+          <div class="spec-sub">SIGNATURE A</div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <svg width="40" height="34" viewBox="0 0 48 40"><path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 22 L 40 22 L 40 24 L 8 24 Z" fill="#e6b500"/><path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/></svg>
+            <span style="font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.04em;">짓다</span>
+            <span class="mono" style="font-size: 9px; letter-spacing: 0.22em; color: var(--c-muted);">JITDA</span>
+          </div>
+          <div style="margin-top: 10px;" class="mono" style="font-size: 11px; color: var(--c-slate);">로고 + 국문 + 영문 캡션</div>
+        </div>
+        <div class="spec">
+          <div class="spec-sub">SIGNATURE B · 콤팩트</div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <svg width="36" height="30" viewBox="0 0 48 40"><path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 22 L 40 22 L 40 24 L 8 24 Z" fill="#e6b500"/><path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/></svg>
+            <span style="font-family: var(--font-display); font-size: 20px; font-weight: 800; letter-spacing: -0.04em;">짓다</span>
+          </div>
+          <div style="margin-top: 10px;" class="mono" style="font-size: 11px; color: var(--c-slate);">앱 헤더용</div>
+        </div>
+        <div class="spec">
+          <div class="spec-sub">MIN SIZE</div>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <svg width="20" height="17" viewBox="0 0 48 40"><path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/></svg>
+            <svg width="32" height="27" viewBox="0 0 48 40"><path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 22 L 40 22 L 40 24 L 8 24 Z" fill="#e6b500"/><path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/></svg>
+            <svg width="48" height="40" viewBox="0 0 48 40"><path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 22 L 40 22 L 40 24 L 8 24 Z" fill="#e6b500"/><path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/></svg>
+          </div>
+          <div style="margin-top: 10px;" class="mono" style="font-size: 11px; color: var(--c-slate);">20px · 32px · 48px (권장 최소 20)</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 02 COLOR -->
+    <section id="color">
+      <div class="sec-head">
+        <span class="sec-num">02</span>
+        <h2 class="sec-title">Color · 산업 팔레트</h2>
+        <span class="sec-tag">5 base · 4 semantic · 2 accent</span>
+      </div>
+      <p class="sec-desc">
+        구조색은 두 가지 — 헬멧 옐로우와 잉크 블랙. 나머지는 콘크리트 톤 회색과 상태색.
+        형광 노랑은 면적 10% 이내, 포커스·CTA·강조 한정. 절대로 큰 면적 배경에 쓰지 않습니다.
+      </p>
+
+      <h3 style="font-size: 14px; margin-bottom: 12px;" class="mono" style="letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase;">▸ STRUCTURAL</h3>
+      <div class="grid grid-4" style="margin-bottom: 28px;">
+        <div class="swatch">
+          <div class="swatch-color" style="background: #14130f;"><span class="swatch-corner">STACHE</span></div>
+          <div class="swatch-meta">
+            <div class="swatch-name">Ink · Stache</div>
+            <div class="swatch-token">--c-ink / --c-stache</div>
+            <div class="swatch-hex">#14130F</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #ffce2b;"><span class="swatch-corner dark">HELMET</span></div>
+          <div class="swatch-meta">
+            <div class="swatch-name">Helmet</div>
+            <div class="swatch-token">--c-helmet</div>
+            <div class="swatch-hex">#FFCE2B</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #f4f2ec;"><span class="swatch-corner dark">PAPER</span></div>
+          <div class="swatch-meta">
+            <div class="swatch-name">Paper · Concrete</div>
+            <div class="swatch-token">--c-paper</div>
+            <div class="swatch-hex">#F4F2EC</div>
+          </div>
+        </div>
+        <div class="swatch">
+          <div class="swatch-color" style="background: #ffffff; box-shadow: inset 0 0 0 1px #d9d5c9;"><span class="swatch-corner dark">CANVAS</span></div>
+          <div class="swatch-meta">
+            <div class="swatch-name">Canvas</div>
+            <div class="swatch-token">--c-canvas</div>
+            <div class="swatch-hex">#FFFFFF</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 14px; margin-bottom: 12px;" class="mono" style="letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase;">▸ STONE / GRAY RAMP</h3>
+      <div class="grid grid-6" style="margin-bottom: 28px;">
+        <div class="swatch"><div class="swatch-color" style="background:#f4f2ec; box-shadow: inset 0 0 0 1px #d9d5c9;"></div><div class="swatch-meta"><div class="swatch-name">paper</div><div class="swatch-hex">#F4F2EC</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#e9e6dd;"></div><div class="swatch-meta"><div class="swatch-name">stone</div><div class="swatch-hex">#E9E6DD</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#ddd9cd;"></div><div class="swatch-meta"><div class="swatch-name">stone-2</div><div class="swatch-hex">#DDD9CD</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#b8b4a6;"></div><div class="swatch-meta"><div class="swatch-name">hairline-strong</div><div class="swatch-hex">#B8B4A6</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#69675c;"><span class="swatch-corner">slate</span></div><div class="swatch-meta"><div class="swatch-name">slate</div><div class="swatch-hex">#69675C</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#2a2823;"><span class="swatch-corner">ink-2</span></div><div class="swatch-meta"><div class="swatch-name">ink-2</div><div class="swatch-hex">#2A2823</div></div></div>
+      </div>
+
+      <h3 style="font-size: 14px; margin-bottom: 12px;" class="mono" style="letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase;">▸ SEMANTIC</h3>
+      <div class="grid grid-4">
+        <div class="swatch"><div class="swatch-color" style="background:#1f3a52;"><span class="swatch-corner">BLUEPRINT</span></div><div class="swatch-meta"><div class="swatch-name">Blueprint</div><div class="swatch-token">info / 튜토리얼</div><div class="swatch-hex">#1F3A52</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#096c4d;"><span class="swatch-corner">MINT</span></div><div class="swatch-meta"><div class="swatch-name">Mint</div><div class="swatch-token">success / 진행 중</div><div class="swatch-hex">#096C4D</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#a06a0a;"><span class="swatch-corner">AMBER</span></div><div class="swatch-meta"><div class="swatch-name">Amber</div><div class="swatch-token">warn / 일시정지</div><div class="swatch-hex">#A06A0A</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#ff6b1f;"><span class="swatch-corner">SAFETY</span></div><div class="swatch-meta"><div class="swatch-name">Safety</div><div class="swatch-token">danger / 종료 (tape)</div><div class="swatch-hex">#FF6B1F</div></div></div>
+        <div class="swatch" style="opacity:0.55;"><div class="swatch-color" style="background:#b3251c;"><span class="swatch-corner">DEPRECATED</span></div><div class="swatch-meta"><div class="swatch-name">Rose <span style="font-size: 9px; color: var(--c-slate);">→ safety alias</span></div><div class="swatch-token">deprecated · 신규 코드 사용 금지</div><div class="swatch-hex">#B3251C</div></div></div>
+      </div>
+    </section>
+
+    <!-- 03 TYPE -->
+    <section id="type">
+      <div class="sec-head">
+        <span class="sec-num">03</span>
+        <h2 class="sec-title">Typography · 작업복 + 도면</h2>
+        <span class="sec-tag">Wanted Sans · Pretendard · JetBrains Mono</span>
+      </div>
+      <p class="sec-desc">
+        디스플레이는 반듯한 산세리프 Wanted Sans (헤드라인/숫자), 본문은 Pretendard, 모노 라벨·코드·치수는 JetBrains Mono.
+        모노는 항상 letter-spacing 0.06–0.22em · UPPERCASE.
+      </p>
+
+      <div class="spec" style="padding: 0;">
+        <div class="type-row">
+          <div class="type-name">Display / 56</div>
+          <div class="type-sample" style="font-size: 56px; font-weight: 800; letter-spacing: -0.04em; line-height: 1;">코드 한 줄로</div>
+          <div class="type-meta">800 · -0.04em · 1.0</div>
+        </div>
+        <div class="type-row">
+          <div class="type-name">Display / 38</div>
+          <div class="type-sample" style="font-size: 38px; font-weight: 700; letter-spacing: -0.028em; line-height: 1.1;">현장에 입장하세요</div>
+          <div class="type-meta">700 · -0.028em · 1.1</div>
+        </div>
+        <div class="type-row">
+          <div class="type-name">Heading / 26</div>
+          <div class="type-sample" style="font-size: 26px; font-weight: 700; letter-spacing: -0.024em; line-height: 1.2;">입장 정보를 입력하세요</div>
+          <div class="type-meta">700 · -0.024em · 1.2</div>
+        </div>
+        <div class="type-row">
+          <div class="type-name">Heading / 20</div>
+          <div class="type-sample" style="font-size: 20px; font-weight: 700; letter-spacing: -0.022em;">세션 정리가 필요해요</div>
+          <div class="type-meta">700 · -0.022em</div>
+        </div>
+        <div class="type-row">
+          <div class="type-name">Body / 14</div>
+          <div class="type-sample" style="font-family: var(--font-body); font-size: 14px; line-height: 1.55; color: var(--c-ink-2); max-width: 420px;">현장 운영자에게 받은 6자리 코드를 입력하면 됩니다. 별도 설치 없이 브라우저에서 바로 작업을 시작해요.</div>
+          <div class="type-meta">400 · 1.55 · Pretendard</div>
+        </div>
+        <div class="type-row">
+          <div class="type-name">Caption / 12</div>
+          <div class="type-sample" style="font-family: var(--font-body); font-size: 12px; color: var(--c-slate);">참가자에게 보일 이름이에요 · 한글/영문 2–12자</div>
+          <div class="type-meta">400 · slate</div>
+        </div>
+        <div class="type-row">
+          <div class="type-name">Mono / 11</div>
+          <div class="type-sample mono" style="font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--c-muted);">▸ WORKER · CODE / OTP</div>
+          <div class="type-meta">JetBrains 500 · 0.18em</div>
+        </div>
+        <div class="type-row">
+          <div class="type-name">Numeric / 28</div>
+          <div class="type-sample mono" style="font-size: 28px; font-weight: 700;">8 K 7 M R 2</div>
+          <div class="type-meta">JetBrains 700</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 SPACE -->
+    <section id="space">
+      <div class="sec-head">
+        <span class="sec-num">04</span>
+        <h2 class="sec-title">Spacing · 4px 베이스</h2>
+        <span class="sec-tag">4 · 8 · 12 · 16 · 24 · 32 · 48</span>
+      </div>
+      <p class="sec-desc">4의 배수 그리드. 카드 내 패딩 16–22, 섹션 간격 56–72, 페이지 패딩 56.</p>
+
+      <div class="spec" style="padding: 0;">
+        <div class="space-row"><span class="space-label">space-1</span><div class="space-bar" style="width: 4px;"></div><span class="space-meta">4px</span></div>
+        <div class="space-row"><span class="space-label">space-2</span><div class="space-bar" style="width: 8px;"></div><span class="space-meta">8px</span></div>
+        <div class="space-row"><span class="space-label">space-3</span><div class="space-bar" style="width: 12px;"></div><span class="space-meta">12px</span></div>
+        <div class="space-row"><span class="space-label">space-4</span><div class="space-bar" style="width: 16px;"></div><span class="space-meta">16px</span></div>
+        <div class="space-row"><span class="space-label">space-6</span><div class="space-bar" style="width: 24px;"></div><span class="space-meta">24px</span></div>
+        <div class="space-row"><span class="space-label">space-8</span><div class="space-bar" style="width: 32px;"></div><span class="space-meta">32px</span></div>
+        <div class="space-row"><span class="space-label">space-12</span><div class="space-bar" style="width: 48px;"></div><span class="space-meta">48px</span></div>
+        <div class="space-row"><span class="space-label">space-14</span><div class="space-bar" style="width: 56px;"></div><span class="space-meta">56px</span></div>
+        <div class="space-row"><span class="space-label">space-18</span><div class="space-bar" style="width: 72px;"></div><span class="space-meta">72px</span></div>
+      </div>
+    </section>
+
+    <!-- 05 RADIUS -->
+    <section id="radius">
+      <div class="sec-head">
+        <span class="sec-num">05</span>
+        <h2 class="sec-title">Radius · 직각에 가까운 산업감</h2>
+        <span class="sec-tag">2 · 4 · 6 · 10</span>
+      </div>
+      <p class="sec-desc">버튼/입력은 4. 카드는 6. 픽업카드는 10. 12 이상은 사용하지 않습니다 — 산업 도구의 정확함을 유지.</p>
+
+      <div class="radius-row">
+        <div class="radius-spec"><div class="radius-shape" style="border-radius: 0;"></div><div class="radius-name">none</div><div class="radius-val">0px</div></div>
+        <div class="radius-spec"><div class="radius-shape" style="border-radius: 2px;"></div><div class="radius-name">--r-xs</div><div class="radius-val">2px · 인풋·작은버튼</div></div>
+        <div class="radius-spec"><div class="radius-shape" style="border-radius: 4px;"></div><div class="radius-name">--r-sm</div><div class="radius-val">4px · 버튼·카드</div></div>
+        <div class="radius-spec"><div class="radius-shape" style="border-radius: 6px;"></div><div class="radius-name">--r-md</div><div class="radius-val">6px · OTP cell</div></div>
+        <div class="radius-spec"><div class="radius-shape" style="border-radius: 10px;"></div><div class="radius-name">--r-lg</div><div class="radius-val">10px · 모달·픽업</div></div>
+        <div class="radius-spec"><div class="radius-shape" style="border-radius: 999px;"></div><div class="radius-name">--r-pill</div><div class="radius-val">999px · 상태칩 한정</div></div>
+      </div>
+    </section>
+
+    <!-- 06 BUTTON -->
+    <section id="button">
+      <div class="sec-head">
+        <span class="sec-num">06</span>
+        <h2 class="sec-title">Buttons · 작업 명령</h2>
+        <span class="sec-tag">5 variants</span>
+      </div>
+      <p class="sec-desc">
+        주요 행동은 <strong>Helmet</strong> (옐로우 + 잉크 텍스트). 보조 행동은 <strong>Primary</strong> (잉크). 위험 행동은 <strong>Danger</strong>.
+        한 화면에 Helmet은 최대 1개.
+      </p>
+
+      <div class="spec">
+        <div class="spec-sub">VARIANT</div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px;">
+          <button class="btn btn-helmet">현장 입장 →</button>
+          <button class="btn btn-primary">이 기기에서 계속</button>
+          <button class="btn btn-secondary">돌아가기</button>
+          <button class="btn btn-ghost">건너뛰기</button>
+          <button class="btn btn-danger">해커톤 종료</button>
+          <button class="jt-btn jt-btn-sm jt-btn-danger-outlined">■ 종료</button>
+        </div>
+        <p style="font-size: 12px; color: var(--c-slate); margin: -16px 0 24px;">
+          마지막 <code class="mono">.jt-btn-danger-outlined</code> = 비가역 액션 중 <strong>실수 방지를 위해 의도적으로 강조 낮춘 변형</strong> (B-2 [종료]에 사용). default 옅은 윤곽 → hover safety-soft 채워짐 → active safety solid로 의도 확정.
+        </p>
+
+        <div class="spec-sub">SIZE · 높이 고정 (2026-05-27 표준화)</div>
+        <p style="font-size: 13px; color: var(--c-ink-2); margin: 0 0 14px;">
+          <strong>원칙</strong>: SIZE가 높이를 결정. variant는 오직 색/테두리/그림자만.
+          <code class="mono">box-sizing: border-box</code> + <code class="mono">height: NNpx</code>로 border 1px↔2px 차이가 높이에 영향 안 줌. critical·helmet의 2px border도 동일 높이 유지.
+        </p>
+        <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-bottom: 14px;">
+          <tr style="border-bottom: 1px solid var(--c-hairline); background: var(--c-stone);">
+            <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 80px;">Size</th>
+            <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 90px;">Height</th>
+            <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 110px;">Padding 좌우</th>
+            <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 90px;">Font</th>
+            <th style="text-align: left; padding: 8px 10px; font-weight: 600;">사용처</th>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">sm</td><td class="mono" style="padding: 8px 10px;">28px</td><td class="mono" style="padding: 8px 10px;">0 10px</td><td class="mono" style="padding: 8px 10px;">12px</td><td style="padding: 8px 10px;">보조 액션 (페이지네이션 등)</td></tr>
+          <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;"><strong>md</strong></td><td class="mono" style="padding: 8px 10px;"><strong>36px</strong></td><td class="mono" style="padding: 8px 10px;">0 16px</td><td class="mono" style="padding: 8px 10px;">13px</td><td style="padding: 8px 10px;"><strong>기본</strong> — 거의 모든 액션. B-2 sticky 52px 바 안에 8px 여유로 균형</td></tr>
+          <tr><td class="mono" style="padding: 8px 10px;">lg</td><td class="mono" style="padding: 8px 10px;">44px</td><td class="mono" style="padding: 8px 10px;">0 20px</td><td class="mono" style="padding: 8px 10px;">14.5px / 700</td><td style="padding: 8px 10px;">메인 CTA (A1 [해커톤 참여하기])</td></tr>
+        </table>
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
+          <button class="jt-btn jt-btn-sm jt-btn-primary">sm 28px</button>
+          <button class="jt-btn jt-btn-primary">md 36px</button>
+          <button class="jt-btn jt-btn-lg jt-btn-primary">lg 44px</button>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;">
+          <button class="jt-btn jt-btn-primary">primary</button>
+          <button class="jt-btn jt-btn-helmet" style="border: 2px solid var(--c-helmet);">helmet (2px)</button>
+          <button class="jt-btn jt-btn-critical-static">critical (2px)</button>
+          <button class="jt-btn jt-btn-danger">danger</button>
+          <button class="jt-btn jt-btn-danger-outlined">종료</button>
+          <span style="font-size: 12px; color: var(--c-slate);">← 모두 36px 동일 높이</span>
+        </div>
+        <p style="font-size: 12px; color: var(--c-slate); margin-bottom: 24px;">
+          <strong>DON'T</strong> — 인라인 <code class="mono">padding: '15px 18px'</code>, <code class="mono">fontSize: 15</code>, <code class="mono">borderWidth: 2</code> 직접 작성 금지. 크기가 필요하면 <code class="mono">jt-btn-sm</code>/<code class="mono">jt-btn-lg</code> 클래스 추가. 색은 variant 클래스로.
+        </p>
+
+        <div class="spec-sub">STATE</div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button class="btn btn-helmet">기본</button>
+          <button class="btn btn-helmet" style="background: #e6b500;">호버</button>
+          <button class="btn btn-helmet" style="opacity: 0.4; cursor: not-allowed;">비활성</button>
+          <button class="btn btn-primary" style="box-shadow: 0 0 0 2px var(--c-helmet);">포커스 (옐로우 링)</button>
+        </div>
+
+        <div class="spec-sub" style="margin-top: 28px;">HOVER 어휘 룰 (2026-05-27)</div>
+        <p style="font-size: 13px; color: var(--c-ink-2); margin: 0 0 14px;">
+          버튼 종류에 따라 hover 시각이 다른 이유 — 두 가지 메타포로 카테고리화. <strong>한 카테고리 안에서는 반드시 동일</strong>.
+        </p>
+        <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid var(--c-hairline); background: var(--c-stone);">
+            <th style="text-align: left; padding: 10px; font-weight: 600; width: 140px;">카테고리</th>
+            <th style="text-align: left; padding: 10px; font-weight: 600;">Hover 어휘</th>
+            <th style="text-align: left; padding: 10px; font-weight: 600;">메타포</th>
+            <th style="text-align: left; padding: 10px; font-weight: 600;">해당 variant</th>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--c-hairline);">
+            <td style="padding: 10px;"><strong>Filled</strong></td>
+            <td style="padding: 10px;">bg 톤 시프트 <strong>+ elevation 들림</strong> (shadow-sm → shadow-md)</td>
+            <td style="padding: 10px; color: var(--c-slate);">공구가 들려 올라옴</td>
+            <td class="mono" style="padding: 10px; font-size: 12px;">primary · danger · coral · helmet · critical</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--c-hairline);">
+            <td style="padding: 10px;"><strong>Outlined</strong></td>
+            <td style="padding: 10px;">bg <strong>채워짐</strong> + 테두리 진해짐 (elevation 없음)</td>
+            <td style="padding: 10px; color: var(--c-slate);">페인트가 칠해짐</td>
+            <td class="mono" style="padding: 10px; font-size: 12px;">secondary · danger-outlined</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px;"><strong>Ghost</strong></td>
+            <td style="padding: 10px;">bg만 옅게 채워짐 (가장 가벼움)</td>
+            <td style="padding: 10px; color: var(--c-slate);">미세한 음영</td>
+            <td class="mono" style="padding: 10px; font-size: 12px;">ghost</td>
+          </tr>
+        </table>
+        <p style="font-size: 12px; color: var(--c-slate); margin-top: 12px;">
+          ※ DON'T — Outlined 버튼에 shadow 추가하지 말 것 (filled처럼 보여 의미 충돌). Filled 버튼에 elevation 빼지 말 것 (다른 filled와 불일치).
+        </p>
+      </div>
+    </section>
+
+    <!-- 07 STATUS PILL -->
+    <section id="pill">
+      <div class="sec-head">
+        <span class="sec-num">07</span>
+        <h2 class="sec-title">Status Pill · 해커톤 상태</h2>
+        <span class="sec-tag">5 stages · 단방향 · paused</span>
+      </div>
+      <p class="sec-desc">
+        해커톤은 5단계 단방향으로 흐릅니다 — 튜토리얼 대기·진행 → 해커톤 대기·진행·종료.
+        [튜토리얼 종료] 클릭 시 별도 종료 상태 없이 즉시 해커톤 대기로 전이됩니다(2026-05-26: tutorial_ended 폐기, hackathon_waiting으로 통합).
+        단계(튜토리얼/해커톤)는 색 계열, 진행도(대기/진행/종료)는 명도로 이중 인코딩.
+        일시정지는 진행 단계 위에만 중첩 표시.
+      </p>
+
+      <div class="spec">
+        <div class="spec-sub">5 STAGES</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px;">
+          <span class="pill" style="background:#ebebec; color:#2a2823; border:1px solid #d9d6cc;"><span class="dot"></span>튜토리얼 대기</span>
+          <span class="pill" style="background:#e1e0fa; color:#2e2c8a;"><span class="dot"></span>튜토리얼 진행</span>
+          <span class="pill" style="background:#ebebec; color:#2a2823; border:1px solid #d9d6cc;"><span class="dot"></span>해커톤 대기</span>
+          <span class="pill pill-started"><span class="dot"></span>해커톤 진행</span>
+          <span class="pill" style="background:#ffe1de; color:#882019;"><span class="dot"></span>해커톤 종료</span>
+          <span class="pill pill-paused"><span class="dot"></span>일시정지</span>
+        </div>
+
+        <div class="spec-sub">기타 알림</div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <span class="pill pill-info"><span class="dot"></span>운영자 전용</span>
+          <span class="pill pill-danger"><span class="dot"></span>비가역</span>
+          <span class="pill" style="background: var(--c-helmet-soft); color: var(--c-amber);"><span class="dot"></span>주의</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 INPUT -->
+    <section id="input">
+      <div class="sec-head">
+        <span class="sec-num">08</span>
+        <h2 class="sec-title">Input · OTP와 텍스트</h2>
+        <span class="sec-tag">text · OTP-6</span>
+      </div>
+      <p class="sec-desc">
+        텍스트 인풋은 4px 라운드 + 포커스시 옐로우 2px 글로우. OTP는 6셀 그리드, 현재 셀에 옐로우 보더와 옐로우 글로우.
+      </p>
+
+      <div class="grid grid-2-1">
+        <div class="spec">
+          <div class="spec-sub">TEXT INPUT</div>
+          <label class="mono" style="font-size: 11px; letter-spacing: 0.12em; color: var(--c-muted); text-transform: uppercase; display: block; margin-bottom: 6px;">NAME</label>
+          <input class="input" value="최지유" style="margin-bottom: 16px;" />
+          <label class="mono" style="font-size: 11px; letter-spacing: 0.12em; color: var(--c-muted); text-transform: uppercase; display: block; margin-bottom: 6px;">FOCUS STATE</label>
+          <input class="input" placeholder="포커스 시 옐로우 2px 글로우" style="border-color: var(--c-ink); box-shadow: 0 0 0 2px var(--c-helmet);" />
+        </div>
+        <div class="spec">
+          <div class="spec-sub">OTP CELLS</div>
+          <div class="otp-grid">
+            <div class="otp-cell filled">8</div>
+            <div class="otp-cell filled">K</div>
+            <div class="otp-cell filled">7</div>
+            <div class="otp-cell filled">M</div>
+            <div class="otp-cell focus"></div>
+            <div class="otp-cell"></div>
+          </div>
+          <div class="mono" style="margin-top: 14px; font-size: 11px; color: var(--c-slate);">
+            ↳ 붙여넣기 자동분배 · 대문자 자동변환 · ⌫ 이전 칸
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09 PATTERN -->
+    <section id="pattern">
+      <div class="sec-head">
+        <span class="sec-num">09</span>
+        <h2 class="sec-title">Patterns · 산업 디테일</h2>
+        <span class="sec-tag">3 textures · 1 stamp · 2 marks</span>
+      </div>
+      <p class="sec-desc">
+        면을 단순하게 두고, 작은 디테일 — 모눈 그리드, 코너 브래킷, 도면 메타 — 으로 산업감을 살립니다.
+        대각선 캐션 스트라이프는 종료/위험 안내에만 한정 사용.
+      </p>
+
+      <div class="grid grid-2" style="margin-bottom: 16px;">
+        <div class="pattern-frame">
+          <div class="pattern-bar"><span>PAPER · 24px 모눈</span><span>--c-paper</span></div>
+          <div class="pattern-body pattern-grid"></div>
+        </div>
+        <div class="pattern-frame">
+          <div class="pattern-bar"><span>BLUEPRINT · 32px 화이트 라인</span><span>--c-ink</span></div>
+          <div class="pattern-body pattern-blueprint" style="color: rgba(255,255,255,0.7);">
+            <div class="mono" style="font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--c-helmet);">DWG · auth-v2.0</div>
+            <div style="font-family: var(--font-display); font-size: 22px; color: #fff; margin-top: 6px; letter-spacing: -0.024em;">현장 도면 톤 · 참가자 인증 패널</div>
+          </div>
+        </div>
+      </div>
+      <div class="grid grid-2" style="margin-bottom: 16px;">
+        <div class="pattern-frame">
+          <div class="pattern-bar"><span>CONCRETE PAD · 24px stache 라인</span><span>--c-stone-2 + helmet 라디얼</span></div>
+          <div class="pattern-body pattern-concrete-pad" style="color: var(--c-stache);">
+            <div class="mono" style="font-size: 10.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--c-stache); border: 1.5px solid var(--c-stache); padding: 4px 10px; display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.45);"><span style="width: 7px; height: 7px; border-radius: 50%; background: var(--c-helmet-deep); box-shadow: 0 0 8px var(--c-helmet);"></span>OPERATOR · 운영자</div>
+            <div style="font-family: var(--font-display); font-size: 22px; color: var(--c-stache); margin-top: 10px; letter-spacing: -0.024em;">콘크리트 패드 · 운영자 인증 패널</div>
+            <div style="font-size: 12px; color: rgba(20,19,15,0.62); margin-top: 4px;">운영자(A-2/A-3) 좌측 패널 전용. 운영자스러운 차분함 + helmet 옅은 라디얼로 짓다 브랜드 정합.</div>
+          </div>
+        </div>
+        <div class="pattern-frame">
+          <div class="pattern-bar"><span>CAUTION · 14px 대각선</span><span>위험 한정</span></div>
+          <div class="pattern-caution" style="height: 100%; min-height: 160px;"></div>
+        </div>
+      </div>
+
+      <div class="grid grid-3">
+        <div class="spec">
+          <div class="spec-sub">CORNER BRACKET</div>
+          <div style="position: relative; padding: 24px; margin: 12px 0;">
+            <span style="position: absolute; top: 0; left: 0; width: 16px; height: 16px; border-left: 2px solid var(--c-ink); border-top: 2px solid var(--c-ink);"></span>
+            <span style="position: absolute; top: 0; right: 0; width: 16px; height: 16px; border-right: 2px solid var(--c-ink); border-top: 2px solid var(--c-ink);"></span>
+            <span style="position: absolute; bottom: 0; left: 0; width: 16px; height: 16px; border-left: 2px solid var(--c-ink); border-bottom: 2px solid var(--c-ink);"></span>
+            <span style="position: absolute; bottom: 0; right: 0; width: 16px; height: 16px; border-right: 2px solid var(--c-ink); border-bottom: 2px solid var(--c-ink);"></span>
+            <div style="font-family: var(--font-display); font-size: 18px; text-align: center; padding: 14px 0;">선택 영역</div>
+          </div>
+          <div class="mono" style="font-size: 11px; color: var(--c-slate);">기술도면 코너마크 · 강조 영역</div>
+        </div>
+        <div class="spec">
+          <div class="spec-sub">DWG STAMP</div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0;">
+            <span class="mono" style="font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; border: 1px solid var(--c-ink); padding: 4px 10px; color: var(--c-ink);">DRAFT</span>
+            <span class="mono" style="font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; border: 1px solid var(--c-helmet-deep); padding: 4px 10px; color: var(--c-helmet-deep); background: var(--c-helmet-soft);">A-1 · LIVE</span>
+            <span class="mono" style="font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase; border: 1px solid var(--c-rose); padding: 4px 10px; color: var(--c-rose);">CRITICAL</span>
+          </div>
+          <div class="mono" style="font-size: 11px; color: var(--c-slate);">메타·버전·심각도 표시</div>
+        </div>
+        <div class="spec">
+          <div class="spec-sub">DIMENSION LINE</div>
+          <div style="position: relative; padding: 24px 0; margin: 14px 0;">
+            <div style="height: 40px; background: var(--c-stone); border: 1px solid var(--c-hairline-strong);"></div>
+            <div style="position: absolute; left: 0; right: 0; top: 100%; margin-top: 6px; display: flex; align-items: center; gap: 6px;">
+              <span style="width: 1px; height: 8px; background: var(--c-ink);"></span>
+              <div style="flex: 1; height: 1px; background: var(--c-ink); position: relative;">
+                <span class="mono" style="position: absolute; left: 50%; top: -16px; transform: translateX(-50%); font-size: 10px; color: var(--c-ink); background: var(--c-canvas); padding: 0 6px;">240 ✕ 40</span>
+              </div>
+              <span style="width: 1px; height: 8px; background: var(--c-ink);"></span>
+            </div>
+          </div>
+          <div class="mono" style="font-size: 11px; color: var(--c-slate); margin-top: 22px;">레이아웃·인구 수 표기</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 09b CONSTRUCTION VOCABULARY · 안전 테이프 어휘 -->
+    <section id="construction-vocab">
+      <div class="sec-head">
+        <span class="sec-num">09b</span>
+        <h2 class="sec-title">Brand Decoration & Critical Action</h2>
+        <span class="sec-tag">brand tape + critical shine button</span>
+      </div>
+      <p class="sec-desc">
+        <strong>caution 스트립은 모달 상단 경계 표시 어휘로 부활(2026-05-26).</strong> 본문/배경 데코로의 사용은 여전히 금지. 변형 3종 — 애니메이션 사선·고정 사선·단색 검정 — 으로 위계 차등(긴급도) 표현. 비가역 액션 강조는 critical 버튼의 사선 shine과 병행, 비-경고 맥락은 helmet-soft 톤의 brand-tape 데코를 그대로 유지.
+      </p>
+
+      <!-- TRACK B · Brand (데코) -->
+      <h3 style="font-size: 14px; margin: 8px 0 12px; letter-spacing: 0.16em; color: var(--c-helmet-deep); text-transform: uppercase; font-family: var(--font-mono);">▸ BRAND TAPE (데코, 36px 간격, 톤 다운)</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin-bottom: 14px; line-height: 1.55;">
+        helmet-soft + 큰 간격으로 톤 다운한 비-경고 액센트. 헤더 underline, eyebrow 액센트에 사용.
+      </p>
+
+      <div class="grid grid-2" style="margin-bottom: 16px;">
+        <div class="spec">
+          <div class="spec-sub">BRAND RULE · 1px helmet-soft</div>
+          <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 8px; padding: 18px 20px; margin: 12px 0;">
+            <div style="font-family: var(--font-display); font-size: 18px; font-weight: 700; margin-bottom: 10px;">짓다 · 작업 현장</div>
+            <div class="jt-brand-rule" style="margin-bottom: 10px;"></div>
+            <div style="font-size: 13px; color: var(--c-slate);">헤더/푸터 하단의 미묘한 액센트. 위험 톤 아님.</div>
+          </div>
+          <div class="mono" style="font-size: 11px; color: var(--c-slate);">.jt-brand-rule</div>
+        </div>
+        <div class="spec">
+          <div class="spec-sub">EYEBROW TAPE · 8px helmet dot</div>
+          <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 8px; padding: 18px 20px; margin: 12px 0;">
+            <div class="jt-eyebrow-tape jt-eyebrow" style="margin-bottom: 6px;">EYEBROW · 라벨</div>
+            <div style="font-size: 13px; color: var(--c-slate);">섹션 라벨 좌측에 작은 helmet 사각 액센트.</div>
+          </div>
+          <div class="mono" style="font-size: 11px; color: var(--c-slate);">.jt-eyebrow-tape</div>
+        </div>
+      </div>
+
+      <!-- CRITICAL BUTTON · 검정+노랑테두리 (정적 / shine sweep 두 변형) -->
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-stache); text-transform: uppercase; font-family: var(--font-mono);">▸ CRITICAL BUTTON · 비가역 액션 (검정 + 노랑 테두리)</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin-bottom: 14px; line-height: 1.55;">
+        가독성 우선: 라벨은 단색 helmet on stache (대비 12.7:1, AAA). 두 변형 — <strong>jt-btn-critical-static</strong>(기본, 정적)이 대부분의 비가역 액션 사용처. <strong>jt-btn-critical</strong>(shine sweep)은 한 번에 한 화면에서 가장 무게 있는 단일 액션에만 — 현재 사용처: E-4 "동의 · AI에 전송" · C-1 종료 "갤러리로 가기 →".
+        @media (prefers-reduced-motion: reduce) 대응 포함.
+      </p>
+
+      <!-- 기본: 정적 -->
+      <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 8px; padding: 28px; display: flex; gap: 18px; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 8px;">
+        <button class="jt-btn jt-btn-critical-static" style="padding: 12px 24px; font-size: 14px; border-radius: 4px;">즉시 종료</button>
+        <button class="jt-btn jt-btn-critical-static" style="padding: 12px 24px; font-size: 14px; border-radius: 4px;">건너뛰고 시작</button>
+        <button class="jt-btn jt-btn-critical-static" style="padding: 12px 24px; font-size: 14px; border-radius: 4px;">해커톤 시작 →</button>
+      </div>
+      <div class="mono" style="font-size: 11px; color: var(--c-slate); margin-bottom: 20px;">.jt-btn-critical-static · 정적 · 비가역 액션 기본형 (대부분의 사용처)</div>
+
+      <!-- 강조: shine sweep -->
+      <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 8px; padding: 28px; display: flex; gap: 18px; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 8px;">
+        <button class="jt-btn jt-btn-critical" style="padding: 12px 24px; font-size: 14px; border-radius: 4px;">동의 · AI에 전송</button>
+        <button class="jt-btn jt-btn-critical" style="padding: 12px 24px; font-size: 14px; border-radius: 4px;">갤러리로 가기 →</button>
+      </div>
+      <div class="mono" style="font-size: 11px; color: var(--c-slate);">.jt-btn-critical · 2.4s ease-in-out · diagonal shine sweep (115°, L→R · 130%→-30%, 양끝 바깥 dwell)</div>
+
+      <!-- SAFETY TAPE · 주황 안전 테이프 -->
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-safety); text-transform: uppercase; font-family: var(--font-mono);">▸ SAFETY TAPE · 위험·비가역 액션의 단일 시각 어휘</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin-bottom: 14px; line-height: 1.55;">
+        공사장에서 출입금지·작업중 표시에 쓰는 주황 안전 테이프. 찢어진 양끝 + 회전 + 그림자로 실제 테이프처럼 표현. <strong>rose(빨강)·coral(주황)을 폐기하고 safety 단일 컬러로 통합.</strong>
+        본문은 stache(검정) on safety(주황), WCAG AA 통과. 라벨/배지/카운트다운 강조 등에 사용.
+      </p>
+
+      <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 8px; padding: 36px 28px; display: flex; gap: 28px; align-items: center; justify-content: center; flex-wrap: wrap; margin-bottom: 12px;">
+        <span class="jt-tape">⚠ 되돌릴 수 없음</span>
+        <span class="jt-tape">⏱ 22초 후 종료</span>
+        <span class="jt-tape-block">⚠ DANGER</span>
+      </div>
+      <p style="font-size: 12.5px; color: var(--c-slate); margin-bottom: 8px;">
+        인라인 (문장 내 강조):
+        다음 단계에서 30초 카운트다운이 시작되며 <span class="jt-tape-inline">되돌릴 수 없습니다</span> 신중히 결정하세요.
+      </p>
+      <div class="mono" style="font-size: 11px; color: var(--c-slate);">.jt-tape (기본) · .jt-tape-inline (문장 내) · .jt-tape-block (큰 라벨)</div>
+
+      <!-- MODAL TOP STRIP · 모달 상단 경계 12px -->
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-helmet-deep); text-transform: uppercase; font-family: var(--font-mono);">▸ MODAL TOP STRIP · 모달 상단 경계 12px (3변형)</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin-bottom: 14px; line-height: 1.55;">
+        모달 상단에 12px 띠를 두어 비가역/주의 위계를 표현. 사선 패턴은 스트라이프 폭 10√2px (≈14.14px) — x축 1주기 = 40px 정수로 솔기 없는 무한 루프. <strong>모달 상단 한정</strong>: 본문·헤더·카드·툴바에 사용 금지.
+      </p>
+
+      <div class="grid grid-3" style="margin-bottom: 16px;">
+        <div class="spec">
+          <div class="spec-sub">CAUTION · ANIMATED</div>
+          <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 8px; overflow: hidden; margin: 12px 0;">
+            <div class="jt-caution-strip" aria-hidden="true"></div>
+            <div style="padding: 16px 18px; font-size: 12.5px; color: var(--c-slate); line-height: 1.5;">
+              비가역 전이 모달 (해커톤 종료 · 튜토리얼 건너뛰기 등). 1.6s linear infinite 스크롤로 능동적 주의 환기.
+            </div>
+          </div>
+          <div class="mono" style="font-size: 11px; color: var(--c-slate);">.jt-caution-strip · -45° helmet/ink · scroll 1.6s</div>
+        </div>
+        <div class="spec">
+          <div class="spec-sub">CAUTION · STATIC</div>
+          <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 8px; overflow: hidden; margin: 12px 0;">
+            <div class="jt-caution-strip-static" aria-hidden="true"></div>
+            <div style="padding: 16px 18px; font-size: 12.5px; color: var(--c-slate); line-height: 1.5;">
+              주의는 필요하나 모션이 과한 맥락 (저빈도 모달·인쇄 미리보기·접근성 우선). 동일 패턴, 정지.
+            </div>
+          </div>
+          <div class="mono" style="font-size: 11px; color: var(--c-slate);">.jt-caution-strip-static · 동일 패턴 · 정지</div>
+        </div>
+        <div class="spec">
+          <div class="spec-sub">INK · PLAIN</div>
+          <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 8px; overflow: hidden; margin: 12px 0;">
+            <div class="jt-ink-strip" aria-hidden="true"></div>
+            <div style="padding: 16px 18px; font-size: 12.5px; color: var(--c-slate); line-height: 1.5;">
+              모달 경계만 명시하고 위험 강조는 절제. 정보성·확인 모달 등 가역적 액션 맥락.
+            </div>
+          </div>
+          <div class="mono" style="font-size: 11px; color: var(--c-slate);">.jt-ink-strip · 단색 var(--c-ink)</div>
+        </div>
+      </div>
+
+      <p style="font-size: 12px; color: var(--c-muted); margin-bottom: 8px; line-height: 1.55;">
+        위계 — 애니메이션 caution > 고정 caution > 단색 검정. 한 모달엔 한 변형만. <code>@media (prefers-reduced-motion: reduce)</code> 환경에서 애니메이션 자동 중지.
+      </p>
+
+      <!-- 사용 규칙 -->
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-ink-3); text-transform: uppercase; font-family: var(--font-mono);">▸ 사용 규칙</h3>
+      <div class="rules">
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">.jt-btn-critical은 비가역 액션에만. 일반 primary로 충분한 곳에는 사용 금지.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">위험/비가역 컬러는 safety(주황) 단일 사용. 좋아요·강조는 helmet(노랑).</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">brand-tape는 비-경고 데코(헤더 underline, eyebrow 액센트)에만.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">caution 스트립(노랑-검정 사선)은 모달 상단 12px 경계 표시 한정 — 본문·배경 데코로 확장 금지.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">caution 스트립을 모달 외부(헤더·카드·툴바·콘텐츠 본문)에 깔지 말 것 — 위험·비가역 모달 상단 어휘로 전용.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">글로우 sweep을 라벨 위로 가로지르게 하지 말 것. 본문은 항상 단색.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">한 화면에 critical 버튼 2개 이상 두지 말 것. 한 번에 한 가지 비가역 액션만.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">신규 코드에 --c-rose / --c-coral 직접 사용 금지. safety / helmet 토큰 사용.</span></div>
+      </div>
+    </section>
+
+    <!-- 09c LIVE FRAME · Safari Chrome (D-2 한정) -->
+    <section id="live-frame">
+      <div class="sec-head">
+        <span class="sec-num">09c</span>
+        <h2 class="sec-title">Live Frame · Safari Chrome</h2>
+        <span class="sec-tag">D-2 한정 · 데코레이션 전용</span>
+      </div>
+      <p class="sec-desc">
+        갤러리 상세(D-2) 좌측 라이브 패널의 iframe 컨테이너 상단에 얹는 <strong>macOS Tahoe Safari 톤</strong>의 컴팩트 chrome 바. 라이브 앱이 "외부 컨텍스트(실제 브라우저)에서 동작 중"임을 시각적으로 분리. <strong>전체 정적</strong> — 트래픽 라이트·아이콘·주소창 모두 클릭/호버 동작 없음. 작품명을 주소창 중앙에 노출(URL 텍스트 대신).
+      </p>
+
+      <h3 style="font-size: 14px; margin: 8px 0 12px; letter-spacing: 0.16em; color: var(--c-ink-3); text-transform: uppercase; font-family: var(--font-mono);">▸ DEFAULT · 작품명 노출 (loaded)</h3>
+
+      <div style="background: var(--c-stone-2); border: 1px solid var(--c-hairline); border-radius: 8px; padding: 16px; margin-bottom: 8px;">
+        <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 8px; overflow: hidden; box-shadow: 0 6px 20px rgba(20,19,15,0.08);">
+          <!-- Safari chrome -->
+          <div style="display: flex; align-items: center; gap: 10px; padding: 5px 11px; background: #f5f5f7; border-bottom: 0.5px solid #d8d8da; height: 32px; box-sizing: border-box;">
+            <div style="display: flex; gap: 6px; flex-shrink: 0;">
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #FF5F57; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #FEBC2E; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #28C840; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
+            </div>
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" style="flex-shrink: 0; margin-left: 4px;">
+              <rect x="1.5" y="2.5" width="11" height="9" rx="1.5" stroke="#86868b" stroke-width="0.9"/>
+              <line x1="5" y1="2.5" x2="5" y2="11.5" stroke="#86868b" stroke-width="0.9"/>
+            </svg>
+            <div style="flex: 1; display: flex; justify-content: center; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 7px; padding: 0 10px; width: 100%; max-width: 380px; height: 22px; background: #fff; border: 0.5px solid #d6d6d8; border-radius: 6px; font-size: 11.5px; color: #1d1d1f;">
+                <span style="color: #86868b; flex-shrink: 0; line-height: 1; letter-spacing: -0.04em;">
+                  <span style="font-size: 8.5px;">a</span><span style="font-size: 11px;">A</span>
+                </span>
+                <span style="flex: 1; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #1d1d1f; font-weight: 400; letter-spacing: -0.01em;">인디 음악 디스커버리</span>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink: 0;">
+                  <path d="M8.3 5a3.3 3.3 0 1 1-1-2.35M8.3 1.5v2h-2" stroke="#86868b" stroke-width="0.9" stroke-linecap="round" fill="none"/>
+                </svg>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 11px; flex-shrink: 0;">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M7 1.5v7" stroke="#86868b" stroke-width="0.9" stroke-linecap="round"/>
+                <path d="M4.8 3.7L7 1.5l2.2 2.2" stroke="#86868b" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <path d="M3 7.5v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-4" stroke="#86868b" stroke-width="0.9" stroke-linecap="round" fill="none"/>
+              </svg>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <rect x="1.5" y="2.5" width="5" height="9" rx="1" stroke="#86868b" stroke-width="0.9" fill="none"/>
+                <rect x="7.5" y="2.5" width="5" height="9" rx="1" stroke="#86868b" stroke-width="0.9" fill="none"/>
+              </svg>
+            </div>
+          </div>
+          <!-- 본문 영역 placeholder -->
+          <div style="background: #fffaf2; padding: 32px 28px; min-height: 140px; display: flex; align-items: center; justify-content: center; color: var(--c-muted); font-size: 11px; font-family: var(--font-mono); letter-spacing: 0.14em;">
+            LIVE PREVIEW ZONE
+          </div>
+        </div>
+      </div>
+      <div class="mono" style="font-size: 11px; color: var(--c-slate); margin-bottom: 24px;">DetailLivePane(gallery.jsx) · 라이브 앱 정상 로드 상태</div>
+
+      <h3 style="font-size: 14px; margin: 8px 0 12px; letter-spacing: 0.16em; color: var(--c-ink-3); text-transform: uppercase; font-family: var(--font-mono);">▸ LOADING · 연결 중 (state === 'loading')</h3>
+
+      <div style="background: var(--c-stone-2); border: 1px solid var(--c-hairline); border-radius: 8px; padding: 16px; margin-bottom: 8px;">
+        <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 8px; overflow: hidden; box-shadow: 0 6px 20px rgba(20,19,15,0.08);">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 5px 11px; background: #f5f5f7; border-bottom: 0.5px solid #d8d8da; height: 32px; box-sizing: border-box;">
+            <div style="display: flex; gap: 6px; flex-shrink: 0;">
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #FF5F57; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #FEBC2E; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #28C840; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
+            </div>
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" style="flex-shrink: 0; margin-left: 4px;">
+              <rect x="1.5" y="2.5" width="11" height="9" rx="1.5" stroke="#86868b" stroke-width="0.9"/>
+              <line x1="5" y1="2.5" x2="5" y2="11.5" stroke="#86868b" stroke-width="0.9"/>
+            </svg>
+            <div style="flex: 1; display: flex; justify-content: center; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 7px; padding: 0 10px; width: 100%; max-width: 380px; height: 22px; background: #fff; border: 0.5px solid #d6d6d8; border-radius: 6px; font-size: 11.5px;">
+                <span style="color: #86868b; flex-shrink: 0; line-height: 1; letter-spacing: -0.04em;">
+                  <span style="font-size: 8.5px;">a</span><span style="font-size: 11px;">A</span>
+                </span>
+                <span style="flex: 1; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #86868b; font-weight: 400; letter-spacing: -0.01em;">연결 중…</span>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink: 0;">
+                  <path d="M8.3 5a3.3 3.3 0 1 1-1-2.35M8.3 1.5v2h-2" stroke="#86868b" stroke-width="0.9" stroke-linecap="round" fill="none"/>
+                </svg>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 11px; flex-shrink: 0;">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <path d="M7 1.5v7" stroke="#86868b" stroke-width="0.9" stroke-linecap="round"/>
+                <path d="M4.8 3.7L7 1.5l2.2 2.2" stroke="#86868b" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                <path d="M3 7.5v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-4" stroke="#86868b" stroke-width="0.9" stroke-linecap="round" fill="none"/>
+              </svg>
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+                <rect x="1.5" y="2.5" width="5" height="9" rx="1" stroke="#86868b" stroke-width="0.9" fill="none"/>
+                <rect x="7.5" y="2.5" width="5" height="9" rx="1" stroke="#86868b" stroke-width="0.9" fill="none"/>
+              </svg>
+            </div>
+          </div>
+          <div style="background: var(--c-paper); padding: 32px 28px; min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
+            <div style="width: 40px; height: 40px; border-radius: 8px; background: var(--c-canvas); border: 1px solid var(--c-hairline);"></div>
+            <div style="font-size: 11px; color: var(--c-muted); font-family: var(--font-mono); letter-spacing: 0.14em;">BOOT · 00:08 · MAX 00:30</div>
+          </div>
+        </div>
+      </div>
+      <div class="mono" style="font-size: 11px; color: var(--c-slate); margin-bottom: 28px;">로딩 시 주소창 텍스트만 "연결 중…" + 회색(#86868b)으로 전환. 다른 요소는 변화 없음.</div>
+
+      <!-- 스펙 표 -->
+      <div class="grid grid-3" style="margin-bottom: 20px;">
+        <div class="spec">
+          <div class="spec-sub">DIMENSIONS</div>
+          <div style="font-size: 13px; line-height: 1.7; color: var(--c-ink); margin: 10px 0;">
+            <div>bar height · <strong>32px</strong> (이전 ~44px의 60% 슬림)</div>
+            <div>padding · <strong>5px 11px</strong></div>
+            <div>address bar · <strong>22px × max-w 380</strong>, radius 6px</div>
+            <div>traffic light · <strong>10px</strong> × 3 (gap 6px)</div>
+            <div>icon stroke · <strong>0.9</strong> (SF Symbols 톤)</div>
+          </div>
+        </div>
+        <div class="spec">
+          <div class="spec-sub">COLORS</div>
+          <div style="font-size: 13px; line-height: 1.7; color: var(--c-ink); margin: 10px 0;">
+            <div>bar bg · <span class="mono" style="font-size: 11px;">#f5f5f7</span></div>
+            <div>bar border · <span class="mono" style="font-size: 11px;">#d8d8da</span> (0.5px)</div>
+            <div>address bg · <span class="mono" style="font-size: 11px;">#ffffff</span></div>
+            <div>address border · <span class="mono" style="font-size: 11px;">#d6d6d8</span> (0.5px)</div>
+            <div>icon color · <span class="mono" style="font-size: 11px;">#86868b</span></div>
+            <div>title color · <span class="mono" style="font-size: 11px;">#1d1d1f</span> / loading <span class="mono" style="font-size: 11px;">#86868b</span></div>
+            <div>traffic · <span class="mono" style="font-size: 11px;">#FF5F57 · #FEBC2E · #28C840</span></div>
+          </div>
+        </div>
+        <div class="spec">
+          <div class="spec-sub">ELEMENTS · 좌→우</div>
+          <div style="font-size: 13px; line-height: 1.7; color: var(--c-ink); margin: 10px 0;">
+            <div>1. 트래픽 라이트 3개</div>
+            <div>2. 사이드바 토글 SVG</div>
+            <div>3. 주소창 (aA 리더 · 작품명 · 새로고침 ↻)</div>
+            <div>4. 공유 액션 SVG</div>
+            <div>5. 탭 그룹 SVG</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 사용 규칙 -->
+      <h3 style="font-size: 14px; margin: 8px 0 12px; letter-spacing: 0.16em; color: var(--c-ink-3); text-transform: uppercase; font-family: var(--font-mono);">▸ 사용 규칙</h3>
+      <div class="rules">
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">D-2(갤러리 상세) 좌측 라이브 패널 iframe 컨테이너에만 사용. 다른 화면에서 "외부 컨텍스트" 시각화 필요할 때만 신중히 재사용.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">주소창 중앙에는 <strong>작품명</strong>만 노출. URL/링크 텍스트 금지(2026-05-27 결정).</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">색조는 macOS Safari 그레이(#f5f5f7) 고수. Jitda 워밍 톤(stone)에 맞추지 말 것 — 의도된 "외부 브라우저" 분리감.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">로딩 상태는 주소창 텍스트만 "연결 중…" + 회색으로 전환. 트래픽 라이트·다른 아이콘은 정적 유지.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">트래픽 라이트·아이콘·새로고침에 클릭 핸들러 부착 금지. <strong>전체 데코레이션 전용</strong>. 실제 새로고침/공유 액션은 GNB·BackLink 영역에서 처리.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">탭 구조(여러 탭) 추가 금지. 단일 작품 표시이므로 주소창 단일 슬롯으로 충분.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">chrome 높이를 늘리지 말 것 (32px 고정). 작업물 가시성 우선 — 두 줄·additional row 금지.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">macOS 브라우저 chrome을 페이지 최상단(GNB 위)에 깔지 말 것 — 더블 헤더 위계 충돌 (변경 사항 #1).</span></div>
+      </div>
+    </section>
+
+    <!-- 09d MOTION & INTERACTION STATES -->
+    <section id="motion">
+      <div class="sec-head">
+        <span class="sec-num">09d</span>
+        <h2 class="sec-title">Motion · Interaction States</h2>
+        <span class="sec-tag">duration · easing · focus · hover · active</span>
+      </div>
+      <p class="sec-desc">모든 인터랙티브 요소는 4단 duration 스케일과 4단 easing 곡선에서 선택. 키보드 사용자에게 항상 가시적 focus ring 제공.</p>
+
+      <h3 style="font-size: 14px; margin: 8px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ DURATION (4단)</h3>
+      <div class="swatches">
+        <div class="swatch"><div class="swatch-fill" style="background: var(--c-helmet); height: 56px;"></div><div class="swatch-meta"><span>--dur-instant</span><span class="mono">75ms</span></div><div style="font-size: 11px; color: var(--c-slate); margin-top: 4px;">:active scale, tap-feedback</div></div>
+        <div class="swatch"><div class="swatch-fill" style="background: var(--c-coral); height: 56px;"></div><div class="swatch-meta"><span>--dur-fast</span><span class="mono">150ms</span></div><div style="font-size: 11px; color: var(--c-slate); margin-top: 4px;">:hover 색·테두리, 칩 토글</div></div>
+        <div class="swatch"><div class="swatch-fill" style="background: var(--c-mint); height: 56px;"></div><div class="swatch-meta"><span>--dur-base</span><span class="mono">240ms</span></div><div style="font-size: 11px; color: var(--c-slate); margin-top: 4px;">모달 fade·scale, 탭 underline</div></div>
+        <div class="swatch"><div class="swatch-fill" style="background: var(--c-tutorial); height: 56px;"></div><div class="swatch-meta"><span>--dur-slow</span><span class="mono">360ms</span></div><div style="font-size: 11px; color: var(--c-slate); margin-top: 4px;">페이지 전환, emphasized</div></div>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ EASING (4종)</h3>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 0; color: var(--c-ink-2); width: 200px;">--ease-standard</td><td style="padding: 8px 0;">cubic-bezier(0.2, 0, 0, 1) — 기본값, 색·크기 변화</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 0; color: var(--c-ink-2);">--ease-decelerate</td><td style="padding: 8px 0;">cubic-bezier(0, 0, 0.2, 1) — 진입(fade-in, modal-pop), 빠르게 출발 → 부드럽게 안착</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 0; color: var(--c-ink-2);">--ease-accelerate</td><td style="padding: 8px 0;">cubic-bezier(0.4, 0, 1, 1) — 퇴장(fade-out), 부드럽게 출발 → 빠르게 사라짐</td></tr>
+        <tr><td class="mono" style="padding: 8px 0; color: var(--c-ink-2);">--ease-spring</td><td style="padding: 8px 0;">cubic-bezier(0.34, 1.56, 0.64, 1) — overshoot, 강조 액션·뱃지 등장</td></tr>
+      </table>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-helmet-deep); text-transform: uppercase; font-family: var(--font-mono);">▸ FOCUS RING · 키보드 접근성 (브랜드 helmet)</h3>
+      <div style="display: flex; gap: 16px; align-items: center; padding: 20px; background: var(--c-paper); border-radius: 8px;">
+        <button class="jt-btn jt-btn-primary" style="outline: 2px solid var(--c-helmet); outline-offset: 2px;">Tab으로 포커스됨</button>
+        <input class="jt-input" style="width: 200px; border-color: var(--c-ink); box-shadow: 0 0 0 3px rgba(255, 206, 43, 0.30);" value="포커스 상태" readonly />
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--c-slate);">
+          <code class="mono" style="color: var(--c-ink);">--focus-ring-color: var(--c-helmet)</code>
+          <code class="mono" style="color: var(--c-ink);">--focus-ring-width: 2px</code>
+          <code class="mono" style="color: var(--c-ink);">--focus-ring-offset: 2px</code>
+          <code class="mono" style="color: var(--c-ink);">--focus-ring-soft: 0 0 0 3px rgba(255,206,43,0.30)</code>
+        </div>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ INTERACTION STATE MATRIX</h3>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid var(--c-hairline); background: var(--c-stone);"><th style="text-align: left; padding: 10px; font-weight: 600;">상태</th><th style="text-align: left; padding: 10px; font-weight: 600;">visual</th><th style="text-align: left; padding: 10px; font-weight: 600;">duration</th></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 10px;">:hover</td><td style="padding: 10px;">배경/테두리/색 변화. shadow-hover (카드) 또는 -ink-2 (버튼)</td><td class="mono" style="padding: 10px;">150ms standard</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 10px;">:active</td><td style="padding: 10px;">scale(0.97) 버튼 · scale(0.94) 아이콘 · scale(0.998) 카드</td><td class="mono" style="padding: 10px;">75ms standard</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 10px;">:focus-visible</td><td style="padding: 10px;">2px outline helmet + 2px offset. input은 ink border + helmet soft glow</td><td class="mono" style="padding: 10px;">즉시</td></tr>
+        <tr><td class="mono" style="padding: 10px;">[disabled]</td><td style="padding: 10px;">opacity 0.4 · transform 무효 · cursor not-allowed</td><td class="mono" style="padding: 10px;">—</td></tr>
+      </table>
+    </section>
+
+    <!-- 09e OVERLAY · MODAL · POPOVER · TOOLTIP -->
+    <section id="overlay">
+      <div class="sec-head">
+        <span class="sec-num">09e</span>
+        <h2 class="sec-title">Overlay · Modal · Popover · Tooltip</h2>
+        <span class="sec-tag">backdrop · z-index · entrance</span>
+      </div>
+      <p class="sec-desc">모달은 backdrop 3단(soft/base/strong) + surface pop-in 표준. Popover는 dropdown·메뉴, Tooltip은 hover 보조 정보 — 위계가 다르므로 z-index도 분리.</p>
+
+      <h3 style="font-size: 14px; margin: 8px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ BACKDROP 3단 강도</h3>
+      <div class="swatches">
+        <div class="swatch"><div class="swatch-fill" style="background: rgba(20,19,15,0.25); height: 64px;"></div><div class="swatch-meta"><span>--c-backdrop-soft</span><span class="mono">α 0.25</span></div><div style="font-size: 11px; color: var(--c-slate); margin-top: 4px;">E-5 AI 선택지 (가벼움)</div></div>
+        <div class="swatch"><div class="swatch-fill" style="background: rgba(20,19,15,0.40); height: 64px;"></div><div class="swatch-meta"><span>--c-backdrop</span><span class="mono">α 0.40</span></div><div style="font-size: 11px; color: var(--c-slate); margin-top: 4px;">기본 (E-4, E-6)</div></div>
+        <div class="swatch"><div class="swatch-fill" style="background: rgba(20,19,15,0.55); height: 64px;"></div><div class="swatch-meta"><span>--c-backdrop-strong</span><span class="mono">α 0.55</span></div><div style="font-size: 11px; color: var(--c-slate); margin-top: 4px;">위험 (B 종료, E-1 미저장)</div></div>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ Z-INDEX SCALE</h3>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2); width: 160px;">--z-base</td><td class="mono" style="padding: 6px 0;">1</td><td style="padding: 6px 0;">기본 콘텐츠</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">--z-sticky</td><td class="mono" style="padding: 6px 0;">10</td><td style="padding: 6px 0;">스티키 헤더/푸터</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">--z-overlay</td><td class="mono" style="padding: 6px 0;">50</td><td style="padding: 6px 0;">backdrop / scrim</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">--z-modal</td><td class="mono" style="padding: 6px 0;">100</td><td style="padding: 6px 0;">모달 surface</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">--z-popover</td><td class="mono" style="padding: 6px 0;">150</td><td style="padding: 6px 0;">dropdown · tooltip</td></tr>
+        <tr><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">--z-toast</td><td class="mono" style="padding: 6px 0;">200</td><td style="padding: 6px 0;">전역 알림</td></tr>
+      </table>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ MODAL WIDTH 4단</h3>
+      <div style="display: flex; gap: 12px; font-size: 12px;">
+        <div style="flex: 1; padding: 14px; background: var(--c-paper); border: 1px solid var(--c-hairline); border-radius: 8px;"><code class="mono" style="color: var(--c-ink);">--modal-w-sm</code><br/><span style="color: var(--c-slate);">420px · 단순 확인</span></div>
+        <div style="flex: 1; padding: 14px; background: var(--c-paper); border: 1px solid var(--c-hairline); border-radius: 8px;"><code class="mono" style="color: var(--c-ink);">--modal-w-md</code><br/><span style="color: var(--c-slate);">560px · 표준</span></div>
+        <div style="flex: 1; padding: 14px; background: var(--c-paper); border: 1px solid var(--c-hairline); border-radius: 8px;"><code class="mono" style="color: var(--c-ink);">--modal-w-lg</code><br/><span style="color: var(--c-slate);">720px · 풍부한 컨텐츠</span></div>
+        <div style="flex: 1; padding: 14px; background: var(--c-paper); border: 1px solid var(--c-hairline); border-radius: 8px;"><code class="mono" style="color: var(--c-ink);">--modal-w-xl</code><br/><span style="color: var(--c-slate);">920px · 데이터 dense</span></div>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ ENTRANCE ANIMATION</h3>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2); width: 220px;">.jt-modal-backdrop</td><td style="padding: 6px 0;">jt-backdrop-in · fade · 240ms decelerate</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">.jt-modal-surface</td><td style="padding: 6px 0;">jt-modal-pop-in · opacity + scale(0.96 → 1) · 240ms standard</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">.jt-modal-surface.is-fade</td><td style="padding: 6px 0;">jt-modal-fade-in · opacity only · 240ms decelerate</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">.jt-modal-surface.is-slide</td><td style="padding: 6px 0;">jt-modal-slide-up · translateY(12 → 0) · 240ms decelerate</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">.jt-popover</td><td style="padding: 6px 0;">jt-popover-in · translateY(-4) + scale(0.96 → 1) · 150ms decelerate</td></tr>
+        <tr><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">.jt-tooltip</td><td style="padding: 6px 0;">jt-modal-fade-in · opacity · 150ms decelerate</td></tr>
+      </table>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-helmet-deep); text-transform: uppercase; font-family: var(--font-mono);">▸ A11Y · 모달 접근성 (필수)</h3>
+      <div class="rules" style="margin-top: 8px;">
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">모든 모달에 <code class="mono">role="dialog"</code> 또는 <code class="mono">role="alertdialog"</code> (비가역 액션).</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text"><code class="mono">aria-modal="true"</code> + <code class="mono">aria-labelledby</code> (heading id) 또는 <code class="mono">aria-label</code>.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">backdrop은 클릭 시 모달 닫음 (단, alertdialog는 명시 액션만).</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">backdrop·shadow를 인라인 rgba로 직접 쓰지 말기 — 반드시 <code class="mono">var(--c-backdrop)</code>·<code class="mono">var(--shadow-modal)</code> 사용.</span></div>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ MODAL SURFACE · 시각 표준 (2026-05-27 추가)</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin: 0 0 12px; line-height: 1.6;">모달 카드의 외관 어휘. <code class="mono">&lt;ModalSurface&gt;</code> 공용 컴포넌트(shared.jsx)를 통해 일관성 보장. 각 모달이 인라인으로 동일 어휘를 반복하지 않도록 표준화.</p>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-bottom: 16px;">
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2); width: 180px;">background</td><td style="padding: 6px 0;"><code class="mono">var(--c-canvas)</code> (#fff)</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">border-radius</td><td style="padding: 6px 0;">10px (모달 surface 고정)</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">box-shadow</td><td style="padding: 6px 0;"><code class="mono">var(--shadow-modal)</code></td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">border</td><td style="padding: 6px 0;"><strong>없음</strong> — backdrop dim + shadow로 경계 충분 (2026-05-27 사용자 결정)</td></tr>
+        <tr><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">topStrip</td><td style="padding: 6px 0;"><code class="mono">'ink'</code> (단색 검정) / <code class="mono">'caution'</code> (애니메이션 사선) / <code class="mono">'caution-static'</code> (고정 사선) / null. 모두 12px 두께.</td></tr>
+      </table>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ HEADER DIVIDER · 헤더-본문 구분선 규칙</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin: 0 0 10px; line-height: 1.6;">사용자 결정(2026-05-27): 모달 본문이 단순 메시지+CTA를 넘는 경우 헤더와 본문 사이 시각 경계가 필요. 정보 위계가 명확한 모달만 구분선 추가.</p>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid var(--c-hairline);">
+          <td style="padding: 8px 0; width: 220px; vertical-align: top;"><strong>단순 버튼 선택 모달</strong></td>
+          <td style="padding: 8px 0; vertical-align: top;">메시지 + confirm/cancel만. <strong>구분선 없음</strong>. 예: B2TutorialStartConfirm, B2SkipTutorialModal, B2HackathonStartConfirm, B2EndModal</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; vertical-align: top;"><strong>인터랙션 모달</strong></td>
+          <td style="padding: 8px 0; vertical-align: top;">스크롤 리스트·폼·다단 입력 등 인터랙션이 있고 헤더-본문 분리가 명확한 모달. <strong>헤더 아래 <code class="mono">border-bottom: 1px solid var(--c-hairline)</code> 필수</strong>. 예: RosterTeamDetailModal(스크롤 멤버 리스트)</td>
+        </tr>
+      </table>
+
+      <p style="font-size: 12px; color: var(--c-muted); margin: 12px 0 0; line-height: 1.5;"><strong>판단 기준</strong>: (a) 본문이 스크롤되는가? (b) 본문에 별도 정보 박스/리스트/폼이 있는가? (c) 헤더가 "맥락 라벨"이고 본문이 "데이터·인터랙션"으로 명확히 분리되는가? — 셋 중 하나 이상이면 인터랙션 모달.</p>
+    </section>
+
+    <!-- 09f COMPONENT LIBRARY EXTENSIONS -->
+    <section id="components">
+      <div class="sec-head">
+        <span class="sec-num">09f</span>
+        <h2 class="sec-title">Component Library · IconButton · Tab · Card</h2>
+        <span class="sec-tag">신규 표준화 컴포넌트</span>
+      </div>
+      <p class="sec-desc">JSX 화면에서 자주 쓰이지만 디자인 시스템에 없었던 컴포넌트들. 모두 hover/active/focus-visible 상태를 토큰으로 정의.</p>
+
+      <h3 style="font-size: 14px; margin: 8px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ ICON BUTTON · 32×32px 정사각 hit target</h3>
+      <div style="display: flex; gap: 14px; align-items: center; padding: 20px; background: var(--c-paper); border-radius: 8px;">
+        <button class="jt-icon-btn" title="기본"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5"/></svg></button>
+        <button class="jt-icon-btn" title="hover" style="background: var(--c-stone); color: var(--c-ink);"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5"/></svg></button>
+        <button class="jt-icon-btn" title="focused" style="outline: 2px solid var(--c-helmet); outline-offset: 2px;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5"/></svg></button>
+        <span style="font-size: 12px; color: var(--c-slate); margin-left: 16px;"><code class="mono">.jt-icon-btn</code> — D-2 상단 액션·운영자 GNB·댓글 더보기 등 32px hit target 표준</span>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ INTERACTIVE CARD · hover/active/focus</h3>
+      <div style="display: flex; gap: 14px; padding: 20px; background: var(--c-paper); border-radius: 8px;">
+        <div class="jt-card jt-card-interactive" style="width: 200px; padding: 16px;"><div style="font-size: 14px; font-weight: 700;">기본 카드</div><div style="font-size: 12px; color: var(--c-slate); margin-top: 4px;">hover하면 shadow-hover + border 진해짐</div></div>
+        <div class="jt-card" style="width: 200px; padding: 16px; border-color: var(--c-hairline-strong); box-shadow: var(--shadow-hover);"><div style="font-size: 14px; font-weight: 700;">hover 상태</div><div style="font-size: 12px; color: var(--c-slate); margin-top: 4px;">--shadow-hover (8/20 dual layer)</div></div>
+      </div>
+      <p style="font-size: 12px; color: var(--c-slate); margin-top: 8px;"><code class="mono">.jt-card.jt-card-interactive</code> — onClick 또는 data-action 있는 카드는 반드시 이 클래스 + <code class="mono">role="button" tabIndex={0}</code>.</p>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ TAB · 패널 segmented navigation (jt-tab)</h3>
+      <div style="padding: 0; background: var(--c-paper); border-radius: 8px; overflow: hidden; border: 1px solid var(--c-hairline);">
+        <div class="jt-tab-bar" style="background: var(--c-paper);">
+          <button class="jt-tab is-active">정보</button>
+          <button class="jt-tab">댓글 <span class="jt-tab-badge">3</span></button>
+        </div>
+        <div style="padding: 20px; background: var(--c-canvas); font-size: 13px; color: var(--c-slate);">활성 탭 본문 영역</div>
+      </div>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 14px;">
+        <tr style="border-bottom: 1px solid var(--c-hairline); background: var(--c-stone);">
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 100px;">상태</th>
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600;">시각</th>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">inactive</td><td style="padding: 8px 10px;">slate 색 + transparent underline (sleeping)</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">hover</td><td style="padding: 8px 10px;">ink-3 색 + hairline-strong underline + bg 옅게 채워짐 (awakened)</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">is-active</td><td style="padding: 8px 10px;">ink 굵게 + ink underline 2px + canvas 배경. hover 무영향(peak emphasis)</td></tr>
+        <tr><td class="mono" style="padding: 8px 10px;">focus-visible</td><td style="padding: 8px 10px;">helmet outline 2px (키보드)</td></tr>
+      </table>
+      <p style="font-size: 12px; color: var(--c-slate); margin-top: 12px;">
+        사용처: D-2 갤러리 상세 [정보 / 댓글]. 추후 운영자·참가자 영역의 패널 내 navigation에도 재사용.
+        <code class="mono">.jt-tab-badge</code> — 댓글 수·알림 카운트. active일 때 ink/white로 invert.
+      </p>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ COUNTDOWN RING · 카운트다운 타이머</h3>
+      <div style="display: flex; gap: 24px; align-items: center; padding: 20px; background: var(--c-paper); border-radius: 8px;">
+        <div class="jt-countdown-ring-critical" style="width: 84px; height: 84px; border-radius: 50%; background: var(--c-helmet); color: var(--c-stache); display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 28px rgba(230,181,0,0.45), 0 0 0 6px rgba(255,206,43,0.22); font-size: 28px; font-weight: 800;">15</div>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--c-slate);">
+          <code class="mono" style="color: var(--c-ink);">.jt-countdown-ring-critical</code>
+          <span>safety 색 6px halo + 28px elevation 그림자</span>
+          <span>jt-ring-pulse 2.4s ease-in-out infinite</span>
+          <span>사용처: E-4 합의 투표(15s) · E-6 일시정지 · B-2 종료(30s)</span>
+        </div>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ TOOLTIP · 호버 보조 정보</h3>
+      <div style="display: flex; gap: 24px; align-items: center; padding: 30px 20px; background: var(--c-paper); border-radius: 8px; position: relative;">
+        <button class="jt-icon-btn" style="position: relative;">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><line x1="7" y1="5" x2="7" y2="7.5"/><circle cx="7" cy="9.5" r="0.5" fill="currentColor"/></svg>
+          <span class="jt-tooltip" style="bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);">남은 시간 안내</span>
+        </button>
+        <span style="font-size: 12px; color: var(--c-slate);"><code class="mono">.jt-tooltip</code> — dark ink + 6/10 padding + mono font. fade-in 150ms decelerate.</span>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ SPIN · 로딩 회전</h3>
+      <div style="display: flex; gap: 28px; align-items: center; padding: 20px; background: var(--c-paper); border-radius: 8px;">
+        <span class="jt-spin" style="display: inline-block; width: 20px; height: 20px; border: 2px solid var(--c-hairline-strong); border-top-color: var(--c-ink); border-radius: 50%;"></span>
+        <span style="font-size: 12px; color: var(--c-slate);"><code class="mono">.jt-spin</code> 1.2s · <code class="mono">.jt-spin-once</code> 600ms (새로고침 클릭 1회) · <code class="mono">.jt-spin-slow</code> 2.4s</span>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ ROSTER MEMBER ROW · 팀 멤버 행 (B-2 모달 + C-1 공용)</h3>
+      <div style="padding: 16px; background: var(--c-paper); border-radius: 8px; max-width: 360px;">
+        <div style="font-family: var(--font-mono); font-size: 10.5px; color: var(--c-muted); letter-spacing: 0.08em; padding: 4px 8px 8px;">팀원 4명</div>
+
+        <!-- 접속 행 -->
+        <div style="position: relative; padding: 7px 10px; display: flex; align-items: center; gap: 10px; border-radius: 6px; background: transparent;">
+          <div style="position: relative; flex-shrink: 0;">
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--c-helmet); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; font-weight: 700;">김</div>
+            <span style="position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px; border-radius: 50%; background: var(--c-mint); border: 2px solid var(--c-canvas);"></span>
+          </div>
+          <span style="font-size: 13px; font-weight: 600; color: var(--c-ink);">김민준</span>
+        </div>
+
+        <!-- 미접속 행 (state='off' — 한 번 들어왔다 끊김).
+             UI 2상태 통합(2026-05-27): "입장 전"(API not_entered)과 같은 시각으로 표시. -->
+        <div style="position: relative; padding: 7px 10px; display: flex; align-items: center; gap: 10px; border-radius: 6px; background: rgba(20,19,15,0.025);">
+          <div style="position: relative; flex-shrink: 0;">
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--c-mint); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; font-weight: 700; opacity: 0.5;">박</div>
+            <span style="position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px; border-radius: 50%; background: #c94560; border: 2px solid var(--c-canvas);"></span>
+          </div>
+          <span style="font-size: 13px; font-weight: 600; color: var(--c-muted);">박지호</span>
+        </div>
+
+        <!-- 미등록 행 (state='pending' — 한 번도 안 들어옴, API not_entered).
+             비접속 시각은 미접속과 동일하되 이름 우측에 "미등록" 라벨(mono caps + hairline outline + muted)로 차이 노출. -->
+        <div style="position: relative; padding: 7px 10px; display: flex; align-items: center; gap: 10px; border-radius: 6px; background: rgba(20,19,15,0.025);">
+          <div style="position: relative; flex-shrink: 0;">
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--c-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; font-weight: 700; opacity: 0.5;">이</div>
+            <span style="position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px; border-radius: 50%; background: #c94560; border: 2px solid var(--c-canvas);"></span>
+          </div>
+          <span style="font-size: 13px; font-weight: 600; color: var(--c-muted);">이서윤</span>
+          <span class="mono" style="font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; padding: 1px 5px; border-radius: 2px; background: transparent; color: var(--c-muted); border: 1px solid var(--c-hairline-strong); font-weight: 600;">미등록</span>
+        </div>
+
+        <!-- 나 행 (C-1 한정) -->
+        <div style="position: relative; padding: 7px 10px; display: flex; align-items: center; gap: 10px; border-radius: 6px; background: var(--c-helmet-soft);">
+          <span style="position: absolute; left: 2px; top: 8px; bottom: 8px; width: 3px; border-radius: 2px; background: var(--c-helmet-deep);"></span>
+          <div style="position: relative; flex-shrink: 0; margin-left: 4px;">
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--c-amber); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; font-weight: 700;">최</div>
+            <span style="position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px; border-radius: 50%; background: var(--c-mint); border: 2px solid var(--c-canvas);"></span>
+          </div>
+          <span style="font-size: 13px; font-weight: 600; color: var(--c-ink);">최지유</span>
+          <span class="mono" style="font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 6px; border-radius: 2px; background: var(--c-helmet-deep); color: #fff; font-weight: 700;">나</span>
+        </div>
+      </div>
+
+      <div style="margin-top: 12px; padding: 12px 14px; background: var(--c-stone); border-radius: 6px; font-size: 12px; color: var(--c-ink-3); line-height: 1.6;">
+        <strong>Props</strong>: <code class="mono">name</code> · <code class="mono">color</code>(성씨 hash 6색) · <code class="mono">state</code>(on/off/pending — UI는 on 외 모두 off로 통합) · <code class="mono">isMe</code>(C-1 한정).
+        <br /><strong>UI 2상태 정책</strong>(2026-05-27): on=접속 / 그 외=비접속. 데이터 모델(API <code class="mono">teammates.status</code>)은 3상태 유지하나 UI는 단순화. 근거: 운영자/참가자 task가 두 비접속 케이스 모두 "옆에 가서 확인"으로 같음.
+        <br /><strong>"미등록" 라벨</strong>: <code class="mono">state==='pending'</code>(API not_entered, 한 번도 안 들어옴)인 멤버만 이름 우측에 mono caps + hairline outline 라벨로 차이 노출. 도트·bg는 미접속과 동일. 호버 없이 인라인으로 "최초 입장 안 함" 정보 보존.
+        <br /><strong>인디케이터</strong>: 우하단 9px, on=mint solid · off=#c94560 rose solid. 흰 2px ring으로 아바타와 분리.
+        <br /><strong>행 차별화</strong>: 접속=투명 / 비접속=rgba(20,19,15,0.025) + 이름 muted / 호버=rgba 0.05 (useState).
+        <br /><strong>isMe</strong>: helmet-soft bg + 좌측 3px helmet-deep 액센트 바 + "나" 칩(helmet-deep bg + 흰 글자). border 박스 어휘는 호버처럼 보여 폐기됨.
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ ROSTER LEGEND · 푸터 범례 (멤버 행 인디케이터와 동일 색 도트)</h3>
+      <div style="display: flex; gap: 24px; padding: 14px 18px; background: var(--c-paper); border-radius: 6px; align-items: center;">
+        <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--c-muted); font-family: var(--font-mono);">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--c-mint);"></span>접속
+        </span>
+        <span style="display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--c-muted); font-family: var(--font-mono);">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: #c94560;"></span>미접속
+        </span>
+      </div>
+      <div style="margin-top: 12px; padding: 12px 14px; background: var(--c-stone); border-radius: 6px; font-size: 12px; color: var(--c-ink-3); line-height: 1.6;">
+        <strong>Props</strong>: <code class="mono">states</code> — 기본 <code class="mono">['on','off']</code> 2상태. <code class="mono">'pending'</code>도 인자로 받을 수 있으나 off와 동일 시각으로 통합 노출 (UI 2상태 정책).
+        <br /><strong>DO</strong>: 멤버 행 위쪽 RosterMemberRow 인디케이터와 항상 같은 색 도트 어휘 유지.
+        <br /><strong>DON'T</strong>: 이모지(🟢🔘⬜) 사용 금지. "입장 전" 별도 시각도 폐기(2026-05-27) — 운영자/참가자 task 동일성 분석에 따라 미접속으로 통합.
+      </div>
+    </section>
+
+    <!-- 10 RULES -->
+    <section id="rules">
+      <div class="sec-head">
+        <span class="sec-num">10</span>
+        <h2 class="sec-title">Usage Rules · 사용 원칙</h2>
+        <span class="sec-tag">do / don't</span>
+      </div>
+      <p class="sec-desc">의문이 들면 항상 작업복처럼 친근하지만 산업 도구처럼 정확하게.</p>
+
+      <div class="rules">
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">옐로우는 한 화면에 한 곳만 — 가장 중요한 CTA, 활성 OTP, 또는 위치 표시.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">모노 라벨은 항상 UPPERCASE + 0.12em 이상 자간으로. 도면의 주석처럼.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">상태칩만 pill(999px). 그 외 모든 요소는 4–6px 직각에 가까운 라운드.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">고정 영역(GNB·스티키 헤더·툴바)은 한 줄·최소 높이. 본 영역을 가능한 넓게 확보.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">대각선 caution 스트라이프를 장식으로 쓰지 않기 — 종료/위험 안내 전용.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">옐로우를 큰 면적 배경에 쓰지 않기 — 형광색 피로감을 유발.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">12px 이상의 라운드, 그라데이션, 입체 효과 사용하지 않기.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">기술 용어(세션·토큰·OAuth·세션 만료) 그대로 노출하지 않기 — 사용자 행동 단어로 풀어쓰기.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">아바타·프로필 아이콘처럼 정보 가치 없는 장식 요소를 헤더에 두지 않기.</span></div>
+      </div>
+    </section>
+
+    <!-- 11 COPY -->
+    <section id="copy">
+      <div class="sec-head">
+        <span class="sec-num">11</span>
+        <h2 class="sec-title">Copy · 카피라이팅 정책</h2>
+        <span class="sec-tag">user-first · 짧게 · 직관</span>
+      </div>
+      <p class="sec-desc">
+        화면에 보이는 모든 문장은 사용자가 다음에 무엇을 할지 결정하는 데 직접 도움이 되어야 합니다.
+        개발자가 아는 사실(토큰·세션·OAuth·전파)을 그대로 쓰지 않습니다.
+      </p>
+
+      <div class="rules">
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text"><strong>사용자 관점 단어</strong>를 씁니다. 사용자가 한 행동(코드를 입력했다·해커톤이 시작되지 않았다·다시 시도)을 그대로 부릅니다.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text"><strong>두 문장은 줄바꿈으로 분리</strong>합니다. 한 줄에 두 문장을 이어 쓰지 않고, <code>&lt;br/&gt;</code> 또는 <code>\n</code>으로 의도된 줄바꿈을 둡니다.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text"><strong>핵심 한 문장 + 보조 한 문장</strong>이 기본. 보조 문장이 없으면 그냥 비웁니다.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">버튼은 <strong>동사로 끝나는 짧은 명령</strong>: "해커톤 참여하기", "튜토리얼 종료", "갤러리 보기".</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text"><strong>개발자 관점 단어</strong>를 노출하지 않기 — 세션·토큰·OAuth·전파·동기화·핸들러·rate limit.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text"><strong>불필요한 설명</strong>을 덧붙이지 않기. "우리 서비스는~", "이 기능은~", 안내성 미사여구는 모두 삭제.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">기획에 없는 정보(예: "오픈 예정 시각", "제출률", "갤러리 공개 수")를 임의로 만들어 노출하지 않기.</span></div>
+      </div>
+
+      <div class="grid grid-2-1" style="margin-top: 20px;">
+        <div class="spec" style="border-left: 3px solid var(--c-mint);">
+          <div class="spec-sub" style="color: var(--c-mint);">GOOD · 사용자 관점</div>
+          <div style="font-family: var(--font-display); font-size: 18px; letter-spacing: -0.022em; margin-bottom: 6px;">아직 행사가<br/>시작되지 않았어요</div>
+          <div style="font-size: 13px; color: var(--c-ink-2); line-height: 1.5;">안내된 시작 시각에 다시 접속해 주세요.<br/>운영자가 시작 버튼을 누르면 팀 대기실이 열립니다.</div>
+        </div>
+        <div class="spec" style="border-left: 3px solid var(--c-rose); background: #fff7f6;">
+          <div class="spec-sub" style="color: var(--c-rose);">BAD · 개발자 관점</div>
+          <div style="font-family: var(--font-display); font-size: 18px; letter-spacing: -0.022em; margin-bottom: 6px;">404 · hackathon_waiting</div>
+          <div style="font-size: 13px; color: var(--c-ink-3); line-height: 1.5;">해커톤 status가 hackathon_waiting 상태로 시작 시각이 등록되지 않았습니다. 운영자가 hackathon_running으로 전이시키면 입장 가능합니다.</div>
+        </div>
+      </div>
+
+      <div class="spec" style="margin-top: 16px;">
+        <div class="spec-sub">치환 사전</div>
+        <div class="token-list" style="border:none;">
+          <div class="token-row" style="grid-template-columns: 1fr 24px 1fr; padding:10px 0; border-bottom:1px dashed var(--c-hairline);">
+            <span class="token-name" style="color: var(--c-rose);">세션이 만료되었습니다</span>
+            <span style="text-align:center; color: var(--c-muted);">→</span>
+            <span class="token-val" style="color: var(--c-mint);">다시 로그인해 주세요</span>
+          </div>
+          <div class="token-row" style="grid-template-columns: 1fr 24px 1fr; padding:10px 0; border-bottom:1px dashed var(--c-hairline);">
+            <span class="token-name" style="color: var(--c-rose);">OAuth 토큰 교환 실패</span>
+            <span style="text-align:center; color: var(--c-muted);">→</span>
+            <span class="token-val" style="color: var(--c-mint);">로그인을 처리할 수 없었습니다</span>
+          </div>
+          <div class="token-row" style="grid-template-columns: 1fr 24px 1fr; padding:10px 0; border-bottom:1px dashed var(--c-hairline);">
+            <span class="token-name" style="color: var(--c-rose);">238/240명 전파 완료</span>
+            <span style="text-align:center; color: var(--c-muted);">→</span>
+            <span class="token-val" style="color: var(--c-mint);">(필요 없으면 표기하지 않음)</span>
+          </div>
+          <div class="token-row" style="grid-template-columns: 1fr 24px 1fr; padding:10px 0; border-bottom:1px dashed var(--c-hairline);">
+            <span class="token-name" style="color: var(--c-rose);">제출률 92%</span>
+            <span style="text-align:center; color: var(--c-muted);">→</span>
+            <span class="token-val" style="color: var(--c-mint);">(짓다는 제출 개념 없음 — 삭제)</span>
+          </div>
+          <div class="token-row" style="grid-template-columns: 1fr 24px 1fr; padding:10px 0; border-bottom:1px dashed var(--c-hairline);">
+            <span class="token-name" style="color: var(--c-rose);">다인 9 · 1인 3</span>
+            <span style="text-align:center; color: var(--c-muted);">→</span>
+            <span class="token-val" style="color: var(--c-mint);">12팀</span>
+          </div>
+          <div class="token-row" style="grid-template-columns: 1fr 24px 1fr; padding:10px 0;">
+            <span class="token-name" style="color: var(--c-rose);">읽기 전용 · 팀 편성은 어드민에서</span>
+            <span style="text-align:center; color: var(--c-muted);">→</span>
+            <span class="token-val" style="color: var(--c-mint);">팀 변경 요청 (호버 시 상세)</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 12 LAYOUT -->
+    <section id="layout">
+      <div class="sec-head">
+        <span class="sec-num">12</span>
+        <h2 class="sec-title">Layout · 본 영역 우선</h2>
+        <span class="sec-tag">고정 영역 최소 · 한 줄 원칙</span>
+      </div>
+      <p class="sec-desc">
+        고정 영역(GNB·스티키 헤더·툴바)은 사용자가 보고 싶은 콘텐츠가 아닙니다.
+        의미 있는 정보만 한 줄에 압축해 두고, 본 영역을 가능한 넓게 확보합니다.
+      </p>
+
+      <div class="spec" style="padding:0; overflow:hidden;">
+        <div class="spec-sub" style="padding: 16px 22px 0;">GNB — 단일 행 44px</div>
+        <div style="background: var(--c-canvas); border-top: 1px solid var(--c-hairline); border-bottom: 1px solid var(--c-hairline); padding: 8px 24px; display: flex; align-items: center; gap: 18px; min-height: 44px;">
+          <svg width="22" height="19" viewBox="0 0 48 40"><path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/></svg>
+          <span style="font-family: var(--font-display); font-size: 16px; font-weight: 800; letter-spacing: -0.04em;">짓다</span>
+          <div style="width: 1px; height: 14px; background: var(--c-hairline-strong);"></div>
+          <span style="font-size: 13px; color: var(--c-slate);">해커톤</span>
+          <span style="color: var(--c-muted);">›</span>
+          <span style="font-size: 13px; font-weight: 600;">2026 봄 ENK 해커톤</span>
+          <div style="flex: 1;"></div>
+          <span style="font-size: 12.5px; font-weight: 600;">박운영</span>
+          <span class="mono" style="font-size: 11px; color: var(--c-muted);">park.unyoung@enk.kr</span>
+          <button class="btn btn-ghost btn-sm" style="padding: 4px 8px; font-size: 11.5px;">로그아웃</button>
+        </div>
+        <div class="mono" style="padding: 10px 22px; font-size: 11px; color: var(--c-slate); background: var(--c-paper); border-bottom: 1px solid var(--c-hairline);">
+          ↳ 이름·이메일·로그아웃은 한 줄. 아바타·이니셜 동그라미 없음. 최소 높이 44px.
+        </div>
+      </div>
+
+      <div class="rules" style="margin-top: 20px;">
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">GNB·툴바·서브 헤더는 <strong>단일 행</strong>으로. 텍스트는 baseline 정렬, 메타는 모노로.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">대시보드 상단 정보(상태·런타임·현황)는 <strong>제목 옆 세로 바 우측에 한 줄</strong>로. 폭 변하는 텍스트가 다른 요소 위치를 흔들지 않게.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">진행 단계 인디케이터는 <strong>모든 칩 동일 모양·크기</strong>로 통일. 현재 단계만 색 인코딩으로 차이.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-tag"></span><span class="rule-text">아바타·이니셜 동그라미·장식 아이콘으로 헤더 높이를 늘리지 않기.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">의미가 사라진 보조 안내("읽기 전용·팀 편성은 어드민에서")를 본문 행에 남기지 않기 — 아이콘 호버로 옮기기.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">진행률 바를 흰 카드로 감싸 면적을 키우지 않기. 데이터 시각화 자체로 충분히 강조됩니다.</span></div>
+      </div>
+    </section>
+
+    <!-- TOKENS DUMP -->
+    <section id="tokens-list">
+      <div class="sec-head">
+        <span class="sec-num">+</span>
+        <h2 class="sec-title">Tokens · CSS 변수 참조</h2>
+        <span class="sec-tag">copy-ready</span>
+      </div>
+
+      <div class="grid grid-2-1">
+        <div class="token-list">
+          <div class="token-row" style="background: var(--c-stone);"><span class="token-name" style="color: var(--c-ink);">TOKEN</span><span class="token-val" style="color: var(--c-ink);">VALUE</span><span></span></div>
+          <div class="token-row"><span class="token-name">--c-canvas</span><span class="token-val">#ffffff</span><span class="token-chip" style="background:#fff;"></span></div>
+          <div class="token-row"><span class="token-name">--c-paper</span><span class="token-val">#f4f2ec</span><span class="token-chip" style="background:#f4f2ec;"></span></div>
+          <div class="token-row"><span class="token-name">--c-stone</span><span class="token-val">#e9e6dd</span><span class="token-chip" style="background:#e9e6dd;"></span></div>
+          <div class="token-row"><span class="token-name">--c-hairline</span><span class="token-val">#d9d5c9</span><span class="token-chip" style="background:#d9d5c9;"></span></div>
+          <div class="token-row"><span class="token-name">--c-hairline-strong</span><span class="token-val">#b8b4a6</span><span class="token-chip" style="background:#b8b4a6;"></span></div>
+          <div class="token-row"><span class="token-name">--c-muted</span><span class="token-val">#8a8779</span><span class="token-chip" style="background:#8a8779;"></span></div>
+          <div class="token-row"><span class="token-name">--c-slate</span><span class="token-val">#69675c</span><span class="token-chip" style="background:#69675c;"></span></div>
+          <div class="token-row"><span class="token-name">--c-ink-3</span><span class="token-val">#4a473e</span><span class="token-chip" style="background:#4a473e;"></span></div>
+          <div class="token-row"><span class="token-name">--c-ink-2</span><span class="token-val">#2a2823</span><span class="token-chip" style="background:#2a2823;"></span></div>
+          <div class="token-row"><span class="token-name">--c-ink / --c-stache</span><span class="token-val">#14130f</span><span class="token-chip" style="background:#14130f;"></span></div>
+          <div class="token-row"><span class="token-name">--c-helmet</span><span class="token-val">#ffce2b</span><span class="token-chip" style="background:#ffce2b;"></span></div>
+          <div class="token-row"><span class="token-name">--c-helmet-deep</span><span class="token-val">#e6b500</span><span class="token-chip" style="background:#e6b500;"></span></div>
+          <div class="token-row"><span class="token-name">--c-helmet-soft</span><span class="token-val">#fff4c2</span><span class="token-chip" style="background:#fff4c2;"></span></div>
+          <div class="token-row"><span class="token-name">--c-blueprint</span><span class="token-val">#1f3a52</span><span class="token-chip" style="background:#1f3a52;"></span></div>
+          <div class="token-row"><span class="token-name">--c-mint</span><span class="token-val">#096c4d</span><span class="token-chip" style="background:#096c4d;"></span></div>
+          <div class="token-row"><span class="token-name">--c-amber</span><span class="token-val">#a06a0a</span><span class="token-chip" style="background:#a06a0a;"></span></div>
+          <div class="token-row"><span class="token-name">--c-rose</span><span class="token-val">#b3251c</span><span class="token-chip" style="background:#b3251c;"></span></div>
+          <div class="token-row"><span class="token-name">--c-safety</span><span class="token-val">#ff6b1f</span><span class="token-chip" style="background:#ff6b1f;"></span></div>
+        </div>
+
+        <div class="token-list">
+          <div class="token-row" style="background: var(--c-stone); grid-template-columns: 1fr 1fr;"><span class="token-name" style="color: var(--c-ink);">TYPE / SCALE</span><span class="token-val" style="color: var(--c-ink);">REF</span></div>
+          <div class="token-row" style="grid-template-columns: 1fr 1fr;"><span class="token-name">--font-display</span><span class="token-val">Wanted Sans</span></div>
+          <div class="token-row" style="grid-template-columns: 1fr 1fr;"><span class="token-name">--font-body</span><span class="token-val">Pretendard</span></div>
+          <div class="token-row" style="grid-template-columns: 1fr 1fr;"><span class="token-name">--font-mono</span><span class="token-val">JetBrains Mono</span></div>
+          <div class="token-row" style="grid-template-columns: 1fr 1fr;"><span class="token-name">--r-xs</span><span class="token-val">2px</span></div>
+          <div class="token-row" style="grid-template-columns: 1fr 1fr;"><span class="token-name">--r-sm</span><span class="token-val">4px</span></div>
+          <div class="token-row" style="grid-template-columns: 1fr 1fr;"><span class="token-name">--r-md</span><span class="token-val">6px</span></div>
+          <div class="token-row" style="grid-template-columns: 1fr 1fr;"><span class="token-name">--r-lg</span><span class="token-val">10px</span></div>
+          <div class="token-row" style="grid-template-columns: 1fr 1fr;"><span class="token-name">--shadow-sm</span><span class="token-val">0 1px 0 / 4%</span></div>
+          <div class="token-row" style="grid-template-columns: 1fr 1fr;"><span class="token-name">--shadow-md</span><span class="token-val">0 4px 16px / 6%</span></div>
+          <div class="token-row" style="grid-template-columns: 1fr 1fr;"><span class="token-name">--shadow-lg</span><span class="token-val">0 12px 32px / 10%</span></div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="doc-footer">
+      <span>JITDA · DESIGN SYSTEM · 0.1 DRAFT</span>
+      <span>HELMET #FFCE2B · STACHE #14130F · PAPER #F4F2EC</span>
+      <span>2026-05-21</span>
+    </footer>
+  </main>
+</body>
+</html>

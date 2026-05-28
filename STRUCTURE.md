@@ -1,0 +1,406 @@
+# 짓다 UI 디자인 — 작업 컨텍스트 맵
+
+> **이 문서의 역할**: 짓다 UI 디자인 수정·검토·개발 시 **어떤 문서와 코드를 어떤 순서로 봐야 하는지**의 지도.
+> AI가 디자인 작업을 할 때, 사람이 화면을 수정·검토할 때 **첫 번째로 읽는 문서**.
+>
+> 작성: 2026-05-26 · 기준 캔버스: `Jitda Renewal.html` (52개 화면 상태 — 2026-05-26: a1-expired 폐기로 50→49 / c1-paused → e6-paused 이전으로 C 7→6, E 8→9, 총합 유지 49 / 2026-05-27: b2-roster-detail 신설로 B 14→15, 총합 49→50 / 2026-05-27: e7-ending 폐기로 E 9→8, 총합 50→49 / 2026-05-27: e4-waiting 신설로 E 8→9, 총합 49→50 / 2026-05-27: e4-v2 + e4-waiting-v2 신설로 E 9→11, 총합 50→52 — 매치 수락 어휘 alternate 디자인 세트)
+
+---
+
+## 0. 빠른 참조 (이것만 봐도 됨)
+
+| 무엇을 하려는가 | 어디부터 읽나 |
+|----------------|--------------|
+| 특정 화면 **수정** | ① 이 문서 §3에서 화면 ID 찾기 → ② JSX 컴포넌트 위치 확인 → ③ 해당 영역 페이지정의서 섹션 → ④ spec-updates.md (해당 영역에 변경 있나 확인) |
+| **새 화면** 추가 | ① 페이지정의서에서 인접 화면 정의 확인 → ② 화면상태정의서 §11(전체 상태 요약표) → ③ Jitda Design System.html (재사용 컴포넌트) → ④ JSX 파일에 컴포넌트 추가 → ⑤ Renewal.html에 `<DCArtboard>` 추가 |
+| **기획 정합성 검토** | ① 페이지정의서·화면상태정의서·UX리뷰 3개 비교 → ② spec-updates.md에서 override 있는지 → ③ 이 문서 §5(알려진 갭) 참조 |
+| **AI 디자인 작업** | 이 문서 → spec-updates.md → 작업 영역 페이지정의서 섹션 → tokens.css → Design System.html |
+
+---
+
+## 1. 문서 위계 (충돌 시 위가 우선)
+
+| 우선순위 | 문서 | 역할 | 경로 |
+|---------|------|------|------|
+| 🥇 1 | `spec-updates.md` | **최신 결정 (override)** — D영역 18개 변경 등 | `./spec-updates.md` |
+| 🥈 2 | `2026-05-20_디자인-리뉴얼-페이지-정의서.md` | 페이지별 컴포넌트·액션 표준 명세 | `../2026-05-20_디자인-리뉴얼-페이지-정의서.md` |
+| 🥉 3 | `화면상태정의서.md` | 라우트·상태 머신·모바일 분기 | `../화면상태정의서.md` |
+| 4 | `2026-05-20_디자인-리뉴얼-UX-리뷰.md` | UX 전문가 리뷰 (Critical·Med·Low 이슈) | `../2026-05-20_디자인-리뉴얼-UX-리뷰.md` |
+| 참조 | `Jitda Design System.html` | 토큰·컴포넌트 시각 가이드 | `./Jitda Design System.html` |
+| 참조 | `tokens.css` | CSS 변수 (색·타입·radius) | `./tokens.css` |
+| 산출물 | `Jitda Renewal.html` | 46 화면 캔버스 뷰 | `./Jitda Renewal.html` |
+
+**원칙**: 문서가 충돌하면 위 우선순위로 판단. `spec-updates.md`가 가장 최신이므로 다른 문서를 override.
+
+---
+
+## 2. 영역별 통합 매핑
+
+| 영역 | 화면 수 | JSX 파일 | 페이지정의서 | 화면상태정의서 | UX 리뷰 |
+|------|--------|---------|-------------|--------------|---------|
+| **A 인증** | 9 | `auth.jsx` — A1Expired 폐기 (2026-05-26: 코드 오류와 동치로 통합) | §A (L23~154) | §3·§4·§5-1 | §A (L29~108) |
+| **B 운영자** | 15 | `operator.jsx` — 5상태 + 확인 모달 6종 + 팀 상세 모달 1종(2026-05-27) | §B (L155~277) | §6·§7 | §B (L110~173) |
+| **C 참가자** | 6 | `participant.jsx` — c1-paused 폐기(E-6로 이전, 2026-05-26) | §C (L278~474) | §5-2·§7 | §C (L175~242) |
+| **D 갤러리** | 10 | `gallery.jsx` (1410줄) | §D (L475~584) | §8·§9 | §D (L244~289) |
+| **E 다이얼로그** | 11 | `dialogs.jsx` — E-4 게임 수락 단순화 + E-6 일시정지 신설(2026-05-26) · E-7 폐기(2026-05-27) · e4-waiting 신설(2026-05-27) · **e4-v2/e4-waiting-v2 신설**(2026-05-27: 매치 수락 어휘 alternate 세트) | §E (L585~716) | §7-5·§9-5 (일부) | §E (L290~305) ⚠️ |
+| **F 심사** | 1 | `judge.jsx` (407줄) | §F (L717~768) | ❌ (정의 없음) | ❌ (리뷰 없음) |
+| 공용 | - | `shared.jsx` (491줄) | §전체 페이지 맵 (L769~) | §10 공통 컴포넌트 | - |
+
+⚠️ = 일부 누락. ❌ = 전체 누락 (§5 알려진 갭 참조)
+
+---
+
+## 3. 화면 ↔ 컴포넌트 인덱스 (45개)
+
+각 화면의 `id`는 `Jitda Renewal.html`의 `<DCArtboard id="...">` 값. JSX 파일에서 컴포넌트 이름으로 찾으면 됨.
+
+### A. 인증 (9)
+
+| ID | 라벨 | Component | 파일 | 페이지정의서 | 화면상태정의서 |
+|----|------|-----------|------|-------------|--------------|
+| `a1` | 코드 입장 (기본) | `A1CodeLogin` | auth.jsx | L29 | §5-1 |
+| `a1-invalid` | 코드 오류 | `A1CodeInvalid` | auth.jsx | L29 | §5-1 |
+| `a1-not-started` | 행사 미시작 | `A1NotStarted` | auth.jsx | L29 | §5-1 |
+| `a1-ended` | 행사 종료 | `A1Ended` | auth.jsx | L29 | §5-1 |
+| `a2` | 운영자 로그인 (기본) | `A2OperatorLogin` | auth.jsx | L77 | §3-1 |
+| `a2-inflight` | Google 로그인 진행 | `A2GoogleInFlight` | auth.jsx | L77 | §3-1 |
+| `a2-popup` | 팝업 차단 우회 | `A2PopupBlocked` | auth.jsx | L77 | §3-2 |
+| `a3` | OAuth 콜백 (처리) | `A3OAuthCallback` | auth.jsx | L119 | §4-1 |
+| `a3-failed` | 인증 실패 + 카운트다운 | `A3OAuthFailed` | auth.jsx | L119 | §4-2 |
+
+### B. 운영자 (11)
+
+| ID | 라벨 | Component | 파일 | 페이지정의서 | 화면상태정의서 |
+|----|------|-----------|------|-------------|--------------|
+| `b1` | 해커톤 목록 (5상태) | `B1HackathonList` | operator.jsx | L163 | §6-1·§6-3 |
+| `b1-empty` | 빈 상태 (신규 운영자) | `B1Empty` | operator.jsx | L163 | §6-1 |
+| `b2-tutorial-waiting` | ① 튜토리얼 대기 | `B2DashboardTutorialWaiting` | operator.jsx | L198 | §7 |
+| `b2-tutorial-running` | ② 튜토리얼 진행 | `B2DashboardTutorialRunning` | operator.jsx | L198 | §7 |
+| `b2-hack-waiting` | ④ 해커톤 대기 | `B2DashboardHackathonWaiting` (operator.jsx:1032 inline) | operator.jsx | L198 | §7 |
+| `b2-started` | ⑤ 해커톤 진행 | `B2DashboardStarted` | operator.jsx | L198 | §7 |
+| `b2-paused` | 일시정지 오버레이 | `B2DashboardPaused` | operator.jsx | L198 | §7 |
+| `b2-ended` | ⑥ 해커톤 종료 | `B2DashboardEnded` | operator.jsx | L198 | §7 |
+| `b2-skip` | 모달 · 튜토리얼 건너뛰기 | `B2SkipTutorialModal` | operator.jsx | L198 | - |
+| `b2-end` | 모달 · 종료 1단계 (이름 타이핑) | `B2EndModal` | operator.jsx | L198 | - |
+| `b2-end-countdown` | 모달 · 종료 2단계 (30초) | `B2EndModalCountdown` | operator.jsx | L198 | - |
+| `b2-tutorial-start-confirm` | 모달 · 튜토리얼 시작 확인 (① → ②) [신규] | `B2TutorialStartConfirm` | operator.jsx | §규칙 L213 | - |
+| `b2-tutorial-end-confirm` | 모달 · 튜토리얼 종료 확인 + 완료 현황 (② → ④) [신규] | `B2TutorialEndConfirm` | operator.jsx | §규칙 L215 | - |
+| `b2-hackathon-start-confirm` | 모달 · 해커톤 시작 확인 (④ → ⑤) [신규] | `B2HackathonStartConfirm` | operator.jsx | §규칙 L216 | - |
+| `b2-roster-detail` | 모달 · 팀 상세 (RosterRow 카드 클릭 → 멤버·접속) [신규 2026-05-27] | `B2RosterDetail` + `RosterTeamDetailModal` | operator.jsx | §B-2 ⑦ | - |
+
+> ⚠️ 명명 불일치: `b2-tutorial-waiting` ↔ `B2DashboardPending`. 향후 `B2DashboardTutorialWaiting`으로 리네이밍 권장.
+
+### C. 참가자 (6)
+
+| ID | 라벨 | Component | 파일 | 페이지정의서 | 화면상태정의서 |
+|----|------|-----------|------|-------------|--------------|
+| `c1` | 대기실 ① 시작 전 (tutorial_waiting) | `C1RoomBefore` | participant.jsx | L284 | §5-2 |
+| `c1-after-tutorial` | 대기실 ② 튜토리얼 후 (튜토리얼 거친 hackathon_waiting) | `C1RoomAfterTutorial` | participant.jsx | L284 | §5-2 |
+| `c1-ended` | 대기실 ③ 해커톤 종료 (hackathon_ended) | `C1RoomEnded` | participant.jsx | L284 | §5-2 |
+| `c1-long-name` | 대기실 ① · edge: 긴 팀명 | `C1TeamRoom + MOCK_TEAM_LONG_NAME` | participant.jsx | (edge) | - |
+| `c1-many-members` | 대기실 ① · edge: 다인팀 7명 | `C1TeamRoom + MOCK_TEAM_MANY_MEMBERS` | participant.jsx | (edge) | - |
+| `c1-ended-long-name` | 대기실 ③ · edge: 긴 팀명 | `C1TeamRoom + MOCK_TEAM_LONG_NAME` | participant.jsx | (edge) | - |
+| `c1-ended-many-members` | 대기실 ③ · edge: 다인팀 7명 | `C1TeamRoom + MOCK_TEAM_MANY_MEMBERS` | participant.jsx | (edge) | - |
+| `c2` | 셀프 튜토리얼 | `C2Tutorial` | participant.jsx | L322 | §7 |
+| `c3` | 1인팀 캔버스 (OpenCode 임베드) | `C3PersonalCoding` | participant.jsx | L374 | §7 |
+| `c4` | 다인팀 캔버스 (커서 + 전송 요청) | `C4TeamCanvas` | participant.jsx | L418 | §7 |
+
+> 일시정지 오버레이는 E-6 (`e6-paused`)로 이전 — C-3·C-4 바이브코딩 화면 위 백드롭으로 동작.
+
+### D. 갤러리 (10)
+
+| ID | 라벨 | Component | 파일 | 페이지정의서 | 화면상태정의서 |
+|----|------|-----------|------|-------------|--------------|
+| `d1` | 목록 (진행 중 · 8개 공개) | `D1GalleryList` | gallery.jsx | L481 | §8 |
+| `d1-ended` | 목록 (종료 후 · 12개) | `D1GalleryListEnded` | gallery.jsx | L481 | §8 |
+| `d1-empty` | 빈 상태 | `D1GalleryEmpty` | gallery.jsx | L481 | §8-2 |
+| `d1-loading` | 로딩 (스켈레톤) | `D1GalleryLoading` | gallery.jsx | L481 | §8-2 |
+| `d2` | 상세 (기본·정보 탭) | `D2GalleryDetail` | gallery.jsx | L524 | §9 |
+| `d2-comments` | 댓글 탭 (4건) | `D2GalleryDetailComments` | gallery.jsx | L524 | §9-3 |
+| `d2-comments-empty` | 댓글 빈 상태 | `D2GalleryDetailCommentsEmpty` | gallery.jsx | L524 | §9-3 |
+| `d2-loading` | 라이브 프리뷰 로딩 | `D2GalleryDetailLoading` | gallery.jsx | L524 | §9-2 |
+| `d2-mine` | 내 프로젝트 | `D2GalleryDetailMine` | gallery.jsx | L524 | §9 |
+| `d2-last` | 마지막 프로젝트 (다음 비활성) | `D2GalleryDetailLast` | gallery.jsx | L524 | §9 |
+
+> D 영역은 `spec-updates.md`에 18개 변경 결정이 정리되어 있음 — **수정 전 반드시 확인**.
+
+### E. 다이얼로그 (8)
+
+| ID | 라벨 | Component | 파일 | 페이지정의서 | 트리거 |
+|----|------|-----------|------|-------------|--------|
+| `e1` | 프로젝트 설정 (공개 활성+사용법) | `E1ProjectSettings stateVariant="unsaved"` | dialogs.jsx | L591 | C-3/C-4에서 설정 버튼 |
+| `e1-private` | 비공개 기본 | `E1ProjectSettings stateVariant="private"` | dialogs.jsx | L591 | 동일 |
+| `e1-saving` | 저장 중 | `E1ProjectSettings stateVariant="saving"` | dialogs.jsx | L591 | 동일 |
+| `e1-saved` | 저장 완료 | `E1ProjectSettings stateVariant="saved"` | dialogs.jsx | L591 | 동일 |
+| `e1-unsaved-close` | 미저장 종료 경고 | `E1UnsavedCloseConfirm` | dialogs.jsx | L591 | E-1에서 미저장 채로 닫기 |
+| `e4` | 합의 투표 (15초 카운트다운 · 게임 수락 UI · 만장일치) | `E4ConsensusVote stateVariant="voting"` | dialogs.jsx | L644 | C-4 다인팀 캔버스 전용 |
+| `e4-waiting` | 응답 대기 (본인 동의 후 · 팀원 응답 대기 · 취소 불가) | `E4ConsensusVote stateVariant="waiting"` | dialogs.jsx | L712 | 동의 클릭 시 e4 → 본 화면 (2026-05-27 신설) |
+| `e4-v2` | 합의 투표 v2 (LoL 매치 수락 어휘 · 거대 ring · 미수락자 아바타만) | `E4ConsensusVote stateVariant="voting-v2"` | dialogs.jsx | L770 | e4 alternate (2026-05-27 신설) |
+| `e4-waiting-v2` | 응답 대기 v2 (매치 수락 어휘 · 거대 ring + 동의 완료 pill) | `E4ConsensusVote stateVariant="waiting-v2"` | dialogs.jsx | L840 | e4-waiting alternate (2026-05-27 신설) |
+| `e4-rejected` | 합의 무산 (4 칩 포트레이트 + 캔버스 복귀 primary CTA) | `E4ConsensusVote stateVariant="rejected"` | dialogs.jsx | L644 | 거절·타임아웃 시 (이름 미명시) |
+| `e5` | AI 선택지 투표 (3안 + 기타) | `E5AIChoiceVote` | dialogs.jsx | L693 | C-3/C-4 캔버스 AI 응답 시 |
+| `e6-paused` | 일시정지 오버레이 (바이브코딩 위 백드롭) | `E6Paused` | dialogs.jsx | (신규) | 운영자 [일시정지] · C-3/C-4 위 자동 노출 |
+| ~~`e7-ending`~~ | ~~해커톤 종료 카운트다운 오버레이~~ | — | — | — | **2026-05-27 폐기**: 참가자에게 종료 예고 없음 정책. 운영자 30초 유예 만료 시 C-3/C-4 → c1-ended 직접 전환. |
+
+### F. 심사 (1)
+
+| ID | 라벨 | Component | 파일 | 페이지정의서 |
+|----|------|-----------|------|-------------|
+| `f1` | 심사위원 대시보드 (4축 채점) | `F1JudgeDashboard` | judge.jsx | L723 |
+
+---
+
+## 4. 화면 간 의존성·전이
+
+### 오버레이 중첩 (Z-축)
+- `b2-paused` → `b2-started` 위에 중첩 (운영자 일시정지)
+- `e6-paused` → `c3`/`c4` 바이브코딩 화면 위에 백드롭(참가자 일시정지 — C 영역 c1-paused에서 E 영역으로 이전, 2026-05-26)
+- `e1`, `e1-saving`, `e1-saved`, `e1-unsaved-close` → `c3`/`c4` 위에 모달
+- `e4`, `e4-rejected` → `c4` 위에 모달 (다인팀 전용, 풀스크린 오버레이)
+- `e5` → `c3`/`c4` 위에 모달
+
+### 자동 전이 (참가자 — 진입 버튼 없음, "참가자-로그인 v8")
+```
+운영자 상태 변화 → 참가자 화면 자동 전환
+
+tutorial_waiting                          → c1 (대기실 ①)
+tutorial_running                          → c2 (셀프 튜토리얼)
+hackathon_waiting (튜토리얼 거친 경우)     → c1-after-tutorial (대기실 ②)
+hackathon_waiting (튜토리얼 미사용 행사)   → c1 (대기실 ①)
+hackathon_running                         → c3 또는 c4 (팀원 수로 분기)
+paused (during hackathon_running)         → e6-paused (c3/c4 위 백드롭 오버레이)
+hackathon_ended                           → c1-ended (대기실 ③)
+```
+
+### 5상태 단방향 모델 (운영자) — 2026-05-26 업데이트
+```
+①tutorial_waiting → ②tutorial_running ──[튜토리얼 종료]──▶ ④hackathon_waiting → ⑤hackathon_running → ⑥hackathon_ended
+        │                                                                          ↕ (paused 오버레이, 상태 미변경)
+        └──[해커톤 시작 ⚠ 건너뛰기]────────────────────────────▶ ⑤hackathon_running
+```
+- **되돌리기 불가** (단방향). 잘못 시작 시 종료만 가능.
+- 모든 4개 전이 버튼은 **확인 모달** 거침 — `b2-tutorial-start-confirm` / `b2-tutorial-end-confirm` / `b2-hackathon-start-confirm` / `b2-end` + `b2-end-countdown`
+- 일시정지/재시작은 모달 없음 (토글)
+- 종료는 2단계 확인 (이름 타이핑 → 30초 카운트다운)
+- **③ 튜토리얼 종료 상태는 폐기** (2026-05-26). [튜토리얼 종료] 누르면 즉시 ④ 해커톤 대기로 전이. 화면 번호 ① ② ④ ⑤ ⑥는 디자인 호환성을 위해 보존, ③은 결번.
+
+### 카운트다운 타이머
+| 화면 | 시간 | 동작 |
+|------|------|------|
+| `a3-failed` | 5초 | 로그인 화면으로 자동 이동 |
+| `e4` | 15초 | 미투표 시 거절 처리 (만장일치 룰 — 2026-05-26) |
+| `e4-rejected` | 5초 | 재요청 가능까지 (합의 무산 화면에 통합 — 2026-05-26) |
+| `b2-end-countdown` | 30초 | 해커톤 종료 확정 |
+
+---
+
+## 5. 알려진 갭 (정합성 검토 결과)
+
+2026-05-26 정합성 검증 결과 12개 갭 식별 → 사용자 결정 반영 후 **10개 해소**. 자세한 내용은 [GAP_REPORT.md](GAP_REPORT.md) 참조.
+
+### ✅ 해소된 갭 (10/12)
+| 갭 | 해소 방법 |
+|----|----------|
+| 확인 모달 3개 누락 (1-1) | `b2-tutorial-start-confirm`, `b2-tutorial-end-confirm`, `b2-hackathon-start-confirm` 디자인·코드 추가 |
+| 튜토리얼 paused 화면 부재 (1-2) | `b2-paused` 라벨 일반화 ("② 또는 ⑤ 위 오버레이") |
+| A-1 운영자 옵션 단순화 (1-3) | 디자인 유지 + 기획문서 두 문서 갱신 (단일 링크로 명시) |
+| c1 발동 상태 라벨 (1-4) | 라벨 갱신 "(tutorial_waiting / 튜토리얼 없는 hackathon_waiting)" |
+| 명명 일관성 (1-5) | `B2DashboardPending` → `B2DashboardTutorialWaiting` 리네임 |
+| ③ 튜토리얼 종료 자동 전이 (2-2) | **③ 상태 폐기 → 5상태 모델로 통합**. 어드민·참가자 두 기획문서 갱신, c1-after-tutorial 라벨 변경 |
+| A-3 콜백 이동 경로 (2-3) | 어드민-역할-기획에 "OAuth 콜백 후 이동 경로" 절 추가 |
+| E-4 거절 안내 모달 명시 (2-4) | 캔버스 기획에 "모달로 표시 (e4-rejected 오버레이)" 명시 |
+| 참가자 paused 해제 트리거 (2-5) | 참가자-로그인-기획에 "참가자 직접 닫기 불가, 운영자 [재시작]만 해제" 명시 |
+| 튜토리얼 건너뛰기 UI (3-1) | 디자인대로 별도 텍스트 링크. 어드민-역할-기획 버튼 구성 절 갱신 |
+| 자동전환·모달 위계 (3-2) | 1-1 해결과 함께. 와이어링도 모달 경유 흐름으로 변경 |
+| 코드 에러 분리 (3-3) | 2026-05-26 재검토: `a1-expired`는 코드 오류와 사용자 시각에서 동치(둘 다 "코드 다시 받으세요"). 화면 폐기, `a1-invalid` 단일 화면으로 통합. "3회 실패" 안내도 폐기 |
+
+### ⏸️ 의도된 미완성 (1/12)
+| 갭 | 처리 |
+|----|------|
+| F-1 심사 영역 기획 부재 (2-1) | **아직 기획 안 함** — 디자인은 placeholder. 기획 시점 미정. |
+
+### 📐 검증되지 않은 가정 (Critical Analysis — 미해결, 사용자 테스트 필요)
+- **"진입 버튼 없이 자동 전환"** (C영역) → 참가자가 화면 전환을 인지 못해 혼란할 가능성
+- **30초 종료 카운트다운** → 실수 회수에 충분한 시간인지 검증 데이터 없음
+- **1280×820 고정 캔버스** → 240명 동시 사용 시 실제 디바이스 해상도 분포 미확인
+- **50개 화면 모두 MVP에 필요한가** → 점진 출시 가능성 검토 안 됨
+
+### 🔄 명세 부족 (소소)
+- "1초 규칙·2클릭 규칙" (Renewal.html B영역 subtitle) — 출처·정의 불명
+- `e6-paused`(구 c1-paused) 진입·해제 트리거는 이제 명시됨 (참가자-로그인-기획 갱신). 진입 = 운영자 [일시정지] (hackathon_running 한정), 해제 = 운영자 [재시작]만 가능 — 참가자 직접 닫기 불가
+
+---
+
+## 6. AI 작업 가이드
+
+### 6-1. 새 디자인 작업 시 컨텍스트 로드 순서
+```
+1. STRUCTURE.md (이 문서)              ← 어디를 봐야 하는지
+2. spec-updates.md                     ← 최신 결정 (override)
+3. 페이지정의서 §해당영역                ← 표준 명세
+4. 화면상태정의서 §해당섹션              ← 상태·전이
+5. UX 리뷰 §해당영역 (있으면)            ← 알려진 이슈
+6. tokens.css + Design System.html      ← 시각 토큰
+7. 해당 영역 JSX 파일                   ← 현 구현
+```
+
+### 6-2. 화면 수정 시 체크리스트
+- [ ] 이 문서 §3에서 해당 화면의 컴포넌트 위치 확인
+- [ ] `spec-updates.md`에 관련 변경 결정 있는지 확인
+- [ ] 페이지정의서·화면상태정의서·UX리뷰 3개 중 해당 섹션 비교
+- [ ] §4 의존성 그래프에서 영향받는 다른 화면 식별
+- [ ] §5 알려진 갭 중 이 작업으로 해소되는 것 있는지 확인
+- [ ] tokens.css 변수만 사용 (인라인 색상값 금지)
+- [ ] Renewal.html의 `<DCArtboard>` 라벨 동기화
+
+### 6-3. 기획문서 정합성 검토 시
+- 3개 문서(페이지정의서·화면상태정의서·UX리뷰)에서 동일 화면을 동시에 열고 비교
+- 충돌 시 §1 위계로 판단
+- `spec-updates.md`에 override 있는지 항상 확인
+- §5 갭 목록에 새로운 갭 발견 시 추가
+
+### 6-4. 금기 사항
+- ❌ `enk-hackathon-rails/`·`enk-hackathon-vite/` 등 **읽기 전용 레포 직접 수정 금지** (`.claude/CLAUDE.md` 참조)
+- ❌ 디자인 토큰 무시한 색상·radius·spacing 인라인 작성 금지 — `tokens.css` 변수 사용
+- ❌ "확실히·당연히·반드시" 등 검증되지 않은 단정 표현 (ENK Critical Analysis Mode)
+
+---
+
+## 7. 인터랙티브 프로토타입 (viewer.html)
+
+`viewer.html`을 브라우저로 열면 45개 화면을 단일 뷰로 탐색하고 주요 CTA를 클릭해 화면 전이를 시연할 수 있다.
+
+### 기능
+- **URL 라우팅**: `?id=b2-paused` 형태로 직접 접근, 뒤로가기/앞으로가기 동작
+- **이동**: `←` `→` 버튼 또는 키보드 화살표
+- **검색**: `/` 키로 select 포커스
+- **클릭 동작**: 일부 버튼에 와이어링 — 클릭 시 다음 화면으로 자동 이동
+- **시각 표식**: 화면 ID 옆 `⚡N` = N개 액션이 와이어링됨
+
+### 와이어링된 전이 (21개) — 2026-05-26 갱신, 모달 경유 흐름 반영
+
+| 화면 | 버튼 (data-action) | 이동 |
+|------|-------------------|------|
+| `a1` | 해커톤 참여하기 (`submit`) | → `c1` |
+| `a1-invalid` | 다시 시도하기 (`retry`) | → `a1` |
+| `a2` | Google 계정 (`google`) | → `a3` |
+| `a2` | 이메일로 로그인 (`email`) | → `b1` |
+| `a3-failed` | 다시 시도 (`retry`) | → `a2` |
+| `b1` | 해커톤 카드 (`open`) | → `b2-tutorial-waiting` |
+| `b2-tutorial-waiting` | 튜토리얼 시작 (`start`) | → `b2-tutorial-start-confirm` (모달) |
+| `b2-tutorial-waiting` | 건너뛰기 링크 (`skip`) | → `b2-skip` (모달) |
+| `b2-tutorial-start-confirm` | 취소 / 시작 | → `b2-tutorial-waiting` / `b2-tutorial-running` |
+| `b2-tutorial-running` | 튜토리얼 종료 (`end-tutorial`) | → `b2-tutorial-end-confirm` (모달, 완료 현황 표시) |
+| `b2-tutorial-end-confirm` | 취소 / 확정 | → `b2-tutorial-running` / `b2-hack-waiting` |
+| `b2-hack-waiting` | 해커톤 시작 (`start-hackathon`) | → `b2-hackathon-start-confirm` (모달) |
+| `b2-hackathon-start-confirm` | 취소 / 시작 | → `b2-hack-waiting` / `b2-started` |
+| `b2-tutorial-waiting` / `b2-hack-waiting` | RosterRow 카드 클릭 (`open-team`) | → `b2-roster-detail` (팀 상세 모달) |
+| `b2-roster-detail` | 백드롭·X 클릭 (`close-roster-detail`) | → `b2-tutorial-waiting` (또는 진입 화면) |
+| `b2-started` | 일시정지 (`pause`) | → `b2-paused` |
+| `b2-started` | 종료 (`end`) | → `b2-end` (모달) |
+| `b2-paused` | 재시작 (`resume`) | → `b2-started` |
+| `b2-paused` | 종료 (`end`) | → `b2-end` |
+| `b2-end` | 취소 / 계속 | → `b2-started` / `b2-end-countdown` |
+| `b2-end-countdown` | 종료 취소 / 즉시 종료 (또는 30초 만료 자동) | → `b2-started` / `b2-ended` |
+| `b2-skip` | 취소 / 건너뛰고 시작 | → `b2-tutorial-waiting` / `b2-hack-waiting` |
+| `b2-ended` | 갤러리 보기 (`open-gallery`) | → `d1-ended` |
+| `d1`, `d1-ended` | 갤러리 카드 (`open-card`) | → `d2` |
+### 핵심 데모 시나리오 (클릭만으로 완주)
+1. **운영자 풀 스토리**: `a2` → Google → `a3` → (수동으로 `b1`로) → 카드 클릭 → 튜토리얼 시작 → 종료 → 해커톤 시작 → 일시정지 → 재시작 → 종료 → 카운트다운 → `b2-ended` → 갤러리 보기 → `d1-ended` → 카드 클릭 → `d2`
+2. **참가자 시작**: `a1` → 입장 → `c1` (이후 자동 전환 시뮬레이션 없음 — 드롭다운으로 c2~c4 이동)
+3. **에러 흐름**: `a1-invalid` → 다시 시도 → `a1` / `a3-failed` → 다시 시도 → `a2`
+
+### 미와이어링 영역 (의도적)
+다음 화면은 시각 디자인만 있고 클릭 동작 없음. 드롭다운/키보드로 탐색.
+- **C영역 (참가자)**: 실제 앱에서 운영자 상태 따라 자동 전환되는 화면들. 프로토타입에서 자동 전환 시뮬레이트는 과한 비용
+- **E영역 (다이얼로그)**: E-1, E-4, E-5 — 진입 경로가 다양해 단일 매핑 어려움
+- **F영역 (심사)**: 단일 화면, 진입/종료 정의 부재 (§5 갭 참조)
+- **A-2 inflight, popup**: 부차 상태, 메인 흐름에서 제외
+
+### 프로토타입 한계 (정직한 표기)
+- **입력 검증 없음**: a1의 6자리 코드 입력은 빈 칸이어도 `c1`로 이동. 실제 앱은 검증 필요
+- **타이머 없음**: a3-failed의 "5초 카운트다운", b2-end-countdown의 "30초", e4의 "15초" — 시각만 있고 실제 타이머 동작 안 함
+- **상태 누적 없음**: b2-end의 "이름 타이핑" 입력 필드는 시각만 있고 실제로 동작하지 않음. `is-disabled` 클래스를 demo 위해 제거 (line 854)
+- **모달 = 전체 화면**: 실제 앱에서 모달은 오버레이지만, 뷰어에서는 단독 화면으로 전환
+- **백엔드 없음**: 모든 데이터는 JSX 내 하드코딩 (PENDING_TEAMS 등)
+
+### 개발자 인계 시 주의
+이 프로토타입의 **JSX·핸들러 코드는 실제 앱(enk-hackathon-vite)에 그대로 쓸 수 없다.** 다음만 가져갈 것:
+- 시각 디자인 (스타일·레이아웃·토큰값)
+- 인터랙션 사양 (어떤 버튼 누르면 어떤 상태로 가는지 — STRUCTURE.md §4·§7의 매핑 표)
+- 5상태 단방향 상태 머신 (§4)
+
+---
+
+## 8. 파일 인벤토리
+
+```
+06-design/
+├── 2026-05-20_디자인-리뉴얼-페이지-정의서.md   ← 표준 명세 (🥈 우선순위 2)
+├── 2026-05-20_디자인-리뉴얼-UX-리뷰.md        ← UX 검토 (우선순위 4)
+├── 화면상태정의서.md                          ← 상태 머신 (🥉 우선순위 3)
+└── Jitda UI design/
+    ├── STRUCTURE.md                           ← 이 문서 (가장 먼저 읽기)
+    ├── spec-updates.md                        ← 최신 결정 (🥇 우선순위 1)
+    ├── Jitda Renewal.html                     ← 46개 화면 캔버스 (산출물)
+    ├── Jitda Design System.html               ← 디자인 시스템 가이드
+    ├── tokens.css                             ← CSS 변수
+    ├── design-canvas.jsx                      ← Figma-like 캔버스 래퍼 (편집 안 함)
+    ├── shared.jsx                             ← 공용 컴포넌트 (JitdaMark 등)
+    ├── auth.jsx                               ← A영역 (9 화면)
+    ├── operator.jsx                           ← B영역 일부 (8 화면)
+    ├── participant.jsx                        ← C영역 (7 화면)
+    ├── gallery.jsx                            ← D영역 (10 화면)
+    ├── dialogs.jsx                            ← B 모달(3) + E영역 (8 화면)
+    └── judge.jsx                              ← F영역 (1 화면)
+```
+
+---
+
+## 변경 이력
+
+| 일자 | 변경 | 작성자 |
+|------|------|--------|
+| 2026-05-26 | 초안 작성 (46 화면 인덱싱, 5개 갭 식별) | AI |
+| 2026-05-26 | B2 모달 3종 위치 정정 (dialogs.jsx → operator.jsx), viewer.html 추가 | AI |
+| 2026-05-26 | viewer.html 인터랙티브 와이어링 (17 전이 · 21 data-action) | AI |
+| 2026-05-26 | 03-planning 정합성 검증 → 와이어링 4개 추가 (25 data-action / 21 ACTIONS) | AI |
+| 2026-05-26 | **5상태 모델 통합 (③ 폐기), 신규 4 화면 추가 (50 화면), 기획문서 3종 갱신, 12 갭 중 11개 해소** | AI |
+| 2026-05-26 | **Construction Vocabulary 도입** — caution-tape 4단계(banner/strip/border-top/accent-left) + critical button(글로우 sweep) + brand-tape 데코. helmet/stache 토큰화. 적용: 12 화면 + 5 critical 버튼 + 2 countdown ring. JitdaMark SVG도 토큰으로 정렬. 검증 포인트(사용자 테스트 시): (a) 시그널 인플레이션 — 12개 화면 적용이 과한지, (b) 1.6s marching 주기가 산만한지, (c) 노랑-검정 톤이 K-12 교사에게 친숙한지 | AI |
+| 2026-05-26 | **Safety Tape 통합** — 위험/비가역 컬러를 safety(`#FF6B1F` 주황) 단일로 통합. rose/coral → safety/helmet alias로 deprecate. 신규 컴포넌트: `.jt-tape` (찢어진 양끝 + -1.5° 회전 + drop-shadow), `.jt-tape-inline` (문장 내), `.jt-tape-block` (큰 라벨). 적용: B2EndModal/Countdown 카운트다운 ring·미리보기·"되돌릴 수 없음" 인라인 테이프. 좋아요 = helmet(`#FFCE2B` 옐로우) 일관 적용. caution-strip 두께 24px → 12px 통일, marching 동작은 `.is-marching` modifier로 분리. `.jt-caution-border-top` border-image → `::before` pseudo (사선 잘림 해결). 검증 포인트: (a) safety 주황이 helmet 옐로우와 시각적으로 충분히 구별되는지, (b) 인라인 테이프가 문장 흐름을 깨지 않는지, (c) clip-path polygon이 모든 브라우저에서 일관되게 렌더링되는지 | AI |
+| 2026-05-26 | **E-4 합의 투표 게임 수락 UI 리뉴얼** — 풀스크린 다크 dim(0.40) + 원형 헬멧 노랑 링(168px, halo pulse) + display 32px 헤드라인 + `jt-btn-critical` 동의 CTA. **voting**은 미니멀(링·헤드라인·CTA만), **rejected/cooldown**에서만 4열 포트레이트 카드로 거절자·미응답자 식별. 인라인 프롬프트 dashed 박스 → `[프롬프트 보기]` 버튼으로 분리하고 신규 `e4-prompt` 풀스크린 takeover 화면(작성자 색 좌측 4px 바)에서 본문 검토. 신규 변형 `e4-cooldown` viewer 등록. 신규 헬퍼: `RingTimer`·`TeammatePortrait`·`CanvasContextHeader`·`E4PromptReview`. `VoteRow` 제거. 와이어링: `e4 ↔ e4-prompt` (`open-prompt` / `close`). 신규 토큰 0개 — 모두 기존 어휘 재사용. 화면 수 46→48, 와이어링 21→23. 검증 포인트: (a) voting 상태에서 부분 진행률 숨김이 자기 확인 욕구를 차단하지 않는지, (b) 168px 링이 1280×820 아트보드 비율에서 과하지 않은지, (c) 정족수 룰(전원 vs 과반수) 명세 확정 필요 | AI |
+| 2026-05-26 | **`jt-btn-critical` 강조 애니메이션 교체** — 외곽 halo pulse + 하단 3px sweep bar(`jt-btn-halo` + `jt-sweep-bar`) 폐기, 사선(115°) 노란 빛띠가 버튼 표면을 왼쪽→오른쪽으로 통과하는 단일 shine 으로 통합(`jt-btn-shine`, 2.4s ease-in-out). overflow:hidden + ::after inset:0 + linear-gradient(115°, transparent 35% → helmet @0.55 50% → transparent 65%) + background-size 220% + background-position -100%→200% 이동. tokens.css·viewer.html·Jitda Renewal.html·Jitda Design System.html 4개 inline 사본 모두 동기. reduced-motion 대안: 정적 halo box-shadow 유지(0.35 opacity) + 사선 띠 중앙 고정. `jt-btn-critical` 사용 위치 변경 없음(operator.jsx 5건, dialogs.jsx 2건, design-system 데모 3건). 검증 포인트: (a) shine 통과 시 노랑 텍스트(`--c-helmet` on `--c-stache`) 가독성 유지되는지(피크 0.55 alpha 적정), (b) 2.4s 주기가 비가역 액션 강조 의도 대비 너무 빈번/희소하지 않은지, (c) 사선 각도 115°가 좌→우 흐름으로 인식되는지(직관성 검증 필요) | AI |
+| 2026-05-26 | **Tape clip-path % → px 전환** — `.jt-tape` / `.jt-tape-inline` / `.jt-tape-block`의 톱니 x좌표를 `1%~5%` 비율에서 `1px~6px` 고정값으로 변경(우측은 `calc(100% - Npx)`). 사유: 비율 단위는 테이프 길이에 따라 톱니가 비례 확대/축소되어 짧은 테이프는 톱니 작게·긴 테이프는 톱니 크게 보이는 시각 불일치 발생(`⚠ 코드 오류` block과 `⚠ LOGIN FAILED` 일반 tape의 톱니 모양이 달라 보임). 톱니 깊이가 width에 무관해져 어떤 길이의 테이프든 일관된 찢긴 모양 유지. **tokens.css · viewer.html · Jitda Renewal.html · Jitda Design System.html 4곳 모두 동기** (2026-05-26 후속: Design System.html 누락 발견·동기화). 검증 포인트: (a) 매우 짧은 테이프(≤80px)에서 좌·우 톱니가 겹치지 않는지, (b) 6px 톱니가 -2° 회전과 결합되어 어색하지 않은지 | AI |
+| 2026-05-26 | **a1-expired 화면 폐기** — 코드 오류와 코드 만료가 사용자 시각에서 동치(둘 다 "코드 다시 받으세요"). `A1Expired` 함수 삭제, viewer SCREENS/ACTIONS·Renewal.html artboard 제거, A 영역 화면 수 10→9, 총 화면 수 50→49. `참가자-로그인-기획.md` 오류 화면 표를 단일 `a1-invalid`로 통합. A1CodeInvalid는 h2 헤더를 `jt-tape-block`(⚠ 코드 오류)으로 교체해 제목 자체를 테이프 라벨로 단일화 | AI |
+| 2026-05-26 | **`jt-btn-shine` 방향 버그 교정 + `e1-unsaved-close` 슬림화** — (1) keyframes `background-position` 부호 반전: `-100%→200%`(실제 우→좌 흐름)을 `100%→0%`로 교정해 사용자 요청대로 좌→우 흐름 복원. tokens.css·viewer.html·Jitda Renewal.html·Jitda Design System.html 4개 inline 사본 모두 동기. (2) `e1-unsaved-close` 모달에서 `jt-caution-strip`(6px 상단 띠) 제거 — 디자인 시스템 원칙상 critical 강조는 `jt-btn-critical` shine 하나로 통합(중복 시그널 회피, "한 화면에 critical 시그널 2개 이상 금지" DON'T 룰 정렬). (3) 변경된 항목 미리보기 리스트(3행) 제거 — 사용자 결정. (4) "저장하고 닫기" 액션 버튼 `jt-btn-primary` → `jt-btn-critical`로 교체해 shine 적용. 헤더 padding·문장 사이즈 17/13px 살짝 키워 모달 빈 공간 보정. 검증 포인트: (a) 변경 리스트 제거로 사용자가 어떤 데이터를 잃는지 가시성 사라짐 — "변경 내용이 사라져요" 문구만으로 경고 충분한지, (b) "저장하고 닫기"는 가역 액션인데 critical 적용이 디자인 시스템 "비가역 액션에만" DO 룰과 충돌하는지(예외 허용 vs 룰 갱신 필요), (c) caution-strip 제거가 다른 critical 모달(b2-skip, b2-end 등)에도 적용되어야 할 일관성 결정인지 | AI |
+| 2026-05-26 | **E-4 정족수 룰 = 만장일치 단일 룰 확정 + 타임아웃 10s → 15s** — 어드민 설정 옵션(전원/과반수/1명) 제거, 접속 중인 팀원 전원 동의 필요. 페이지정의서·동시편집기획·dialogs.jsx(RingTimer total=15)·viewer·Renewal 라벨 모두 정렬. 프롬프트 모달 열린 동안 타이머 계속 흐름 확정(일시정지 안 함). spec-updates.md §7-0의 E-9·E-10·E-11 결정 완료로 갱신, §7-5 폐기된 옵션 ledger 추가. 검증 포인트(향후): (a) 4인 팀 만장일치가 행사 현장에서 실제로 동작하는지 실측, (b) 15초가 검토 여유 + 시간 압박 균형으로 적절한지, (c) 만장일치 병목 시 폴백(과반수·N-1)을 옵션 부활 vs 룰 변경 어느 쪽으로 갈지 | AI |
+| 2026-05-26 | **caution-tape 어휘 디자인시스템에서 완전 삭제** — 사용자 결정 "더 이상 해당 패턴을 사용하지 않으려고 하니 디자인시스템에서 삭제해라". 폐기 대상: `.jt-caution-strip` / `.jt-caution-banner-top` / `.jt-caution-banner-bottom` / `.is-marching` modifier / `.jt-caution-stripe` / `.jt-caution-thin` / `@keyframes jt-tape-march` / `--gradient-caution-tape` token / `--anim-tape-march` token. **유지**: `.jt-btn-critical` shine (별도 어휘) + `.jt-tape`·`.jt-tape-inline`·`.jt-tape-block` (safety orange 인라인 라벨 — 별도 컴포넌트) + `.jt-brand-rule`·`.jt-eyebrow-tape` (brand 데코 helmet-soft, 비-경고 맥락). JSX 14곳 usage 제거: auth.jsx(2 a1-not-started thin strip) + operator.jsx(6 b2 모달 strip·marching) + dialogs.jsx(2 e4 takeover top strip + 1 TeammatePortrait 좌측 4px gradient bar — ring 색상+칩으로 거절자 식별 충분). CSS 정의 4개 inline 사본 모두 삭제: tokens.css + viewer.html + Jitda Renewal.html + Jitda Design System.html. 디자인 시스템 페이지 §09b 명칭 "Construction Vocabulary" → "Brand Decoration & Critical Action" 으로 갱신, TRACK A(caution) 시각 가이드 섹션 삭제, DO/DON'T 룰 갱신(신규 caution-tape 사용 금지 룰 추가). 검증 포인트: (a) b2-end·b2-end-countdown 종료 모달이 marching 배너 없이도 30초 카운트다운 긴급성이 전달되는지 — RingTimer + safety jt-tape "⏱ 22초 뒤 종료" 라벨만 남음, (b) e4-rejected에서 상단 strip 없이 빨강 safety X 아이콘 + ring shadow 만으로 거절 인지 가능한지, (c) 디자인 시스템 §09b 변경이 신규 디자이너 참여 시 혼란을 주지 않을지(폐기 명시 1줄 강조 충분한지) | AI |
+| 2026-05-26 | **C·E-4 GNB 토큰 D `GalleryHeader`로 통일 + `JitdaToolbar` 로고 좌측 [해커톤 목록] 버튼 제거** — C 영역 내부에서 `C1TeamRoom` 헤더(padding 14/24, JitdaMark 20, separator 18, gap 12)와 `JitdaToolbar`(padding 8/18, JitdaMark 16, separator 16, gap 12)가 서로 어긋났고, `CanvasContextHeader`(padding 10/20, separator 18)도 D 표준과 불일치. 3개 헤더 모두 D `GalleryHeader` 토큰(padding 8/24, minHeight 44, JitdaMark 18, separator height 14, gap 14, fontSize 13/600)으로 정렬. `JitdaToolbar`는 D의 "로고 항상 최좌측" 원칙 위반(`[← 해커톤 목록]` 버튼이 로고 앞에 있었음 — 사용자 c-4 스크린샷으로 지적) → 버튼 제거 + 해커톤명에 `cursor:pointer` 부여(D 패턴: 해커톤명이 상위 컨텍스트로 가는 클릭 요소). 우측 액션(`[내 프로젝트] [서버 재시작] [갤러리 보기]`)·팀원 아바타·상태 pill·남은시간은 유지. 영향: C1×4(c1·c1-after-tutorial·c1-ended·c1-paused) + C2/C3/C4(`JitdaToolbar` 공유) + E-4×3(e4·e4-rejected·e4-cooldown) + e4-prompt — 총 11 화면. 검증: viewer로 c1·c2·c4·e4 스크린샷 비교 — 모두 로고 최좌측·토큰 일치. Renewal.html은 JSX import 방식이라 별도 수정 불필요. 검증 포인트(향후): (a) [해커톤 목록] 진입 경로 제거가 운영자 시연 시나리오에서 문제 되는지(원래 와이어링 없는 데모 버튼), (b) 해커톤명 클릭 시 어디로 가야 하는지 명세 부재(현 디자인은 시각 단서만), (c) E-5의 인라인 헤더는 동일 패턴이지만 사용자 지시 범위 밖이라 미정렬 — 후속 동기화 필요 가능 | AI |
+| 2026-05-26 | **E-4 간소화 — `e4-cooldown` · `e4-prompt` 폐기, 거절 헤드라인 고정 문구화, "무응답" 칩 추가, RingTimer 시계바늘 반전** — (1) `e4-cooldown` 별도 화면 폐기: 거절 안내와 정보 중복 → `e4-rejected` 푸터에 5초 ring + 비활성 "재요청 (대기 중)" 버튼으로 통합. (2) `e4-prompt` takeover + voting 화면 `[프롬프트 보기]` 버튼 모두 제거 — 시간 압박 화면에서 본문 검토 부적절(사용자 결정 "간소화 목적"). `E4PromptReview` 함수·`window.E4PromptReview` export·viewer SCREENS·viewer ACTIONS(`open-prompt`/`close`)·Renewal artboard 모두 제거. 화면 수 47→45, 와이어링 23→21. (3) 거절 헤드라인 "박지호님이 거절했어요" → **"합의가 무산됐어요"** 고정. 이름 명시 폐지 — 사회적 압박/책임 전가 회피. timeout 케이스도 동일 문구 → `failureReason` prop 제거. (4) `e4Teammates` fixture 갱신: 4가지 칩(요청자/동의/거절/무응답)을 한 화면에 표시 — 최유나 `offline` → `timeout`으로 변경. (5) RingTimer conic-gradient 색 순서 반전: 12시 시작 시계바늘처럼 회색 sector가 시계방향으로 늘어남(이전엔 노랑 호가 시계반대로 줄어드는 것처럼 보임). 페이지정의서·동시편집기획·spec-updates §7 모두 정렬. 검증 포인트: (a) "합의가 무산됐어요" 익명화가 책임 회피로 변하지 않는지(포트레이트로 누가 거절했는지는 보임 — 절충), (b) 프롬프트 검토 화면 제거로 긴 프롬프트 컨텍스트 파악 어려워지는지(voting 헤드라인 "이 프롬프트, 보낼까요?"만으로 충분한지), (c) cooldown ring을 거절 화면에 통합한 게 시각 위계 혼란 주는지 | AI |
+| 2026-05-26 | **B 영역 GNB breadcrumb 룰: "특정 해커톤 진입 시에만 해커톤명 노출"** — 사용자 결정 "상단 해커톤 이라는 문구가 필요하지 않다 … 특정 해커톤 들어갔을때만 해커톤 행사명 노출하면됨" (b1 스크린샷으로 지적). 기존: B-1 목록·빈상태는 `['해커톤']` (해커톤 단일 라벨), B-2 대시보드는 `['해커톤', HACKATHON_NAME]` (해커톤 › 2026 봄 ENK 해커톤). 변경: B-1 목록·빈상태는 breadcrumb 자체 제거(로고만 — 아직 특정 해커톤 진입 전), B-2 대시보드는 `[HACKATHON_NAME]` 단일 세그먼트(해커톤 접두사 제거). `AppHeader` 컴포넌트(shared.jsx:215)는 무수정 — breadcrumb prop이 falsy면 구분선·세그먼트 모두 숨김 처리가 이미 구현돼 있음. 영향: 4 호출처(operator.jsx:22 B1HackathonList + L93 B1Empty + L303 B2 대시보드 공통 + L1085 b2-skip 모달 뒷배) → b1·b1-empty + B-2 군(b2-tutorial-waiting/running·b2-hack-waiting·b2-started·b2-paused·b2-ended·b2-skip·b2-end·b2-end-countdown·b2-tutorial-start-confirm·b2-tutorial-end-confirm·b2-hackathon-start-confirm) — 총 14 화면. 검증: viewer로 b1·b1-empty·b2-tutorial-waiting 스크린샷 비교 확인. 검증 포인트: (a) "해커톤" 라벨 사라진 B-1에서 사용자가 자기 위치 파악에 혼란 없는지(이미 본문 "박운영님이 맡은 해커톤 6건" 헤드라인이 컨텍스트 제공), (b) D 영역 GalleryHeader는 여전히 `해커톤명 › 갤러리` 패턴 유지 — 다른 영역도 같은 룰("최상위 진입 전엔 breadcrumb 없음")로 정렬할지 후속 결정 필요 | AI |
+| 2026-05-26 | **참가자 GNB 전면 통합 — `JitdaToolbar` 단일 컴포넌트화 + C1·C2·C3·C4·E4·E5 모두 동일 구조** — 사용자 결정: "c1을 기본으로 하되 c2, c3에는 적절한 버튼이 추가되어야 함 … 팀이든 1인이든 팀 정보(성 아이콘)는 필요없으니 삭제 … c1 우측 계정정보 기본 … 필요한 버튼들은 계정정보 좌측에 배치 … e4·e5는 c3과 동일". (1) **JitdaToolbar 재작성**(participant.jsx:370): `mode`(solo/team) prop 폐기. 새 signature `{status, paused, actions, user}`. 좌측=로고·해커톤명·StatusPill / 우측=actions + 계정정보(이름·팀명·아바타, `DEFAULT_PARTICIPANT_USER`=최지유·터미널 사파리·amber). (2) **제거된 요소**: 팀원 아바타 묶음(김이박최 row), `팀 · 터미널 사파리 · 4명` blue pill, "남은 시간 HH:MM:SS" mono text, [서버 재시작] 버튼 — 사용자 명시 결정으로 모두 GNB에서 추방. (3) **신규 `ParticipantCanvasActions`** 컴포넌트: `[내 프로젝트][갤러리 보기]` 버튼 묶음, C-3·C-4·E-4·E-5에서 `actions` prop으로 주입. (4) **C-1 헤더**(C1TeamRoom): 인라인 `<header>` 마크업 제거 → `<JitdaToolbar status={c1Status.status} paused={c1Status.paused} />`. 참가자 상태 매핑: roomBefore→tutorial_waiting, roomAfterTutorial→hackathon_waiting, roomEnded→hackathon_ended, paused→hackathon_running+paused. (5) **C-2** 튜토리얼: `<JitdaToolbar status="tutorial_running" />` — actions 없음(사용자 결정 "튜토리얼 중 메뉴 접근 차단"). (6) **C-3** 1인 코딩 + **C-4** 다인 코딩: `<JitdaToolbar status="hackathon_running" actions={<ParticipantCanvasActions />} />`. (7) **E-4·E-5** (dialogs.jsx): `CanvasContextHeader`를 `<JitdaToolbar status="hackathon_running" actions={<ParticipantCanvasActions />} />` 단일 래퍼로 축소. E-5의 인라인 헤더(`<header>...AI가 선택지를 제안했어요</header>`) 완전 제거 → `<CanvasContextHeader />` 호출로 교체. (8) **단일 사실 출처**: 향후 GNB 토큰·구조 변경은 `JitdaToolbar` 한 곳만 수정하면 6 화면 모두 반영. 영향: 총 9 화면(c1×4 + c2 + c3 + c4 + e4×3 + e5 — e4 stateVariant 3종은 모두 `CanvasContextHeader` 공유). 검증: viewer로 c1·c2·c3·c4·e4·e5 모두 스크린샷 — 좌측 일관(로고·해커톤명·해당 상태 pill), 우측 일관(계정정보 + 화면별 버튼). 검증 포인트(향후): (a) C-4 다인 코딩에서 GNB에 팀원 아바타 없어진 게 동시편집 인식 저하 시키는지(본문에 TeamCursor 마커는 유지됨), (b) "남은 시간" 제거로 시간 압박 인식이 줄어드는지(B-2 운영자 GNB·E-4 본문 RingTimer에는 남음), (c) C-3·C-4·E-4·E-5 GNB가 100% 동일해서 사용자가 어떤 컨텍스트인지 GNB만으로 구분 못 하는 케이스(본문 차이로 구분 — 의도된 단순화) | AI |
+| 2026-05-26 | **E-6 일시정지 디자인 E-4 합의 무산 패턴으로 정렬** — 사용자 지적 "디자인이 일관성이 없다. e4 합의무산 디자인을 참고하여 다시 만들어라". 초기 v1은 `<C4TeamCanvas />` 뒷배 + `rgba(20,19,15,0.55) blur(3px)` 백드롭 + 460px 폭의 흰 카드 모달(border-top 4px amber, ⏸ 이모지·22px h2·텍스트 단락·작은 pill)로 자체 어휘를 만들었음 — 풀스크린 다크 takeover + 84×84 helmet circle + display 32px headline + mono caps divider + primary CTA 라는 E-4 합의 무산 어휘와 완전 별개. 변경: `E6Paused`를 E-4 와 동일 wrapper(`<JitdaToolbar status="hackathon_running" paused actions={<ParticipantCanvasActions />} />` + `<CanvasBackdrop />` 블러된 OpenCode 셸 + `rgba(20,19,15,0.40)` dim)로 재작성. body는 `E6PausedBody` 신규 — E4FailureBody 와 동일 위계: ① 84×84 원형 아이콘(safety 주황 → helmet 노랑, X icon → `Icon.pause(40)`, halo shadow 동일), ② `<E4Headline title="잠시 멈췄어요" sub="운영자가 재시작하면 작업이 그대로 이어집니다" />`, ③ `<E4Divider>작업 보존됨</E4Divider>` (E-4의 "합의 실패" 와 같은 mono caps), ④ CTA 자리에 상태 칩 — E-4는 primary "캔버스로 돌아가기" 버튼이지만 paused는 참가자 직접 액션 불가이므로 `rgba(255,255,255,0.10)` glass pill + helmet 펄스 dot + "운영자의 재시작을 기다리는 중". 4명 팀원 포트레이트는 paused가 팀원 상태와 무관해서 제외(E-4 의 핵심 정보지만 paused 에서는 노이즈). GNB의 `paused` prop으로 "⏸ 일시정지" pill 이 "해커톤 진행" pill 옆에 노출되어 GNB ↔ 본문 모두에서 paused 상태가 시그널된다. Icon.pause(40)은 shared.jsx:339 기존 helper 재사용. `C4TeamCanvas` import 의존 제거 — E-6는 이제 dialogs.jsx 만으로 자립. 검증: viewer.html 에서 `?id=e4-rejected` 와 `?id=e6-paused` 를 나란히 캡처해 GNB·배경·아이콘 원·헤드라인 타입스케일·구분선·하단 액션 영역 위치가 모두 정렬됨을 확인. 검증 포인트: (a) helmet 노랑이 helmet 색 다른 강조 요소(jt-btn-critical shine)와 충돌하지 않는지(E-6 화면에는 다른 helmet 강조 없음 — OK), (b) CTA가 없어 화면 종료 트리거 시각 단서 부재 — 상태 칩의 펄스가 "곧 자동 해제됨" 단서로 충분한지 검증 필요, (c) GNB 우측 [내 프로젝트][갤러리 보기] 버튼을 paused 중에 누를 수 있게 두는 게 맞는지(현 디자인은 클릭 가능 — E-4 와 동일 정책. 운영자 [재시작] 만으로 모달 해제되지만 그 동안 갤러리 둘러보기는 허용 가능 의도) | AI |
+| 2026-05-26 | **일시정지 화면 C → E 영역 이전 (c1-paused 폐기 → e6-paused 신설)** — 사용자 결정 "일시정지는 바이브코딩 화면에서 발생하며, 본 디자인처럼 일시정지 대기실이 필요하지 않다. 해당 페이지는 e 영역으로 옮기고 백드롭으로 덮어서 나오는 형태로 변경해줘". 기존 `c1-paused`는 `C1TeamRoom state="paused"` 변형으로 좌측 일러스트·우측 팀원 패널의 "일시정지 대기실"을 그리고 그 위에 다시 ⏸ 모달을 띄우는 이중 구조 — 운영자가 hackathon_running 상태에서만 pause 가능한데 뒷배가 대기실 모양이라 시각 거짓말. 변경: (1) **participant.jsx**에서 `stateCopy.paused`·`c1StatusMap.paused`·페이지 내부 paused 모달 마크업·`C1Paused` 호환 alias·`Object.assign` export 모두 삭제. `ParticipantStatusBadge`에서도 `paused` 항목 제거. (2) **dialogs.jsx**에 `E6Paused` 신규 추가: `<C4TeamCanvas />` 를 뒷배로 그리고 그 위에 `rgba(20,19,15,0.55) + blur(3px)` 백드롭과 ⏸ 모달(border-top 4px amber, "잠시 멈췄어요" h2, "운영자의 재시작을 기다리는 중" pill)을 덮는다. 기존 c1-paused 모달 마크업을 그대로 재활용 — 디자인 톤·문구·인터랙션 동일. (3) **Renewal.html**·**viewer.html** 아트보드/SCREENS 갱신: C 영역에서 `c1-paused` 삭제, E 영역 끝에 `e6-paused` 신규(width 1280, height 820). (4) **STRUCTURE.md** §2 화면 수(C 7→6, E 8→9, 총합 49 유지), §3 표, §4 오버레이 중첩(`c1-paused → c2/c3/c4` 항목 삭제, `e6-paused → c3/c4` 신규 — c2 튜토리얼 화면은 운영자가 pause할 수 없는 phase이므로 제외), §4 자동 전이 매트릭스(`paused → c1-paused`를 `paused → e6-paused (c3/c4 위 백드롭 오버레이)`로 정정). 영향: 화면 1개 제거 + 1개 추가 = 총합 49 유지. C 7→6, E 8→9. 검증: viewer 드롭다운 `e6-paused` 노출, 클릭 시 c4 캔버스 위에 백드롭 모달 렌더, c1-paused 직접 URL(`?id=c1-paused`) 시 SCREEN_BY_ID에 없어 fallback 동작. 검증 포인트(향후): (a) c2 튜토리얼 진행 중 일시정지 시나리오를 제외한 게 맞는지(운영자 기획상 hackathon_running 한정 pause인데, 튜토리얼 중 긴급 휴식 케이스에서 b2-paused가 ②/⑤ 양쪽 위에 뜬다는 모순 — 참가자 측은 e6-paused가 c3/c4만 커버하므로 c2 위에서 pause 시 참가자에게 일시정지 안 보임), (b) `e6-paused` 화면 ID 명명이 E 영역 다른 모달과 ID 패턴 일관성 유지하는지(e1·e4·e5는 1-depth, e6-paused는 2-depth — e4-rejected와 동급), (c) 운영자가 pause 직후 캔버스 상태가 백드롭에 보여 "잠시 멈췄어요" 메시지를 보고도 작업 흔적이 보여 혼란 가능성 — blur 3px로 충분한지 | AI |
+| 2026-05-27 | **B-2 RosterView 24팀/페이지 + 페이지네이션 재도입** — 사용자 결정 "24팀 보이게 하고 페이지네이션 넣어줘 … 작업물 미리보기하는곳은 12, 팀리스트는 24". 2026-05-26 §11-1 결정("RosterView 페이지네이션 제거, 30팀 전부 한 화면 노출")의 부분 철회. 근거: (a) 30팀=상한 가정이 전북교육청 60팀 행사 케이스에 부합 못 함(60팀 4열×15행 = 세로 ~1300px+, artboard 820 초과 → 한눈에 식별이라는 §11-1 가치 자체 깨짐), (b) mode 간 페이지네이션 정책 불일치(roster만 없고 나머지 3 mode는 12팀/페이지) 해소, (c) RosterRow 컴팩트 카드(~76px)는 ActivityRow 썸네일 카드(~210px)의 ~2.8배 짧으므로 2배(24=12×2)가 자연. 변경: `DashboardShell` 시그니처에서 `perPage=12` 기본값 제거 → `const effectivePerPage = perPage ?? (mode === 'roster' ? 24 : 12)` 분기 도입. IIFE 안 `pagedTeams`/`nextDisabled`/`pageProps` 모두 effectivePerPage 사용. `RosterView` 본체: `<RosterGrid teams={teams} />` → `<RosterGrid teams={pagedTeams} />` + `<Pagination ... />` 한 줄 추가. 영향 화면: b2-tutorial-waiting + b2-hack-waiting (둘 다 RosterView 공유) = 2 화면, 30팀 mock 기준 2페이지(24+6) 노출. 다른 3 mode(tutorial-progress·activity·summary)는 변경 없음. spec-updates.md §12 신설 + §11-1 표 행/매트릭스에 "2026-05-27 부분 철회" 마커. 검증 포인트: (a) 60팀 실측에서 24/페이지 vs 한 화면 압축(6열×10행) 어느 쪽이 운영자 task에 더 적합한지, (b) 4열 minmax(280px,1fr) 유지 — 6열로 축소 시 멤버 칩 wrap 깨질 가능성(현 보수적 유지), (c) Pagination 위치(본문 하단)는 다른 mode와 일관 OK | AI |
+| 2026-05-27 | **D-2 라이브 패널 Safari Chrome 통합 + 디자인 시스템 §09c 등록** — 사용자 4회 반복("모바일/데스크톱 토글 폐기" → "URL 링크 빼고 브라우저 바 추가" → "탭 구조 시도 → '개못생겼다' 거부" → "사파리 회색 톤 시도 → '올드함' 거부" → "Tahoe Safari 컴팩트 + 60% 슬림" 채택). 최종: `DetailLivePane`(gallery.jsx:592) iframe 컨테이너 상단에 32px 단일 행 chrome — 배경 `#f5f5f7`, 10px 트래픽 라이트 3개(inset 0.5 stroke), 사이드바 토글 SVG, 중앙 pill 주소창(22h × max-w 380, aA 리더 + 작품명 + 새로고침 SVG), 우측 공유·탭 그룹 SVG. 모든 아이콘 SF Symbols 톤(0.9 stroke, #86868b). 로딩 시 주소창 텍스트만 "연결 중…" + #86868b로 전환. **전체 데코레이션** — onClick 핸들러 0개. section padding 24→16으로 작업물 영역 추가 확보. 디자인 시스템(Jitda Design System.html)에 §09c "Live Frame · Safari Chrome" 신설 — TOC 항목 추가, default/loading 두 상태 라이브 렌더 프리뷰, dimensions/colors/elements 3-spec 표, 8개 DO/DON'T 룰(D-2 한정 사용·URL 노출 금지·macOS 그레이 톤 고수·로딩 시 주소창만 변화·핸들러 부착 금지·탭 추가 금지·32px 높이 고정·페이지 GNB 위 깔지 말 것). spec-updates.md row #20 + §1-2 다이어그램 갱신. 검증 포인트: (a) Jitda 워밍 톤(stone)과 macOS 콜드 그레이(#f5f5f7)의 의도적 색조 분리가 "외부 브라우저 컨텍스트" 메타포로 읽히는지 vs 디자인 불일치로 보이는지, (b) 작품명이 GNB(`인디 음악 디스커버리`) + 주소창 중앙 + 우측 패널 헤드라인까지 3중 노출되는 게 중복인지 컨텍스트 강화인지, (c) 32px 높이가 1280×820 아트보드에서 라이브 앱 높이 손실 없이 인지 충분한지 | AI |
+| 2026-05-27 | **A 영역 운영자 화면(A-2/A-3) 콘크리트 패드 메타포 도입 + `AuthShell` variant prop(`site` / `blueprint`)** — 사용자 지시 "참여자 로그인, 운영자 로그인 화면을 서로 다른 느낌으로 구분되게 한다 … 다른 디자인 요소랑 잘 안 어울려서". 4회 시안 반복(① v1 paper+노랑 라디얼 vs ink+그리드 → ② v2 검정+노랑 라디얼 vs blue-soft → 사용자 "노랑 그라데이션 컨셉 안 어울림" → ③ 참가자 작업 시작 전 원본 롤백 + 운영자만 v2 blue-soft 유지 → 사용자 "블루는 좋지만 짓다 브랜드 다른 요소와 안 어울림" → ④ helmet-soft 노랑 → "유치원 같음" → ⑤ **최종: 운영자 stone-2 콘크리트**) 끝에 사용자 채택. 기존 문제: 9개 화면 모두 동일 `.jt-blueprint-bg`(ink 32×32 그리드)를 좌측 패널에 사용 → 시각 차이는 좌측 tag 문구·우측 폼 CTA 컬러뿐. `A2OperatorLogin`·`A3OAuthCallback`이 받는 `leftAccent="var(--c-blue-soft)"` prop은 `AuthShell` 내부에서 destructure만 되고 **소비되지 않는 dead prop**이었음. 변경: (1) **tokens.css**에 `.jt-blueprint-studio-bg` 1개 클래스 신규 — `--c-stone-2`(#e6e3dd) 옅은 콘크리트 + stache 0.05 도면 라인(24×24) + 우상단 헬멧 0.08 옅은 라디얼. **신규 색 토큰 없음** — 기존 `--c-stone-2`·`--c-helmet`·`--c-stache` 재활용. (2) **viewer.html**·**Jitda Renewal.html**에 동일 클래스 인라인 미러(tokens.css ↔ viewer.html ↔ Renewal.html 다이버전스 패턴 정합). (3) **auth.jsx `AuthShell`** 시그니처를 `{children, variant='site', leftHeadline, leftTag, leftBody, tabletMode}`로 확장, dead `leftAccent` prop 제거. variant 분기: `site`(참가자) = 작업 시작 전 원본 그대로(`jt-blueprint-bg` + 헬멧 노랑 1.5px outline tag -1.5° 회전 + 흰 헤드라인 + JitdaMark mono) / `blueprint`(운영자) = `jt-blueprint-studio-bg` + stache 1.5px outline tag + helmet-deep LED dot + stache 헤드라인 + JitdaMark 기본 + borderRight stache 0.10. 우측 폼 카드는 두 variant 공통(paper + 0.04 그리드). 좌측 패널 footer는 두 variant 모두 추가하지 않음 — 사용자 결정 "뜬금없다". (4) **9개 호출부** variant 지정: `A1CodeLogin`·`A1CodeInvalid`·`A1NotStarted`·`A1Ended` → `variant="site"` / `A2OperatorLogin`·`A2GoogleInFlight`·`A2PopupBlocked`·`A3OAuthCallback`·`A3OAuthFailed` → `variant="blueprint"`. A2/A3 3개 호출부의 `leftAccent` prop 제거. (5) **A-1 카피·레이아웃 정합 부수 변경**: a1 leftHeadline "코드 한 번이면 / 바이브 코딩 시작" → "AI 해커톤에 / 오신 것을 환영합니다." (사용자 결정). a1 leftBody "설치 없이 브라우저에서 바로 AI와 지을 수 있습니다." 줄 삭제. a1-invalid leftBody "코드 카드의 0/O, 1/I 같은 혼동 문자는 발급에서 제외됩니다." 줄 삭제. a1·a1-invalid 제목 영역을 동일 컨테이너(`minHeight:52, marginBottom:20, alignItems:'flex-end'`)로 통일 — h2 텍스트(~31px)와 `jt-tape-block`(~46px 회전+drop-shadow) 시각 영역 높이 차이로 어긋난 NAME·CODE 시작 위치 정확히 정합. 미수정: 페이지정의서·화면상태정의서·viewer.html SCREENS/ACTIONS·다른 영역 JSX. 검증 포인트: (a) 콘크리트 stone-2 톤이 paper(우측)와 0.7:1 명도 대비로 시각 구분 충분한지(stone-2 #e6e3dd vs paper #faf9f6 — 미세하나 도면 라인이 명확화), (b) helmet 0.08 라디얼이 "노랑 그라데이션 컨셉 안 맞음" 사용자 우려를 재유발하지 않을 정도로 옅은지(거의 안 보임 — OK), (c) blueprint variant tag의 stache outline + helmet-deep dot이 참가자(헬멧 노랑 outline)와 시각 어휘는 같되 톤만 반전이라 두 화면 패턴 일관성 유지되는지, (d) 시안 4회 반복(노랑→파랑→노랑→콘크리트)에서 학습 — 짓다 브랜드의 helmet/safety/blueprint blue/mint 다중 액센트 컬러는 큰 면적(좌측 패널 전체)에 깔면 톤 인플레이션 또는 컨셉 충돌 → 향후 큰 면적은 무채색(stone/concrete/paper/ink) 위주, 액센트 컬러는 작은 dot·outline에 한정 | AI |
+| 2026-05-27 | **B-2 RosterView 카드 압축 (B+E 결합) — 아바타 도트 + 미접속 필터 + perPage 60** — 사용자 결정 "b + e로 가자 … [전체] [미접속] 2개 칩 + perPage=60". §12 결정(24팀/페이지) 의 추가 압축으로, 두 단계 누적 진화의 3번째: §11-1 페이지네이션 제거(2026-05-26) → §12 24/페이지 재도입(2026-05-27 오전) → §13 B+E 압축(2026-05-27 오후). 변경: (1) **RosterRow**: 멤버 이름 칩(`mint-soft` 배경 + dot + 이름) → 8px 아바타 도트(mint solid / outline)로 압축, `<span title={`${name} · ${state === 'on' ? '접속' : '미접속'}`} />` 호버 툴팁으로 이름 복원. 카드 padding 10/12→8/10, borderRadius 8→6, gap 6→5, minHeight 48px 보장 → 높이 76→48px (~37% 감소). 카운트 색은 anyOff면 muted 일관(기존 allOn 분기 유지). (2) **RosterGrid**: `minmax(280px → 190px)`, gap 10→8. 1280 - 64 padding = 1216 / 6열 ≈ 200px each. (3) **DashboardShell**: roster perPage 24 → 60 (mode 분기는 §12 그대로). 60팀 = 6열×10행 = 1페이지. (4) **RosterView 상단 필터 칩 신설**: `tutorial-progress` stepChips 동일 패턴 재사용 — `[전체 totalTeams] [미접속 offlineCount]` 2개 칩, ink/canvas bg 분기, `data-action="filter-all|filter-offline"` 와이어링 자리 마련. 미접속 카운트 = `teams.reduce((n, t) => n + (t.members.some(m => m[1] !== 'on') ? 1 : 0), 0)`(한 명이라도 off인 팀). (5) **Pagination 조건부 렌더**: `{totalTeams > perPage && <Pagination ... />}` — 60팀 이하 행사는 영역 자체 제거. 영향: b2-tutorial-waiting + b2-hack-waiting 2 화면. 다른 mode 무영향(LivePreview 썸네일 카드는 압축 부적합). spec-updates.md §13 신설 (변경표·구조·필터 칩 패턴·잃은 것 vs 얻은 것·검증 4항). 검증: viewer로 30팀 mock 시각 확인 — 6열×5행 본문 위쪽 50%만 차지(60팀이면 정확히 10행), 카드 높이 측정값 48.2px(목표 48), Pagination 숨김 OK, 필터 칩 "전체 30 / 미접속 14" 정상 산출, activity mode b2-started 회귀 없음(12팀/페이지·Pagination 정상). 검증 포인트(향후): (a) 호버 툴팁 의존성 — 키보드/터치 환경에서 이름 확인 task가 잦으면 별도 검색 화면 필요(§11 GAP 연장), (b) 60팀 실측 시 1280×820에 580px(그리드)+150(헤더)+40(필터)+36(제목)=806px로 24px 여유만 — 폰트 1px 증가 시 마지막 행 잘릴 위험, (c) "미접속" 정의 모호 — 현 구현은 "한 명이라도 off인 팀" 카운트라 4인 중 1명만 off도 포함 → 현 14팀은 over-count 가능. 운영자 task에 따라 `noneOnCount`(전원 미접속) 별도 필요할 수 있음, (d) 필터 칩 실제 필터링은 정적 mock에서 시뮬레이트 안 됨 — 실제 앱 구현 시 pagedTeams 필터링 + page 리셋 로직 필요 | AI |
+| 2026-05-27 | **B-2 RosterView — 새로고침 버튼 + 아바타 호버 디자인 툴팁 + 미접속 기준 확정 + 기획문서 정합** — 사용자 결정 3종: (1) "미접속 기준 = 1명이라도 미접속한 팀"(spec §13-6 (d) over-count 우려가 결정으로 해소), (2) "미접속 여부 검토 = 실시간 or 새로고침 — 새로고침은 어쨋든 있어야할듯함"(이중 갱신 정책 명문화), (3) "호버시 이름 나오는 디자인도 추가해야해"(OS title 단독 의존 → 짓다 어휘 디자인 툴팁 보강). 변경: (1) **operator.jsx `RosterAvatar` 컴포넌트 추출** — `useState(hover)` + onMouseEnter/Leave 기반 디자인 툴팁(ink bg + 흰 글자 padding 5/9 borderRadius 4 fontSize 11, mono ON/OFF 칩 ON=mint bg+ink/OFF=glass white, 6px borderTop 화살표). 짓다 첫 디자인된 툴팁 사례 — `tokens.css` 무수정(useState 인라인 패턴). OS title 속성 병행으로 키보드 포커스·터치 a11y 대응. RosterRow의 인라인 아바타 마크업이 `<RosterAvatar name on />`로 단순화. (2) **RosterView 헤더 새로고침 버튼** — "참가자 접속 현황 N팀 · ● 실시간 · 방금 갱신" 라벨 옆에 `Icon.refresh(13)` ghost 버튼(jt-btn-ghost jt-btn-sm, padding 4/6, color slate), `data-action="refresh-roster"` 와이어링. "방금 갱신" mono 11px muted 라벨 신설(정적 mock = "방금", 실 앱은 lastUpdatedAt setInterval 갱신 필요). live prop falsy 케이스 분기 제거 — roster mode는 항상 실시간 가정. (3) **페이지정의서 §B-2 표 갱신** — ⑦항 "이름+이메일+참가코드+상태+팀명+진행상태"(테이블 행 단위) → "팀 카드 그리드 — 팀명+N/M+22px 성씨 미니 아바타(6색 hash)" 로 단위 자체 재정의(GAP §11 일부 해소). 신규 항목 ⑦a(호버 툴팁)·⑦b(필터 칩 + "1명이라도 미접속" 정의)·⑦c(새로고침 + 이중 갱신 정책) 추가. 본문 주석 3개 추가: 팀 단위 표시 정책 / 갱신 정책(실시간+수동 이중) / 미접속 기준(1명 우선, noneOnCount 별도 필터는 추가 안 함). (4) **spec-updates §13-6 (d) 결정 처리** + **§13-7(새로고침)·§13-8(호버 툴팁) 신설** — 13-7에 위치/어휘/와이어링/정책 표 + "왜 항상 노출인가" 본문(운영자 멘탈 모델상 명시적 검증 손잡이 필요), 13-8에 트리거/어휘/내용/위치/병행/영향 표 + "왜 짓다에 디자인된 툴팁이 없었나" 자기 비판(향후 `<JitdaTooltip>` 공용 컴포넌트 승격 검토). §12 끝 outdated 메타라인 제거 + §13 끝 메타라인 누적 갱신. 영향: b2-tutorial-waiting + b2-hack-waiting 2 화면 (RosterView 공유). 검증: viewer hover 시뮬레이션으로 툴팁 노출 + 새로고침 버튼 노출 확인. 검증 포인트(향후): (a) 호버 툴팁이 첫 행 카드에서 상단으로 솟을 자리 24px 여유 — 헤더 영역에 진입하면 잘릴 위험, (b) 마우스 빠른 이동 시 깜빡임(transition 0ms) — fade 200ms 2차 검토, (c) 짓다 첫 디자인 툴팁 사례 — D-1·D-2 등 다른 화면에서도 같은 패턴 필요해지면 공용 컴포넌트 승격, (d) `<JitdaTooltip>` 승격 시 tokens.css에 어휘 정의 필요(ink-tooltip 패턴 — 색·padding·radius·화살표) | AI |
+| 2026-05-27 | **디자인 시스템 토큰 확장 + Hi-Fi 인터랙션 표준화 (전 영역 49 화면)** — Senior UI 디자이너 관점 5-agent 병렬 정찰(81 갭 식별) 후 시스템 레벨 갭 15종 일괄 해소: (1) `tokens.css` +180줄: `--dur-{instant/fast/base/slow}` 4단 + `--ease-{standard/decelerate/accelerate/spring}` 4종 + `--trans-{hover/press/elev}` preset · `--focus-ring-{color/width/offset/soft}`(helmet) · `--c-backdrop{/-strong/-soft}` 3단 + `--backdrop-blur` · `--z-{base/sticky/overlay/modal/popover/toast}` 스케일 · `--shadow-{hover/popover/modal}` 확장 · `--modal-w-{sm/md/lg/xl}` 4단. (2) 누락 keyframe 정의: `@keyframes jt-spin`(auth.jsx 3곳 인라인 중복 정리 가능)·`jt-status-pulse`·`jt-backdrop-in`·`jt-modal-pop-in/-fade-in/-slide-up`·`jt-popover-in`. (3) 신규 프리미티브 클래스: `.jt-modal-backdrop`(+`.is-strong/.is-soft/.has-blur`) · `.jt-modal-surface`(+`.is-fade/.is-slide`) · `.jt-popover` · `.jt-tooltip` · `.jt-tab-underline` · `.jt-icon-btn` · `.jt-card-interactive` · `.jt-btn-helmet`(JSX 사용처에 없던 정식 정의). (4) `.jt-btn` 기본에 `transition + :active scale(0.97) + :focus-visible outline` 적용 → 전 영역 49화면 인터랙션 0→150ms·키보드 접근성 일괄 확보. `.jt-icon-btn` scale(0.94). (5) `.jt-input` `:hover`/`:focus-visible`/`.is-error` 3상 추가(helmet-soft glow). (6) JSX 패치: dialogs.jsx E-1/E-4/E-5/E-1 미저장/E-6 5모달에 backdrop·shadow·width 토큰화 + role/aria-modal + pop-in 애니메이션 + E-1 미저장에 `jt-caution-strip-static` 추가, operator.jsx 모달 shadow 6곳 + backdrop 1곳 토큰 치환 + `HackathonCard`에 `.jt-card-interactive` + role/tabIndex, shared.jsx `ProjectCard` 조건부 interactive class. (7) `Jitda Design System.html` 신규 섹션 3개: §09d Motion(duration/easing/focus matrix) · §09e Overlay(backdrop/z-index/width/entrance/A11y) · §09f Component Library(IconButton/InteractiveCard/Tab/CountdownRing/Tooltip/Spin 시각 예제). TOC 동기화. (8) spec-updates.md 상단에 토큰 시스템 확장 결정 ledger(T1~T15) 신설. 검증 포인트(향후): (a) `.jt-card-interactive` :hover shadow-hover가 갤러리 D-1 60카드 동시 hover 시 GPU 부담 측정, (b) helmet 색 focus-ring이 helmet 강조 UI(jt-btn-critical shine, 좋아요 CTA)와 시각 충돌 가능 — focus 우선순위 정책 필요, (c) 모달 pop-in 240ms가 빠른 연속 모달 전환(E-1 settings → E-1 unsaved)에서 어지러움 유발하는지, (d) backdrop 3단이 실제 사용 시 운영자/참가자가 위험 강도를 의식적으로 구분하는지(자동/직관 모두 OK인지), (e) 잔여 작업: operator 6 confirm 모달 aria 부여·gallery refresh 버튼 spin 와이어링·StatusPill 라이브 카운터에 jt-status-pulse 적용·Safari traffic light hover(데코 polish) | AI |
+| 2026-05-27 | **E-7 참가자 종료 카운트다운 오버레이 신설** — 운영자 b2-end-countdown 모달이 "참가자 화면 미리보기 · 240명에게 표시" 라벨로 약속한 참가자 측 화면이 실제로는 부재(operator.jsx:1111–1130의 미리보기 띠만 있고 참가자 컴포넌트 없음). 30초 유예 구간 동안 참가자는 c3/c4 그대로 보다가 t=0에 갑자기 c1-ended로 점프 — 운영자 카피와 참가자 경험 어긋남 해소. E-6 일시정지 오버레이 패턴 거울(JitdaToolbar + CanvasBackdrop + 84×84 ring + E4Headline + E4Divider + 상태 칩), 색상만 helmet→safety로 교체. StatusPill은 hackathon_running 유지(운영자 모달과 동일 shell). 정적 22초 프레임(타이머 없음 정책). CTA 없음(참가자 직접 액션 불가, 운영자 [종료 취소] 또는 카운트다운 만료만 해제). viewer 등록: `e7-ending`. 검증 포인트: (a) E-4 합의 투표·E-5 AI 선택지 투표 중 종료 카운트다운이 들어올 때 동시 표시 충돌 — 현 디자인 정의 안 함(후속), (b) safety orange 헤일로가 K-12 교사에게 과한 긴급성으로 읽히는지(실 행사 검증), (c) 참가자가 "작업은 자동 저장" 카피 신뢰 여부 — 실제 백엔드 저장 확정 후 카피 재검토 | AI |
+| 2026-05-27 | **C-1 팀 정보 예외 케이스 viewer 4종 등록 + 팀원 카운트 하드코딩 버그 수정** — `C1TeamRoom` 내부에 박혀 있던 단일 `team` 객체를 모듈 상수 3종(`MOCK_TEAM_STANDARD` 4인 / `MOCK_TEAM_LONG_NAME` 25+자 팀명 / `MOCK_TEAM_MANY_MEMBERS` 7인 일부 offline)으로 분리, `team` prop 받기 추가(기본값 STANDARD로 기존 호출처 무수정). viewer에 `c1-long-name`·`c1-many-members`·`c1-ended-long-name`·`c1-ended-many-members` 4종 등록 — 학교 현장 변동성(긴 팀명·다인팀) 시각 검증 채널 확보. **버그 수정**: 라인 180 `팀원 4명` 리터럴 → `팀원 {team.members.length}명` 동적화(다인팀 케이스에서 카운트 정확). **긴 팀명 처리**: 팀명 div에 `wordBreak: 'keep-all'` + `WebkitLineClamp: 2` 추가(2줄까지 wrap, 3줄 이상은 ellipsis). roomAfterTutorial(②) 변형과 solo(1인팀) C-1은 이번 범위 외(필요 시 후속). 검증 포인트: (a) 25+자 한글 팀명이 360px aside에서 2줄로 자연 wrap 되는지(브라우저 keep-all 동작 차이), (b) 7명 리스트의 my-row 강조가 스크롤 영역에서도 노출되는지(현 mock의 me="최지유"가 4번째 위치), (c) 운영자 mock(operator.jsx:151–160)의 1인팀 케이스를 C-1에도 미러링할지 결정 | AI |
+| 2026-05-27 | **공용 `RosterMemberRow`·`RosterLegend` 컴포넌트 도입 — B-2 모달 + C-1 멤버 목록 어휘 통일 + 접속/미접속 시각 강화 + "나" 표시 재디자인** — 사용자 피드백 4종: (1) "불이 이름 한참 오른쪽 떨어져 들어옴" → 우측 도트 폐기, **아바타 우하단 9px 인디케이터 도트(SNS 온라인 상태 패턴, 흰 ring으로 분리)** 로 통합. (2) "성 아이콘 흐리게 나오는 것도 잘 안 띈다" → 아바타 opacity 0.45 → 0.5 + **행 전체 bg 차별화**(접속=transparent, 미접속=rgba(20,19,15,0.025) 옅은 회색) + **이름 색 차별화**(접속=ink, 미접속=muted). (3) "줄별 호버 안됨" → `useState(hover)` 기반 호버 bg(rgba 0.05). (4) "C-1 '나' 표시가 호버처럼 보임" → 기존 helmet-soft bg + helmet-deep 1px border(틀 어휘) → **helmet-soft bg + 좌측 3px helmet-deep 세로 액센트 바 + "나" mono caps 칩(helmet-deep bg + 흰 글자)**. 추가 사용자 지적 "아래쪽 불 디자인이 위쪽에 쓰인것과 달라" → C-1 푸터 🟢🔘⬜ 이모지 폐기 → **`RosterLegend` 공용 컴포넌트**로 멤버 행 인디케이터와 동일 색 도트 어휘. 변경: (1) **shared.jsx 끝에 `RosterMemberRow({name, color, state, isMe})` 신규** — state='on'|'off'|'pending', isMe (C-1 전용). 28px 아바타 + 우하단 9px 인디케이터(mint solid / paper dashed border for pending / muted solid). isMe면 좌측 액센트 바 + "나" 칩. useState hover bg. (2) **`RosterLegend({states=['on','off']})` 신규** — 2/3 상태 가변 노출, 멤버 행 인디케이터와 동일 색 도트 매핑. (3) `window.RosterMemberRow`·`window.RosterLegend` export. (4) **operator.jsx `RosterTeamDetailModal`** — 인라인 멤버 행 마크업 폐기 → `<RosterMemberRow name color={rosterAvatarColor(name)} state />` 호출. 푸터 인라인 → `<RosterLegend states={['on','off']} />`. (5) **participant.jsx `C1TeamRoom`** — 인라인 멤버 행(`jt-avatar` + 인라인 PresenceDot + helmet-soft border 박스 + "나" 작은 라벨) 폐기 → `<RosterMemberRow ... isMe={m.name === team.me} />`. 푸터 이모지 폐기 → `<RosterLegend states={['on','off','pending']} />`. 데이터 변환: C-1 `m.online: 'connected'|'offline'|'idle'` → state `'on'|'off'|'pending'`. (6) `PresenceDot` 함수는 미사용으로 남음(향후 cleanup 대상). 영향: B-2 b2-roster-detail 1 화면 + C-1 c1·c1-after-tutorial·c1-ended 3 화면 = 총 4 화면. 검증: viewer로 b2-roster-detail + c1 모두 시각 확인 — 행 호버 동작, 미접속 행 차별화 명확, 아바타 인디케이터로 도트 위치 가까움, 푸터 도트 어휘 통일, C-1 "나" 표시 호버처럼 안 보임. 콘솔 0 에러. 검증 포인트(향후): (a) `PresenceDot` 미사용 함수 cleanup — 다른 곳 호출 없는지 grep 후 삭제, (b) state='pending'(입장 전) 케이스가 B-2 데이터(2상태 튜플)에는 없으니 모달에서는 절대 안 나타남 — 의도적, (c) C-1 1인팀 케이스(MOCK_TEAM_STANDARD가 4인 가정)에서 isMe 행만 보이는 단일 행 시각 검증 필요, (d) 행 호버 bg(rgba 0.05)가 isMe 행(helmet-soft) 위에서 누적 시 색 충돌 — 현 코드는 isMe 우선이라 호버 무시(side effect 없음), (e) 인디케이터 9px가 아바타 28px와 비례적으로 OK이나, 아바타 더 작은 사이즈에서는 비례 재계산 필요 | AI |
+| 2026-05-27 | **RosterAvatar 호버 툴팁 ON/OFF 칩 시멘틱 분리 + 흰 글자 통일** — 사용자 1차 지적 "off일때 호버 반투명인거 너무 가독성 떨어져 / 초록색에 검정글씨도 가독성 떨어져". AI 1차 안: ON=mint+흰색, OFF=stone+ink(중성) — 가독성은 통과하나 두 칩 톤이 비슷해 시멘틱 분리 약함. 사용자 2차 피드백 "on이랑 off 너무 비슷, 칩 색 다르게 + 글씨 흰색"으로 최종안 채택: **ON=`var(--c-mint)` + 흰색 / OFF=`var(--c-rose)` + 흰색**(operator.jsx:867–875). 시멘틱(mint=긍정·접속 / rose=부정·미접속) + 가독성(흰 글자 통일) + 시각 위계 평등화(어느 한쪽 강조 X) 3가지 동시 달성. rose 선택 근거: safety orange는 너무 긴급, ink는 시멘틱 모호, stone은 중성 — rose가 "비활성"을 차분히 전달하면서 mint와 보색으로 분리. 다른 RosterAvatar 외관(아바타 자체 dashed border·opacity)은 변경 없음 — 사용자 지적은 *호버 툴팁* 한정. 검증 포인트: (a) rose가 다른 위험 신호(safety orange · critical 어휘)와 시각 충돌하는지 — 호버 노출이라 빈도 낮고 채도 차이 있어 OK 가능성, (b) ON 흰색=mint 4.6:1 / OFF 흰색=rose 5.1:1 모두 WCAG AA 통과 (검정 페어 1.8:1·1.5:1 미달에서 개선), (c) 두 칩이 거의 동시에 노출되지 않으므로(한 아바타당 한 상태만) 보색 충돌은 인접 상황에선 발생 안 함 | AI |
+| 2026-05-27 | **B-2 신규 화면 `b2-roster-detail` — RosterRow 카드 클릭 → 팀 상세 모달 (C-1 어휘 재사용)** — 사용자 결정 "각 카드 누르면 작은 모달로 팀에 소속된 인원들과 접속상태 보여줘. c1의 요소 활용해". 변경 (패턴 C + D 복합): (1) **operator.jsx `RosterTeamDetailModal` 신규** — 380px 폭 흰 카드 모달, C-1 `C1TeamRoom` 우측 패널 어휘 그대로 재사용. 헤더: "팀 상세" eyebrow(mono caps) + 팀명 display 20px + "N/M 접속 중" mono + X 닫기 (data-action="close-roster-detail"). 본문: 28px 아바타(`rosterAvatarColor(name)` 6색 hash, 미접속=opacity 0.45) + 이름 + PresenceDot(C-1 어휘 인라인 — 2상태 on/off만, 참가자측은 3상태). 푸터: 범례(● 접속 / ● 미접속). (2) **`B2RosterDetail` 셸 함수** — DashboardShell(roster mode)을 뒷배에 + filter:blur(2px) opacity 0.55 + 백드롭(var(--c-backdrop-strong)) + 모달 중앙. 백드롭 클릭 시 닫힘 와이어링. (3) **`RosterRow`에는 이미 `data-action="open-team"` + `jt-card-interactive` 클래스가 이전 시스템 토큰 확장 작업(2026-05-27)에서 적용된 상태 — 추가 와이어링 없이 viewer ACTIONS에 매핑만 추가**. (4) **viewer.html SCREENS**에 `b2-roster-detail` 항목 추가(h=920, label "B-2 모달 · 팀 상세 (RosterRow 카드 클릭 → 멤버·접속)"). ACTIONS에 `b2-tutorial-waiting.open-team → b2-roster-detail` / `b2-hack-waiting.open-team → b2-roster-detail` / `b2-roster-detail.close-roster-detail → b2-tutorial-waiting` 매핑. (5) **Renewal.html `<DCArtboard id="b2-roster-detail" width=1280 height=820>`** 추가. (6) **`Object.assign(window, {...})`에 B2RosterDetail·RosterTeamDetailModal export**. (7) **시뮬 데이터 = PENDING_TEAMS[2]** (404 NOT FOUND, 4명 중 2명 미접속) — 첫 카드(터미널 사파리, 4/4)는 미접속 상태 시각화가 안 보여 시뮬 부적합. (8) **STRUCTURE.md §3 B 영역 표 행 추가 + 화면 수 14→15, 총합 49→50 갱신 + §7 와이어링 표 행 추가**. (9) **페이지정의서 §B-2 사용자 액션 표 ⑧항 신설** ("팀 상세 모달 — RosterRow 클릭 → b2-roster-detail"). (10) **spec-updates §14 신설**. 영향: 신규 1 화면 + 와이어링 3개(open-team×2, close-roster-detail×1). 검증: viewer 직접 url(b2-roster-detail) + 카드 클릭 트랜지션(b2-tutorial-waiting → 첫 카드 click → b2-roster-detail) + 접속/미접속 두 상태 시각화 모두 OK, 콘솔 0 에러. 검증 포인트(향후): (a) 모달 width 380px가 멤버 5명+ 팀(짓다는 1~4인 상한)에서도 OK인지 — 현 룰 4인 상한이라 무관, (b) 진행 mode(activity)에서도 ActivityRow 카드 클릭 시 같은 모달 노출 정책 일관 검토 필요(현 와이어링은 roster 2개 화면만), (c) 백드롭 클릭 닫기 시 viewer가 항상 b2-tutorial-waiting으로 복귀 — 실제 앱은 진입 화면 추적 필요(b2-hack-waiting에서 진입 시 거기로), (d) C-1과 동일 어휘 사용으로 운영자가 모달을 "참가자 화면"으로 오인할 가능성 — 헤더 eyebrow "팀 상세"·X 닫기 버튼이 모달임을 명시하나 추가 검증 필요 | AI |
+| 2026-05-27 | **미접속 도트 rose 채택 + PresenceDot 폐기 + 입장 전 mock 추가 + 디자인 시스템 §09f 등록** — 사용자 결정 3종: (1) "초록 점이랑 회색 점이 잘 눈에 띄게 구분이 안되네. rose를 회색대신 써볼까?" → shared.jsx RosterMemberRow 인디케이터 + RosterLegend off 도트 `var(--c-muted)` → **`var(--c-rose)`(safety orange alias) 채택**. mint(#096c4d 진한 초록)와 rose(#ff6b1f 주황)는 hue 정반대 + 채도 대비 강함. 짓다 어휘상 safety는 "위험/비가역"이지만 미접속도 운영자 즉각 인지 신호라 의미 정합. (2) "입장 전 상태가 있는데 샘플이 없네 디자인에" → participant.jsx MOCK_TEAM_STANDARD 이서윤 `online: 'connected'` → **`'idle'`** 변경. 새 분포: 김민준 connected / 이서윤 idle / 박지호 offline / 최지유 connected(나) — 3상태 모두 한 화면 시각 검증 가능. C-1 c1·c1-after-tutorial·c1-ended 모든 변형에 반영. (3) "정리하고 디자인시스템에도 반영해" → **PresenceDot 함수 삭제**(participant.jsx:230, 호출처 0 확인 후) + **operator.jsx RosterTeamDetailModal 주석에서 PresenceDot 언급 제거**. (4) **`Jitda Design System.html` §09f Component Library 끝에 신규 서브섹션 2종 추가**: ▸ ROSTER MEMBER ROW · 팀 멤버 행 (4행 시각 예제 정적 HTML 미러 — 접속 mint / 입장 전 paper+dashed / 미접속 rose / 나 helmet 액센트 + "나" 칩, props 표(name·color·state·isMe), 인디케이터/행 차별화/isMe 규칙 본문 3줄) + ▸ ROSTER LEGEND · 푸터 범례 (3상태 도트 + props states 가변, DO 멤버 행과 같은 색 도트 어휘 / DON'T 이모지 🟢🔘⬜ 금지). TOC는 §09f 내부 서브섹션이라 별도 갱신 불필요. (5) spec-updates §16 신설. 영향: 4 화면(b2-roster-detail + c1·c1-after-tutorial·c1-ended) 시각 갱신, 디자인 시스템 1 섹션 확장, 1 함수 삭제. 검증: viewer로 c1 시각 — rose 도트와 mint 도트 명확 구분, 이서윤 입장 전(dashed) 노출, 콘솔 0 에러. 디자인 시스템 §09f 정상 렌더. 검증 포인트(향후): (a) rose가 짓다 safety("위험/비가역") 단일 어휘와 의미 충돌 여부 — 미접속이 "비가역" 아니지만 즉각 인지 신호이므로 정합, 실측 필요, (b) rose 도트가 b2-end 종료 모달 등 다른 safety 강조와 한 화면 동시 노출 시 우선순위 — 현재 풀스크린 takeover라 동시 노출 불가, 향후 인라인 사이드바 등에서 충돌 가능, (c) 디자인 시스템 §09f 시각 예제가 정적 HTML 미러 — React 컴포넌트 변경 시 동기화 부담, 향후 변경 시 같이 갱신 룰 명시 필요, (d) 짓다 첫 "공용 시각 컴포넌트의 시각 미러 시스템 등록" 사례 — 향후 ProjectCard·StatusPill 등 다른 공용 컴포넌트도 §09f에 등록할지 정책 결정 필요 | AI |
+| 2026-05-27 | **E-7 폐기 + B-2 종료 카운트다운 정책 변경 — "30초는 운영자 전용 유예, 참가자에게는 종료 예고 없음"** — 사용자 결정 "30초 안내를 참가자에게는 보여주지 말고, 운영자에게만 유예 시간으로 주는 정책으로 변경해줘. 참가자는 그냥 즉시종료나 30초 지났을때 종료대기실로 이동되는것으로". 2026-05-27 신설된 `e7-ending`은 "운영자 모달이 미리보기로 약속한 참가자 화면이 실제로 없다"는 갭을 메우려 만든 화면이었으나, 이번 결정으로 **약속(미리보기 라벨) 자체가 잘못이었음** — 미리보기 폐기가 정합. 변경: (1) **dialogs.jsx** `E7EndingCountdown` + `E7EndingCountdownBody` 함수 삭제, `Object.assign` export에서 제외. 폐기 주석 4줄로 흔적만 남김. (2) **viewer.html** SCREENS에서 `e7-ending` 항목 제거(주석으로 폐기 사유 명시). ACTIONS는 본인 항목 없었음. (3) **operator.jsx** `B2EndModalCountdown` 정리: ㄱ) "지금 종료" → **"즉시 종료"** 라벨 변경(3곳 동기화: operator.jsx + Jitda Design System.html §03 데모 + STRUCTURE.md §7 와이어링 표). ㄴ) 안내 문구를 운영자 시점으로 — "참가자들의 화면에 종료 알림이 표시되고 있어요" 폐기, "마음이 바뀌었다면 지금 [종료 취소]를 눌러주세요 / 아무 동작이 없으면 0초에 자동으로 종료됩니다"로 교체. ㄷ) "참가자 화면 미리보기 · 240명에게 표시" 검은 띠 박스 → **`var(--c-paper)` 옅은 안내 박스**로 교체. 카피: "참가자에게는 종료 예고가 표시되지 않습니다 — 30초는 운영자만의 유예 시간이며, 종료가 확정되는 시점에 참가자 화면이 곧바로 **해커톤 종료 안내(대기실 ③)** 로 전환됩니다". 운영자가 정책을 모달에서 즉시 학습하도록 명시. ㄹ) rAF 카운트다운 0초 도달 시 confirm 버튼 자동 클릭 → viewer ACTIONS 위임이 `b2-ended`로 라우팅 (이전 작업과 동일 유지). (4) **STRUCTURE.md** §2 E 9→8 / 총합 50→49, §3 E 영역 표 `e7-ending` 행 strike-through로 폐기 명시(완전 삭제 대신 결정 흔적 보존), §6 헤더 카운트 갱신. (5) **어드민-역할-기획.md** L218 `[해커톤 종료]` 규칙에 정책 한 줄 명시: "**2단계 카운트다운은 운영자가 [즉시 종료]를 눌러 즉시 종료하거나, 30초가 모두 경과하면 자동으로 ⑥ 해커톤 종료로 전이된다.** [종료 취소]를 누르면 ⑤ 해커톤 진행 상태로 복귀한다". (6) **참가자-로그인-기획.md** §자동 전환 매트릭스는 무수정 — 이미 `[해커톤 종료] → 대기실 ③`로 명시되어 있어, E-7이 오히려 이 매트릭스와 어긋난 신설이었음을 확인 후 정합 복원. (7) **spec-updates §17 신설** (이전 §15 자동 종료 정책 항목을 흡수·통합). 영향: 신설 1 화면 폐기(49 화면), 변경 1 모달(B2EndModalCountdown), 카피 3곳, 기획문서 1곳. 검증: viewer 드롭다운에 `e7-ending` 미노출, B-2 b2-end-countdown 모달에서 옅은 안내 박스 노출 + 30초 후 자동 b2-ended 전환, 콘솔 0 에러. 검증 포인트(향후): (a) 참가자가 c3/c4에서 코딩하다 갑자기 c1-ended로 점프하는 게 "작업 사라짐"으로 오해되지 않는지 — c1-ended 카피("작업은 갤러리에 공개되었어요" 명시 필요할 수 있음) 후속 검토, (b) 운영자가 [종료 취소]를 누른 직후 참가자에게 어떤 신호도 안 가는 게 맞는지 — 운영자 화면만 b2-started 복귀, 참가자는 변화 없음(원래 c3/c4 계속), (c) 30초 자동 종료는 viewer 프로토타입 한정 동작이며 실제 앱은 서버 타이머가 같은 시점에 상태 전이 트리거해야 한다는 구현 메모 백엔드 인계 필요, (d) "30초는 운영자만의 유예"가 실제 행사 시연에서 운영자에게 부담(자동 종료 위험 인지)을 주는지 — K-12 교사 시범 운영자 피드백 필요 | AI |
+| 2026-05-27 | **§16-6 후속 정정: 진짜 rose 인라인 hex(#c94560) + pending 행 bg 적용** — 사용자 피드백 "지금은 로즈가 아니라 주황색인데? 주황색이 오프라인인게 직관적이지 않아. 로즈로 가자" + (이미지 첨부)"미접속은 배경줄이 없어서 눈에 안띄네. 미접속과 같은 배경 적용해줘"(입장 전 행 지적). §16에서 채택한 `var(--c-rose)`가 deprecated alias로 safety orange(#ff6b1f)를 가리키고 있어 시각상 주황 렌더 → 진짜 rose 분홍빛 빨강 `#c94560` 인라인 hex로 우회. shared.jsx RosterMemberRow 인디케이터(line 553) + RosterLegend off(line 600) + Jitda Design System.html §09f 정적 미러(미접속 행 도트 + RosterLegend 도트) 3곳 동기화. 추가: shared.jsx RosterMemberRow rowBg 조건 `!on && !pending` → `!on`로 단순화 — pending도 off와 같은 rgba(20,19,15,0.025) bg 적용해 "비접속" 두 상태를 시각적으로 한 그룹으로 묶음(운영자 즉각 식별 가치). 도트 어휘(solid rose vs dashed paper)로 두 상태는 여전히 구분됨. 디자인 시스템 §09f 정적 미러도 입장 전 행에 같은 bg 적용. 영향: C-1 c1·c1-after-tutorial·c1-ended + B-2 b2-roster-detail + 디자인 시스템 §09f 정적 미러. 검증: viewer c1 — 박지호 진짜 rose 도트, 이서윤 옅은 bg로 박지호와 한 그룹. 검증 포인트(향후): (a) 인라인 hex `#c94560`이 토큰 시스템 밖에 살아 있음 — 다른 화면에서 같은 rose 필요해지면 `--c-rose-real` 또는 `--c-state-off` 별도 토큰 승격 결정 필요, (b) `--c-rose` deprecated alias가 여전히 safety orange를 가리켜 다른 사용처(예: rose-soft 등)가 헷갈리는지 점검 필요, (c) pending/off 같은 bg가 두 상태 시각 구분을 약화시키는지 — 도트로 구분 충분한지 행사 실측 필요 | AI |
+| 2026-05-27 | **E-4 alternate 디자인 세트 `e4-v2` + `e4-waiting-v2` — LoL 매치 수락 어휘 직접 차용 (거대 ring · 미수락자만 아바타)** — 사용자 결정 "디자인을 아예 바꿔서 새 버전 / 타이머가 훨씬 크고 6시방향에 수락 버튼 / 팀원들 응답은 타이머 안에 작게 아이콘 / 미수락자만 / 기존 화면은 두고 새 화면 추가 / 동의 후 대기 화면도 세트로". 변경: (1) **dialogs.jsx 신규 컴포넌트 3종** — `useCountdown(total)` rAF 카운트다운 훅(v2 두 화면 공유), `MatchAcceptRing` 거대 ring(480px conic-gradient outer + 다크 inner disc + drop-shadow helmet glow), `PendingAvatar` 점선 테두리 40px 아바타(이름 mono 캡션). (2) **`E4VotingV2Body` 신규** — 480 ring 중심 + ring 내부 (eyebrow "자동 거절까지 · {N}s" + h2 30px "이 프롬프트, 보낼까요?" + sub + "응답 대기 · N명" eyebrow + 미수락자 아바타 row) + 수락 버튼 ring 6시 overlap(`bottom: -26`, jt-btn-critical 18×56 + 다층 boxShadow) + ring 아래 64px 간격 거절 버튼(secondary outlined). 데모: t=2.5s 이서윤 agree → pending 3→2. (3) **`E4WaitingV2Body` 신규** — voting-v2 와 동일 ring 어휘. 6시 위치에 수락 버튼 대신 "✓ 동의했어요 · 응답 완료" pill(다크 bg + mint border + mint check 22px + glow). ring 아래 캡션 "응답 취소 불가 · 타이머 종료 대기". 데모: 본인=이서윤 가정, t=3s 박지호 agree. (4) **`E4ConsensusVote`** stateVariant 'voting-v2'·'waiting-v2' 추가, 정책 주석 v3 갱신. (5) **viewer.html SCREENS·ACTIONS** `e4-v2`·`e4-waiting-v2` 등록 + `e4-v2: { agree: e4-waiting-v2, reject: e4-rejected }` 와이어링. (6) **Renewal.html** DCArtboard 2개 추가. 영향: 신규 2 화면 + 신규 컴포넌트 3종(공유 가능) + 와이어링 3개. E 9→11, 총합 50→52. 검증: viewer 드롭다운 `?id=e4-v2` 거대 ring 카운트다운 동작 + 수락 클릭 → e4-waiting-v2 전환 + 거절 클릭 → e4-rejected. 검증 포인트(향후): (a) 거대 ring(480px)이 1280×820 아트보드에서 다른 모달 대비 시각 위계 과한지 — 사용자 선호 vs 정합성 트레이드오프, (b) ring 내부 다크 inner disc가 라이트 테마 짓다 어휘에서 이질감(다른 E 모달은 흰 카드 패턴), (c) 미수락자만 노출이 K-12 학생에게 "쟤네가 안 누르고 있어"라는 또래 압박 신호로 작용하는지 (vs 모든 4명 노출의 균형감) — 행사 실측 필요, (d) v1·v2 두 디자인 중 어느 쪽을 정본으로 채택할지 결정 시점 + 폐기 화면 처리 정책(사용자가 명시 안 함, 둘 다 alternate 상태 유지) | AI |
+| 2026-05-27 | **E-4 신규 화면 `e4-waiting` — 본인 동의 후 팀원 응답 대기 (취소 불가)** — 사용자 결정 "동의 누르고 다른사람 동의할때까지 기다리는 화면이 필요". 패턴 C(신규 화면). 변경: (1) **dialogs.jsx `E4WaitingBody` 신규** — voting body 와 동일 vertical 구조(eyebrow→ring140→headline→CTA슬롯→divider→cards) 시각 점프 최소화. CTA 슬롯에 "✓ 동의했어요 · 응답 완료" 상태 pill(glass + mint check 26px 원형) 대체. 헤드라인 "팀원 응답을 기다리고 있어요" + sub "모두 동의하면 AI에 자동으로 전송됩니다"(그룹 상태 강조 어휘 — 사용자 선택). 본인=이서윤 가정 데모 — 진입 시 김민준=요청자/이서윤=동의/박지호·최유나=대기, t=3s 박지호 추가 agree. 취소 불가(사용자 결정 — 투표 의미 보존). aria role="status" + aria-live="polite". (2) **`E4ConsensusVote`** stateVariant 'waiting' 추가, 정책 주석 블록 v3 갱신. (3) **viewer.html SCREENS** `e4-waiting` 항목 추가 + ACTIONS `e4: { agree: e4-waiting, reject: e4-rejected }` + `e4-waiting: { back-to-canvas: c4 }` 와이어링. (4) **Renewal.html** DCArtboard `e4-waiting` 추가. (5) **voting body 와이어링 보강**: 거부 버튼 `data-action="reject"`, 동의 버튼 `data-action="agree"` 추가. (6) **거부 버튼 가로폭 축소** (사용자 피드백) — `padding 24×44 → 24×26`(text "거부" 2자 + 아이콘에 맞춤). 동의 버튼은 `padding 24×48 → 24×52`로 상대적 대비 강화. (7) **레이아웃 여유 증대** (사용자 피드백) — container `padding 28→32`, `gap 18→22`, 헤드라인↔CTA `marginTop 4→12`. 버튼 세로 padding `18→24` (높이 ↑). (8) **STRUCTURE.md** §0 화면 수 49→50, §2 E 8→9, §3 표 e4-waiting 행 추가, §6-1 와이어링 표 행 추가 필요(다음 작업). 영향: 신규 1 화면 + 와이어링 3개(agree, reject, back-to-canvas). 검증: viewer 직접 url `?id=e4-waiting` + e4에서 동의 클릭 → e4-waiting 전환 + 거부 클릭 → e4-rejected. 검증 포인트(향후): (a) 취소 불가가 K-12 학생 행사에서 "잘못 눌렀어요" 케이스 어떻게 처리할지(타이머 만료 기다림 vs 별도 UX), (b) 본인=이서윤 가정이 viewer 데모 한정 — 실 앱은 현재 사용자 identity 기반으로 card "(나)" 뱃지 표시 필요(향후), (c) e4-waiting → 전원 동의 success 화면 부재(현재는 c4로 폴백) — success 토스트 또는 별도 화면 필요한지 정책 결정 필요, (d) timer 15s 만료 시 e4-waiting → e4-rejected 자동 전환은 viewer 미구현(rAF 기반 RingTimer는 시각만, 액션 디스패치 없음) — 실 앱 서버 이벤트 필요 | AI |
+| 2026-05-27 | **E-4 voting 화면에 팀원 카드 노출 + 레이아웃 B안 + 카드 fill 강조 + 실시간 시뮬레이션** — 사용자 결정 4단계: (1) "voting 화면에도 사람별 카드/동의 여부 보이게" — 2026-05-26 룰("voting 부분 진행률 미노출 — 노이즈")을 뒤집음. dialogs.jsx E4VotingBody 에 4열 TeammatePortrait 추가, voting 단계 칩 3종(requester/agreed/pending)으로 한정(rejected 칩은 voting 중 등장 불가 — 즉시 e4-rejected 전이). (2) "현재 응답이 맨 아래가 맞음 / 동의·거부 버튼 더 커야 함" — 레이아웃 B안 채택(헤드라인 → 큰 CTA → 구분선 → 카드). 안구 이동 거리 단축 + 동조 편향 완화 + 짓다 모달 표준(CTA 아래) 일부 벗어나나 시간 압박 화면에서 핵심 액션 시각 위계 우선. CTA 사이즈 증대: padding 13×30 → 18×40/44, fontSize 14/14.5 → 16/17, 아이콘 13→16, border 1.5→2px, radius 999→10. (3) "카드 자체를 초록/주황으로 — 더 눈에 띄게" — TeammatePortrait state-driven cardBg/cardBorder/cardBorderStyle 적용: requester=helmet-soft+helmet solid / agreed=mint-soft+mint solid / rejected=safety-soft+safety solid / pending=rgba(255,255,255,0.92)+stone-2 dashed / timeout·offline=#ebebec+stone-2 solid. 칩은 카드 fill 대비 위해 흰 bg + 색 글자로 전환(이전 칩 bg와 카드 bg가 같아 묻혔던 문제 해결). voting·rejected 양쪽 화면에 동시 영향(공용 컴포넌트). (4) "voting 중 실시간 업데이트" — E4VotingBody 에 React.useState + setTimeout 데모: 초기 [요청자=김민준 / 나머지 pending] → t=2.5s 이서윤 agree → t=6.5s 박지호 agree → 최유나 15s timeout 까지 pending. 실제 앱은 서버 이벤트로 setMembers 호출 필요(메모). 변경 파일: dialogs.jsx(E4VotingBody·TeammatePortrait·정책 주석 블록), spec-updates.md(E-1 행 뒤집기 + E-14~E-18 5행 신설), 2026-05-18_동시편집-캔버스-기획.md(voting 정책 문구). 영향: E-4 voting + E-4 rejected 2 화면 시각 갱신. 검증 포인트(향후): (a) 동조 편향 완화 의도가 K-12 학생 4인팀에서 실제 측정 가능한지(7/13 전북 연수 관찰), (b) 15초가 카드 4장 스캔+헤드라인 읽기+결정에 충분한지 행사 실측, (c) 카드 fill agreed(mint-soft)·rejected(safety-soft) 채도가 옆 화면(b2-tutorial-waiting 등)의 mint/safety 액센트와 시각 충돌 없는지, (d) setTimeout 시뮬레이션이 viewer 직접 진입 시에만 동작(드롭다운 전환 시 unmount/remount되어 t=0부터 재시작) — 실제 앱 동작과 차이 명시 필요 | AI |
+| 2026-05-27 | **UI 2상태 통합 — 미접속/입장 전 어휘 단일화 (데이터 3상태 유지)** — 사용자 결정 "미접속과 입장 전을 꼭 나눠야 할까? 기획을 검토해보고 의견줘" → 기획문서 검토(참가자-로그인-기획.md:287~290 3상태 정의 + API teammates.status="online"|"offline"|"not_entered") + 운영자 task 분석(두 비접속 케이스 모두 "옆에 가서 확인"으로 동일) → 통합 권고 → "좋아. ui만 하나로 묶는다. a로 심플하게". 변경: (1) **shared.jsx `RosterMemberRow`** `pending` 변수 제거, 인디케이터 분기 단순화 (`on ? mint : rose`). state prop이 'pending'으로 들어와도 자동으로 off와 동일 렌더. 행 bg는 이미 `!on` 기준이라 그대로. (2) **`RosterLegend`** pending 옵션 map에 남기되 off와 동일 색·라벨(rose, "미접속")로 통합. 기본값 `['on','off']`. (3) **participant.jsx C-1** `RosterLegend states={['on','off','pending']}` → `['on','off']`. MOCK_TEAM_STANDARD 이서윤 `online: 'idle'`은 그대로(데이터 보존). (4) **Jitda Design System.html §09f** 입장 전 행 정적 미러 제거 + 푸터 범례 입장 전 도트 제거 + 본문 정책 명시("UI 2상태 정책: on 외 모두 off로 통합. 데이터 모델은 3상태 유지"). (5) **참가자-로그인-기획.md 287~290** 3상태 라벨 → 2상태 + 데이터 3상태 유지 명시 + 통합 근거 4줄. (6) **페이지정의서 §C-1 ③** "🟢접속/🔘미접속/⬜입장 전" → "🟢접속/🔘미접속" + not_entered도 UI에선 미접속 명시. (7) **화면상태정의서 §C-1** 동일. (8) **spec-updates §17 신설** — 통합 근거 표(운영자 액션 동일) + 변경 코드 5개 파일 표 + 기획문서 3개 표 + 검증 4항. 영향: 4 화면(c1·c1-after-tutorial·c1-ended + b2-roster-detail) 시각 갱신, 디자인 시스템 1 섹션 축소, 코드 분기 단순화. 검증: viewer c1 — 이서윤·박지호 모두 rose 도트 + 옅은 bg로 "비접속" 한 그룹, 푸터 2상태, 콘솔 0 에러. 검증 포인트(향후): (a) 행사 시작 직후 "입장 전 N명"이 운영자 즉각 액션 유발하는지 7/13 전북 연수 운영자 행동 관찰 — 명확한 패턴 검증되면 옵션 B(3상태 유지) 또는 C(호버 컨텍스트)로 회귀 검토, (b) 호버 툴팁/상세 컨텍스트 노출 미적용 — 향후 RosterMemberRow에 호버 툴팁 추가 가능(operator.jsx RosterAvatar 패턴 재사용), (c) 데이터 모델 3상태가 UI 미사용 — 분석·로깅·어드민 시스템(짓다 외부)에서만 의미, (d) 본 작업은 짓다 플랫폼 한정 — 어드민 외부 시스템에서는 3상태 분리 유지 권장(참가자 등록·코드 발급 추적) | AI |
+| 2026-05-27 | **§17 후속: 미등록 인라인 라벨 추가 (UI 2상태 유지 + 한 번도 안 들어온 멤버만 "미등록" 라벨 노출)** — 사용자 결정 "최초 등록 했는지 여부는 데이터상으로 알 수 있으니까, 둘다 빨간불로 표기하되 아에 한 번도 안 들어온사람(미등록)만 이름 우측에 미등록이라고 표기해줄래?". §17의 UI 단순화(2상태) 유지하되 §17-5 (b) 호버 컨텍스트 우려를 인라인 라벨로 부분 해소. 변경: (1) **shared.jsx `RosterMemberRow`** `state === 'pending' && !isMe`일 때 이름 우측에 "미등록" mono caps 라벨(fontSize 9.5, padding 1/5, transparent bg + hairline outline + muted 글자, fontWeight 600) 추가. 도트·bg는 미접속과 동일 유지(rose). "나" 칩(helmet-deep solid 강)과 시각 위계 분리 — "미등록"은 약(부가 정보). (2) **`Jitda Design System.html` §09f** 미등록 행 정적 미러 추가(박지호 미접속 행 다음, 이서윤 — 같은 비접속 시각 + 우측 미등록 라벨) + 본문 정책 1줄 명시. (3) **참가자-로그인-기획.md** §대기실 상태 표기 갱신 — "한 번도 안 들어온 멤버만 미등록 라벨" 명시 + 데이터 모델 3상태 유지 + 운영자 별도 대응(코드 안내·재발급) 트리거 가능 명시. (4) **페이지정의서 §C-1 ③** + **화면상태정의서 §C-1** "한 번도 안 들어온 멤버는 이름 우측 미등록 라벨" 명시. (5) **spec-updates §17-6 신설** — 디자인 어휘 위계 표("나" vs "미등록" 강도 분리) + 영향 + 근거(§17-5 (b) 부분 해소) + 검증 3항. 영향: c1·c1-after-tutorial·c1-ended 3 화면 시각 갱신, 디자인 시스템 1 행 추가, 코드 1 분기 추가. 검증: viewer c1 evaluate — 이서윤 옆 "미등록" 노출, 박지호(off)는 라벨 없음, 최지유(나)는 "나" 칩만. 스크린샷은 viewer screenshot timeout으로 시각 캡처 불가(evaluate 결과로 확인). 검증 포인트(향후): (a) "미등록" 라벨이 시각 노이즈인지 정보인지 7/13 전북 연수 운영자 행동 관찰, (b) PENDING_TEAMS(operator.jsx mock) 데이터 모델이 2상태(튜플)라 B-2 모달에서 미등록 시각 검증 불가 — 향후 PENDING_TEAMS에 'pending' 추가 검토, (c) "미등록" 어휘 정확성 — 기획문서 정의는 "코드는 발급됐으나 사용 안 함"(어드민이 등록은 했음)이라 "미등록"은 의미 약간 모호 — 행사 운영자 피드백 후 "미입장"·"코드 미사용" 등 대안 검토 가능 | AI |
+| 2026-05-27 | **E-1 프로젝트 설정 모달 디자인 정합화 (B-2 모달 톤 정렬)** — 사용자 지적 "모달이 너무 못생겼어. 다른 모달들과 디자인 정합성 확인하고 디자인 개선해봐". B-2 종료/튜토리얼 모달 패턴 비교 후 7개 갭 식별·해소: (1) **헤더** — ✍️ 이모지 + 인라인 제목 → eyebrow(mono caps "프로젝트 설정") + h2 display 20px "갤러리에 어떻게 보여줄까요?" 2단 구조(B-2 모달 어휘 정렬). 닫기 버튼 `.jt-btn-ghost.jt-btn-sm` → `.jt-icon-btn`. (2) **갤러리 공개 토글 카드** — 풀 mint-soft fill + 🌐 이모지 → canvas 위 좌측 3px mint accent bar(ON 시) + ON pill(mint-soft + dot, mono caps). 시각 무게 ~70% 감소. (3) **FieldRow** — 이모지 아이콘(📝📋🔧) prop 제거. 텍스트 라벨만(B-2 폼 톤과 동일). (4) **공개 URL 블록** — `border: 1px dashed` + raw green ● → `border: 1px solid var(--c-hairline)` + `.jt-dot.live`(halo) + `.jt-btn-secondary.jt-btn-sm` 복사 버튼. dashed는 placeholder 어휘라 라이브 URL에 부적합. (5) **비공개 상태 안내 카드** — 🔒 이모지 + dashed border → SVG lock 아이콘(`stroke-width:2`) + solid hairline border. (6) **푸터 버튼** — `.jt-btn-sm` → 기본 36px(`.jt-btn`). B-2 종료·튜토리얼 모달과 동일 사이즈. 상태 인디케이터(미저장·저장 중·저장 완료) 모두 푸터 좌측으로 통합 — 헤더에서 제거하여 헤더 위계 단순화. (7) **레이아웃** — body padding `18/22` → `20/24/22`, gap `16` → `18`, header padding `12/18` → `20/24/16`. 모달 자체에 `overflow: hidden` 추가(border-radius 안에서 footer/header bg 클리핑). 영향 화면: e1(공개 활성+미저장) + e1-private + e1-saving + e1-saved 4 stateVariant. **변경 파일**: dialogs.jsx `E1ProjectSettings`(L80~) + `FieldRow`(L348~) 2 함수만. STRUCTURE.md·spec-updates.md·tokens.css 무수정(시각 정렬이라 구조 변화 없음). 검증: viewer로 e1·e1-private·e1-saved 3 stateVariant 스크린샷 — 모두 B-2 모달 톤(eyebrow + h2 + 깔끔한 폼 블록)과 정렬, 콘솔 0 에러(favicon 404 제외). 검증 포인트(향후): (a) AI 자동 채우기 버튼은 사용자 결정으로 그라데이션·sparkle 유지 — 다른 모달은 평이한 버튼만 사용하므로 시각 단일 강조로 OK, 다만 향후 E-5 AI 선택지 모달과 어휘 정합성 검토 필요, (b) 토글 ON 시 mint accent bar(3px)가 정합성에는 OK이나 인지 강도가 약할 수 있음 — 실제 사용자가 ON/OFF 상태를 토글 스위치만으로 충분히 인지하는지 행사 실측 필요, (c) 푸터에 상태 인디케이터 통합으로 헤더는 깔끔해졌으나 미저장 상태가 모달 하단에 있어 인지 지연 가능 — 헤더 우측 보조 칩 패턴 vs 푸터 패턴 트레이드오프 후속 검토 | AI |
+| 2026-05-27 | **§17 후속 (호버 칩 rose 통일 + 미등록 모달 샘플 + RosterTeamDetailModal B-2 표준 정렬)** — 사용자 피드백 4종: (1) "호버 칩 off일때 일관성있게 rose로 표기" — operator.jsx RosterAvatar 호버 OFF 칩 `var(--c-slate)` → `#c94560`. ON(mint) ↔ OFF(rose) 명확 대조 + 미접속 인디케이터와 어휘 통일. (2) "모달 안에 리스트에서 미등록 칩 샘플 추가" — PENDING_TEAMS '데이터 파이프라인 크루'(B2RosterDetail 시뮬 데이터) 오민채 `'off'` → `'pending'`. RosterTeamDetailModal에서 미등록 라벨 시각 검증 가능. (3) "모달 디자인 수정. b2 모달 참고하되 상단 플레인 잉크, 닫기 버튼 삭제, 헤더 아래 얇은 바 없애. 디자인 시스템 따라라" — RosterTeamDetailModal 재디자인: 상단 `<div className="jt-ink-strip" />` 추가, 헤더 X 닫기 버튼 + borderBottom 제거, boxShadow 인라인 → `var(--shadow-modal)` 토큰. (4) "잉크 플레인 상단바는 커션보다 얇아?" — 초기 인라인 8px 잘못 만든 것 지적. `.jt-ink-strip` 클래스로 교체해 caution-strip과 동일 12px로 정렬(tokens.css §618 "모달 상단 스트립 3변형 — 12px 표준"). 변경 파일: operator.jsx (RosterAvatar 호버 칩 + PENDING_TEAMS + RosterTeamDetailModal) + spec-updates §17-7 신설. 영향: b2-roster-detail 1 화면(모달 디자인) + b2-tutorial-waiting RosterAvatar 호버(rose 칩) 시각 갱신. 검증: evaluate `hasUnregistered: true`, `omincheCtx: "오민채\n미등록"`, ink-strip height 측정 11.996px(≈12px) bg rgb(20,19,15) = --c-ink, 콘솔 0 에러. ⚠️ viewer 스크린샷 timeout 지속으로 시각 캡처 불가 — 사용자 직접 확인 필요. 검증 포인트(향후): (a) 다른 B-2 모달(B2EndModal 등)도 caution-strip 대신 ink-strip 검토 가치 있음, (b) 닫기 버튼 제거로 키보드 ESC 또는 백드롭 클릭만 가능 — 향후 ESC 핸들러 추가 검토, (c) PENDING_TEAMS 데이터 모델 이제 'on'|'off'|'pending' 3상태 — RosterAvatar 인디케이터·RosterRow에서 pending도 자동 off와 같이 미접속 처리(§17 통합 정책 유지) + 모달에서만 미등록 라벨 노출, (d) "데이터 파이프라인 크루" 7명 케이스가 모달 본문 maxHeight 320 스크롤 시각화에도 적합 | AI |
+| 2026-05-27 | **§17-8: RosterTeamDetailModal border 제거** — 사용자 피드백 "상단바에도 흰색 테두리가있네? 모달에 밝은색 테두리가 둘러져있는거같은데 디자인시스템때문이지? 테두리를 아예없애볼래?" 진단 정확 — B-2 모달 표준 `border: 1px solid var(--c-hairline)`이 ink-strip 위쪽 1px을 흰 띠처럼 노출(ink-strip이 카드 border 안쪽에 위치). 변경: operator.jsx RosterTeamDetailModal `border` 라인 제거. boxShadow `var(--shadow-modal)`은 유지 — 백드롭 검정 dim 위 흰 카드 경계는 shadow만으로 충분. 검증: viewer evaluate borderWidth 0px / borderStyle none / shadow 유지 확인. spec-updates §17-8 신설. 검증 포인트(향후): (a) 다른 B-2 모달(B2EndModal·B2TutorialStartConfirm 등)도 같은 hairline border — 본 작업은 RosterTeamDetailModal 한정. 일관성 위해 전체 제거 vs 본 모달만 예외 처리 정책 결정 필요, (b) 디자인 시스템 §09e 모달 표준에 "border + shadow" 명시돼 있다면 본 결정이 표준 위반 — 표준 수정 또는 예외 등록 필요 | AI |
+| 2026-05-27 | **§17-9: ModalSurface 공용 컴포넌트 추출 + operator 7개 모달 호출부 교체 + 디자인 시스템 §09e 시각 표준·헤더 구분선 규칙 추가** — 사용자 결정 3단계: (1) "모든 모달에서 흰테두리를 삭제해줘" — operator.jsx 6개 모달 hairline border 일괄 제거. (2) "모달 디자인은 디자인시스템에 없어?" → §09e 갭(backdrop·z·width·animation·A11Y만 있고 surface 시각 표준 누락) 진단 + 옵션 C 채택("ModalSurface 컴포넌트 추출"). (3) "단순 버튼 선택 모달 외 인터렉션이 있는 모달은 헤더 아래 본영역 사이 구분선 추가" — 디자인 시스템 §09e 규칙 추가. 변경: (1) **shared.jsx `ModalSurface({ children, width, topStrip, entrance, role, ariaLabel, ariaLabelledBy, style })` 신규** — width sm/md/lg/xl 매핑 + topStrip ink/caution/caution-static + entrance pop/fade/slide + dialog/alertdialog role. 내부 어휘 고정: bg canvas + radius 10 + shadow-modal + **border 없음** + overflow hidden. `Object.assign(window, { ..., ModalSurface })`로 글로벌 등록. (2) **operator.jsx 7개 모달 호출부 ModalSurface로 교체**: B2EndModal(480 caution alertdialog) / B2EndModalCountdown(520 caution alertdialog) / B2SkipTutorialModal(480 caution alertdialog) / B2TutorialStartConfirm(480 caution alertdialog) / B2TutorialEndConfirm(520 caution alertdialog) / B2HackathonStartConfirm(480 caution alertdialog) / RosterTeamDetailModal(380 ink dialog + style maxHeight/minHeight + 헤더 borderBottom 추가). 각 모달의 outer div + caution-strip div가 ModalSurface 단일 호출로 통합. (3) **Jitda Design System.html §09e 신규 서브섹션 2종**: ▸ MODAL SURFACE 시각 표준 — bg/border-radius/box-shadow/border/topStrip props 표 + 사용자 결정("border 없음 — backdrop dim + shadow로 경계 충분") 명시. ▸ HEADER DIVIDER 규칙 — "단순 버튼 선택 모달은 구분선 없음 / 인터랙션 모달은 헤더 아래 hairline borderBottom 필수" + 판단 기준 3가지(스크롤 본문 / 별도 정보 박스·리스트·폼 / 헤더-본문 분리 명확성). (4) **spec-updates §17-9 신설** — 변경 요약 + 7개 모달 분류 표(단순 4 / 단일영역 2 / 인터랙션 1=RosterTeamDetailModal) + 검증 + 후속 4항. 영향: operator.jsx 7개 모달 + 디자인 시스템 1 섹션 확장. 검증: viewer evaluate B2TutorialStartConfirm role=alertdialog/aria-modal=true/borderWidth=0px/className=jt-modal-surface/hasCautionStrip=true 모두 통과. RosterTeamDetailModal: role=dialog/미등록 라벨 노출/.jt-ink-strip 자식 정상. 콘솔 0 에러(cache busting URL 필요했음). 검증 포인트(향후): (a) dialogs.jsx 모달(E-1·E-5)은 ModalSurface 미적용 — border 어휘 다름(ink/hairline-strong), 향후 통합 정책 결정 필요, (b) B2EndModalCountdown·B2TutorialEndConfirm "단일 영역"으로 분류했으나 사용자 명시적 헤더 분리 원할 수 있음 — 7/13 실측 후 재분류 가능, (c) babel-standalone hot reload 안 됨 — shared.jsx 변경 시 viewer cache busting URL 필요, dev 워크플로우 개선 검토, (d) ModalSurface에 padding prop 미포함 — inner div로 처리, 다양한 padding 케이스 있어 향후 prop 추가 검토 | AI |

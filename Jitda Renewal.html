@@ -1,0 +1,843 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>짓다 · 디자인 리뉴얼 Hi-fi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css" />
+
+  <!-- 단일 소스: tokens.css 직접 로드 (2026-05-27 전환). 아래 인라인 <style>은 renewal-specific override만 유지. -->
+  <link rel="stylesheet" href="tokens.css" />
+
+  <style>
+
+:root {
+  --c-canvas: #ffffff;
+  --c-paper: #f4f2ec;          /* warm concrete paper */
+  --c-stone: #e9e6dd;
+  --c-stone-2: #ddd9cd;
+  --c-hairline: #d9d5c9;
+  --c-hairline-strong: #b8b4a6;
+  --c-ink: #14130f;            /* deep structural */
+  --c-ink-2: #2a2823;
+  --c-ink-3: #4a473e;
+  --c-muted: #8a8779;
+  --c-slate: #69675c;
+
+  /* hi-vis construction palette — restrained */
+  --c-helmet: #ffce2b;          /* hard-hat yellow (point accent + 좋아요 강조) */
+  --c-helmet-deep: #e6b500;
+  --c-helmet-soft: #fff4c2;
+  --c-stache: #14130f;
+  --c-rebar: #b87333;           /* rust/copper — 보조 액센트 */
+  --c-blueprint: #1f3a52;
+  --c-blueprint-soft: #dde4ec;
+  --c-safety: #ff6b1f;          /* safety orange — 위험/비가역 액션 단일 컬러 */
+  --c-safety-soft: #ffe0cf;
+  --c-safety-deep: #cc4a0a;
+  --c-concrete: #c3bfb3;
+  --c-concrete-light: #ebe7dd;
+
+  /* semantic aliases */
+  --c-deep: #003c33;
+  --c-blue: var(--c-blueprint);
+  --c-blue-soft: var(--c-blueprint-soft);
+  --c-amber: #a06a0a;
+  --c-amber-soft: #fbeacf;
+  --c-mint: #096c4d;
+  --c-mint-soft: #d6f1de;
+  --c-tutorial: #2e2c8a;
+  --c-tutorial-soft: #e1e0fa;
+
+  /* Deprecated — 단계적 마이그레이션 (danger→safety, 강조→helmet) */
+  --c-rose: var(--c-safety);
+  --c-rose-soft: var(--c-safety-soft);
+  --c-coral: var(--c-helmet);
+  --c-coral-soft: var(--c-helmet-soft);
+
+  --font-display: 'Wanted Sans Variable', 'Wanted Sans', system-ui, sans-serif;
+  --font-body: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, 'Menlo', monospace;
+
+  /* Sharper radii — industrial */
+  --r-xs: 2px;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+  --r-pill: 999px;
+
+  --shadow-sm: 0 1px 0 rgba(20, 19, 15, 0.04);
+  --shadow-md: 0 4px 16px rgba(20, 19, 15, 0.06), 0 1px 0 rgba(20, 19, 15, 0.04);
+  --shadow-lg: 0 12px 32px rgba(20, 19, 15, 0.10);
+
+  /* Brand tape — 비-경고 데코 (helmet-soft + helmet, 36px 간격, 톤 다운) */
+  --gradient-brand-tape: repeating-linear-gradient(
+    -45deg,
+    var(--c-helmet-soft) 0px,
+    var(--c-helmet-soft) 36px,
+    var(--c-helmet)      36px,
+    var(--c-helmet)      40px
+  );
+  --anim-glow-duration: 2.4s;
+}
+
+/* Reset within artboards */
+.jt-art *,
+.jt-art *::before,
+.jt-art *::after {
+  box-sizing: border-box;
+}
+
+.jt-art {
+  width: 100%;
+  height: 100%;
+  background: var(--c-paper);
+  color: var(--c-ink);
+  font-family: var(--font-body);
+  font-size: 14px;
+  letter-spacing: -0.005em;
+  line-height: 1.45;
+  overflow: hidden;
+  position: relative;
+}
+
+.jt-art h1,
+.jt-art h2,
+.jt-art h3,
+.jt-art h4 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  margin: 0;
+  color: var(--c-ink);
+}
+
+.jt-art button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.jt-mono { font-family: var(--font-mono); }
+.jt-display { font-family: var(--font-display); }
+
+/* Pill badge */
+.jt-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  font-size: 11.5px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.jt-pill .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+}
+
+.jt-pill-pending { background: var(--c-stone); color: var(--c-ink-3); }
+.jt-pill-tutorial { background: var(--c-tutorial-soft); color: var(--c-tutorial); }
+.jt-pill-started { background: var(--c-mint-soft); color: var(--c-mint); }
+.jt-pill-paused { background: var(--c-amber-soft); color: var(--c-amber); }
+.jt-pill-ended { background: #ebebec; color: var(--c-ink-3); }
+.jt-pill-danger { background: var(--c-rose-soft); color: var(--c-rose); }
+.jt-pill-info { background: var(--c-blue-soft); color: var(--c-blue); }
+
+/* 5상태 모델 — 단계는 색계열, 진행도는 명도로 이중 인코딩 (2026-05-26: tutorial_ended 폐기) */
+.jt-pill-tutorial-waiting { background: #ebebec; color: #4a473e; border: 1px solid #d9d6cc; }
+.jt-pill-tutorial-running { background: #e1e0fa; color: #2e2c8a; }
+.jt-pill-hack-waiting     { background: #ebebec; color: #4a473e; border: 1px solid #d9d6cc; }
+.jt-pill-hack-running     { background: var(--c-mint-soft); color: var(--c-mint); }
+.jt-pill-hack-ended       { background: #ffe1de; color: #882019; }
+.jt-pill-tutorial-ended   { background: #ebebec; color: #4a473e; border: 1px solid #d9d6cc; } /* legacy alias → hack-waiting과 동일 시각 */
+
+/* Buttons — Size-locked height (2026-05-27 한 단계 축소): 52px 바 안에서 8px 여유. */
+.jt-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 600;
+  /* 2026-05-28: border shorthand → individual properties (variant override 보존). */
+  border-width: 1px;
+  border-style: solid;
+  border-color: transparent;
+  box-sizing: border-box;
+  font-family: inherit;
+  line-height: 1;
+  white-space: nowrap;
+}
+.jt-btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+.jt-btn-lg { height: 44px; padding: 0 20px; font-size: 14.5px; font-weight: 700; }
+
+/* Card */
+.jt-card {
+  background: var(--c-canvas);
+  border: 1px solid var(--c-hairline);
+  border-radius: var(--r-sm);
+}
+
+/* Inputs */
+.jt-input {
+  width: 100%;
+  padding: 12px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  background: var(--c-canvas);
+  border: 1px solid var(--c-hairline-strong);
+  border-radius: var(--r-xs);
+  color: var(--c-ink);
+  outline: none;
+}
+.jt-input:focus { border-color: var(--c-ink); box-shadow: 0 0 0 2px var(--c-helmet); }
+
+/* === Interaction tokens & primitives (2026-05-27 추가 — tokens.css 미러) === */
+:root {
+  --dur-instant: 75ms; --dur-fast: 150ms; --dur-base: 240ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --focus-ring-color: var(--c-helmet);
+  --c-backdrop: rgba(20, 19, 15, 0.40);
+  --c-backdrop-strong: rgba(20, 19, 15, 0.55);
+  --c-backdrop-soft: rgba(20, 19, 15, 0.25);
+  --shadow-hover: 0 8px 20px rgba(15, 15, 20, 0.08), 0 2px 4px rgba(15, 15, 20, 0.04);
+  --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.30), 0 12px 24px rgba(0, 0, 0, 0.16);
+  --modal-w-sm: 420px; --modal-w-md: 560px; --modal-w-lg: 720px; --modal-w-xl: 920px;
+}
+
+.jt-btn {
+  transition: background-color 150ms cubic-bezier(0.2,0,0,1), color 150ms cubic-bezier(0.2,0,0,1), border-color 150ms cubic-bezier(0.2,0,0,1), box-shadow 150ms cubic-bezier(0.2,0,0,1), transform 75ms cubic-bezier(0.2,0,0,1);
+}
+.jt-btn:active:not([disabled]):not(.is-disabled) { transform: scale(0.97); }
+.jt-btn:focus-visible { outline: 2px solid var(--c-helmet); outline-offset: 2px; }
+.jt-btn-primary { box-shadow: 0 1px 2px rgba(15,15,20,0.04); }
+.jt-btn-primary:hover { background: var(--c-ink-3); box-shadow: 0 6px 22px rgba(15,15,20,0.10), 0 1px 2px rgba(15,15,20,0.04); }
+/* Outlined: bg fill만 (elevation 없음 — fill 메타포) */
+.jt-btn-secondary:hover { background: var(--c-stone); border-color: var(--c-ink-3); }
+/* Helmet: filled이므로 elevation lift */
+.jt-btn-helmet { box-shadow: 0 1px 2px rgba(15,15,20,0.04); }
+.jt-btn-helmet:hover { background: var(--c-helmet-deep); border-color: var(--c-helmet-deep); box-shadow: 0 6px 22px rgba(15,15,20,0.06), 0 1px 2px rgba(15,15,20,0.04); }
+.jt-btn-danger { background: var(--c-safety); color: #fff; box-shadow: 0 1px 2px rgba(15,15,20,0.04); }
+.jt-btn-danger:hover { background: var(--c-safety-deep); box-shadow: 0 6px 22px rgba(15,15,20,0.06); }
+/* Danger Outlined — 약한 danger 변형 (실수 방지용 종료 등) */
+.jt-btn-danger-outlined { background: transparent; color: var(--c-safety); border-color: var(--c-safety-soft); }
+.jt-btn-danger-outlined:hover { background: var(--c-safety-soft); border-color: var(--c-safety); color: var(--c-safety-deep); }
+.jt-btn-danger-outlined:active:not([disabled]) { background: var(--c-safety); color: #fff; border-color: var(--c-safety-deep); }
+.jt-btn-coral { box-shadow: 0 1px 2px rgba(15,15,20,0.04); }
+.jt-btn-coral:hover { background: #e6b500; color: var(--c-stache); box-shadow: 0 6px 22px rgba(15,15,20,0.06); }
+
+/* Interactive card primitive — 인라인 border/boxShadow를 이기기 위해 !important */
+.jt-card-interactive {
+  cursor: pointer;
+  transition: background-color 150ms cubic-bezier(0.2,0,0,1), border-color 150ms cubic-bezier(0.2,0,0,1), box-shadow 150ms cubic-bezier(0.2,0,0,1), transform 75ms cubic-bezier(0.2,0,0,1);
+}
+.jt-card-interactive:hover {
+  border-color: var(--c-ink-3) !important;
+  box-shadow: 0 8px 20px rgba(15,15,20,0.10), 0 2px 4px rgba(15,15,20,0.05) !important;
+  transform: translateY(-1px);
+}
+.jt-card-interactive:active {
+  transform: translateY(0) scale(0.998);
+  box-shadow: 0 1px 2px rgba(15,15,20,0.04) !important;
+}
+.jt-card-interactive:focus-visible { outline: 2px solid var(--c-helmet); outline-offset: 2px; }
+
+.jt-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: var(--r-sm);
+  background: transparent; color: var(--c-ink-3);
+  border: 1px solid transparent; cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, transform 75ms ease;
+}
+.jt-icon-btn:hover { background: var(--c-stone); color: var(--c-ink); }
+.jt-icon-btn:active { transform: scale(0.94); }
+.jt-icon-btn:focus-visible { outline: 2px solid var(--c-helmet); outline-offset: 2px; }
+
+@keyframes jt-spin { to { transform: rotate(360deg); } }
+.jt-spin { animation: jt-spin 1.2s linear infinite; }
+.jt-spin-once { animation: jt-spin 600ms cubic-bezier(0,0,0.2,1); }
+
+@keyframes jt-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes jt-modal-pop-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes jt-modal-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.jt-modal-backdrop {
+  position: absolute; inset: 0;
+  background: var(--c-backdrop);
+  animation: jt-backdrop-in 240ms cubic-bezier(0,0,0.2,1);
+}
+.jt-modal-backdrop.is-strong { background: var(--c-backdrop-strong); }
+.jt-modal-backdrop.is-soft   { background: var(--c-backdrop-soft); }
+.jt-modal-backdrop.has-blur  { backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+
+/* Helpers */
+.jt-row { display: flex; align-items: center; }
+.jt-col { display: flex; flex-direction: column; }
+.jt-spacer { flex: 1; }
+.jt-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+
+.jt-divider { height: 1px; background: var(--c-hairline); }
+
+/* Status dot indicator */
+.jt-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.jt-dot.live { background: var(--c-mint); box-shadow: 0 0 0 4px rgba(9, 108, 77, 0.12); }
+
+/* Avatar */
+.jt-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  background: var(--c-stone);
+  color: var(--c-ink);
+  flex-shrink: 0;
+}
+
+.jt-blueprint-bg {
+  background-color: var(--c-ink);
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 32px 32px, 32px 32px;
+}
+.jt-concrete-bg {
+  background-color: var(--c-paper);
+  background-image:
+    linear-gradient(rgba(20,19,15,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20,19,15,0.04) 1px, transparent 1px);
+  background-size: 24px 24px, 24px 24px;
+}
+/* A 영역 — 운영자 메타포 배경 (concrete pad: stone-2 + stache 도면 라인). tokens.css 동기 미러. */
+/* 참가자(A-1)는 기존 .jt-blueprint-bg 그대로 사용 — 별도 클래스 없음. */
+.jt-blueprint-studio-bg {
+  background-color: var(--c-stone-2);
+  background-image:
+    radial-gradient(circle at 78% 22%, rgba(255, 206, 43, 0.08) 0%, transparent 45%),
+    linear-gradient(rgba(20, 19, 15, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 19, 15, 0.05) 1px, transparent 1px);
+  background-size: auto, 24px 24px, 24px 24px;
+}
+.jt-stamp {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  border: 1px solid currentColor;
+  padding: 3px 8px;
+  display: inline-block;
+}
+
+/* Corner brackets (technical drawing) */
+.jt-bracket {
+  position: relative;
+}
+.jt-bracket::before,
+.jt-bracket::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid var(--c-stache);
+}
+.jt-bracket::before {
+  top: -1px; left: -1px;
+  border-right: none; border-bottom: none;
+}
+.jt-bracket::after {
+  bottom: -1px; right: -1px;
+  border-left: none; border-top: none;
+}
+
+/* Renewal-specific radius override만 유지 — variant 색/hover는 tokens.css 단일 소스 (2026-05-27). */
+.jt-btn-helmet { border-radius: var(--r-sm); }
+.jt-btn-primary { border-radius: var(--r-sm); }
+.jt-btn-secondary { border-radius: var(--r-sm); }
+.jt-btn-ghost { border-radius: var(--r-sm); }
+.jt-btn { border-radius: var(--r-sm); }
+.jt-btn-sm { border-radius: var(--r-xs); }
+
+.jt-brand-rule {
+  height: 1px;
+  background: var(--gradient-brand-tape);
+  background-size: 48px 1px;
+  opacity: 0.6;
+}
+.jt-eyebrow-tape::before {
+  content: "";
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: var(--c-helmet);
+  margin-right: 8px;
+  vertical-align: middle;
+}
+/* 비가역 액션 버튼 — 검정 본체 + 외곽 노랑 ring (2026-05-27: border → box-shadow로 이동). */
+.jt-btn-critical,
+.jt-btn-critical-static {
+  background: var(--c-stache);
+  color: var(--c-helmet);
+  border: 1px solid var(--c-stache);
+  box-shadow: 0 0 0 2px var(--c-helmet);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-radius: var(--r-sm);
+}
+.jt-btn-critical:hover,
+.jt-btn-critical-static:hover { background: #000; box-shadow: 0 0 0 2px var(--c-helmet), 0 6px 20px rgba(20,19,15,0.35); }
+.jt-btn-critical { position: relative; overflow: hidden; }
+.jt-btn-critical::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 35%, rgba(255, 206, 43, 0.55) 50%, transparent 65%);
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  background-position: 130% 0;
+  animation: jt-btn-shine var(--anim-glow-duration) ease-in-out infinite;
+  pointer-events: none;
+}
+/* 130%(좌측 완전 바깥) → -30%(우측 완전 빠짐) → dwell. 빛띠가 항상 버튼 바깥에서 시작 → 자연스러운 진입. */
+@keyframes jt-btn-shine {
+  0%   { background-position: 130% 0; }
+  55%  { background-position: -30% 0; }
+  100% { background-position: -30% 0; }
+}
+.jt-countdown-ring-critical {
+  animation: jt-ring-pulse var(--anim-glow-duration) ease-in-out infinite;
+}
+@keyframes jt-ring-pulse {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  50%      { filter: drop-shadow(0 0 12px var(--c-safety)); }
+}
+/* 모달 상단 스트립 — 12px (애니메이션 사선 / 고정 사선 / 단색 검정)
+   사선 패턴 스트라이프 폭 10√2(=14.1421356)px → x축 1주기 = 정확히 40px (솔기 없음) */
+.jt-caution-strip,
+.jt-caution-strip-static,
+.jt-ink-strip {
+  height: 12px;
+  width: 100%;
+  flex-shrink: 0;
+}
+.jt-caution-strip,
+.jt-caution-strip-static {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--c-helmet) 0 14.1421356px,
+    var(--c-ink) 14.1421356px 28.2842712px
+  );
+  background-size: 40px 100%;
+}
+.jt-caution-strip {
+  animation: jt-caution-scroll 1.6s linear infinite;
+  will-change: background-position;
+}
+@keyframes jt-caution-scroll {
+  0%   { background-position: 0 0; }
+  100% { background-position: 40px 0; }
+}
+.jt-ink-strip { background: var(--c-ink); }
+@media (prefers-reduced-motion: reduce) {
+  .jt-btn-critical { box-shadow: 0 0 12px 2px rgba(255, 206, 43, 0.35); }
+  .jt-btn-critical::after { animation: none; background-position: 50% 0; opacity: 0.35; }
+  .jt-countdown-ring-critical { animation: none; filter: drop-shadow(0 0 6px var(--c-safety)); }
+  .jt-tape, .jt-tape-block { filter: drop-shadow(0 1px 2px rgba(20, 19, 15, 0.15)); }
+  .jt-caution-strip { animation: none; }
+}
+
+/* Safety Tape — 공사장 주황 안전 테이프 */
+.jt-tape {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 6px 18px;
+  background: var(--c-safety); color: var(--c-stache);
+  font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  line-height: 1.3; white-space: nowrap;
+  transform: rotate(-1.5deg);
+  filter: drop-shadow(0 2px 3px rgba(20, 19, 15, 0.18));
+  /* 톱니 깊이 px 고정 — 테이프 길이와 무관하게 일정한 찢긴 모양 */
+  clip-path: polygon(2px 8%, 0 22%, 3px 38%, 0 55%, 4px 72%, 0 88%, 3px 100%,
+    calc(100% - 3px) 100%, 100% 88%, calc(100% - 4px) 72%, 100% 55%, calc(100% - 3px) 38%, 100% 22%, calc(100% - 2px) 8%, calc(100% - 5px) 0, 5px 0);
+}
+.jt-tape-inline {
+  display: inline-block; padding: 1px 10px;
+  background: var(--c-safety); color: var(--c-stache);
+  font-weight: 700; line-height: inherit;
+  clip-path: polygon(3px 0, 0 50%, 3px 100%, calc(100% - 3px) 100%, 100% 50%, calc(100% - 3px) 0);
+}
+.jt-tape-block {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 10px 28px;
+  background: var(--c-safety); color: var(--c-stache);
+  font-family: var(--font-display); font-size: 18px; font-weight: 800;
+  letter-spacing: -0.01em; line-height: 1.2;
+  transform: rotate(-2deg);
+  filter: drop-shadow(0 3px 6px rgba(20, 19, 15, 0.22));
+  /* 톱니 깊이 px 고정 — block은 비율 18%(높이 ~40px 기준 8px 코너)로 .jt-tape와 동일 비례감 */
+  clip-path: polygon(3px 8%, 0 22%, 4px 38%, 0 55%, 5px 72%, 0 88%, 4px 100%,
+    calc(100% - 4px) 100%, 100% 88%, calc(100% - 5px) 72%, 100% 55%, calc(100% - 4px) 38%, 100% 22%, calc(100% - 3px) 8%, calc(100% - 7px) 0, 7px 0);
+}
+
+  </style>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #f0eee9; font-family: 'Pretendard Variable', system-ui, sans-serif; }
+    @keyframes blink { 50% { opacity: 0; } }
+    @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(24,99,220,0.5); } 50% { box-shadow: 0 0 0 6px rgba(24,99,220,0); } }
+  </style>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="design-canvas.jsx"></script>
+  <script type="text/babel" src="shared.jsx"></script>
+  <script type="text/babel" src="auth.jsx"></script>
+  <script type="text/babel" src="operator.jsx"></script>
+  <script type="text/babel" src="participant.jsx"></script>
+  <script type="text/babel" src="gallery.jsx"></script>
+  <script type="text/babel" src="dialogs.jsx"></script>
+  <script type="text/babel" src="judge.jsx"></script>
+
+  <script type="text/babel" data-presets="react">
+    function App() {
+      return (
+        <DesignCanvas>
+          <DCSection
+            id="intro"
+            title="짓다 · 디자인 리뉴얼"
+            subtitle="2026-05-20 · 데스크탑·태블릿 · 페이지 정의서 v23848e86 + UX 리뷰 + 화면상태정의서 반영"
+          >
+            <DCArtboard id="readme" label="README" width={520} height={820}>
+              <div style={{
+                width: '100%', height: '100%',
+                background: '#17171c',
+                color: '#fff',
+                padding: '44px 44px',
+                display: 'flex',
+                flexDirection: 'column',
+                fontFamily: 'var(--font-body)',
+                overflow: 'hidden',
+              }}>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, opacity: 0.55, letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+                  Design Renewal · 전 영역
+                </div>
+                <div style={{ marginTop: 10, fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1 }}>
+                  짓다<br/><span style={{ opacity: 0.5 }}>Jitda</span>
+                </div>
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.15)', margin: '28px 0' }} />
+
+                <div style={{ fontSize: 14, lineHeight: 1.6, opacity: 0.85 }}>
+                  현장 240명을 위한 해커톤 운영 도구.<br/>
+                  코드 한 줄로 입장하고, 캔버스로 함께 짓고, 갤러리에 공개합니다.
+                </div>
+
+                <div style={{ marginTop: 26, fontFamily: 'var(--font-mono)', fontSize: 10.5, opacity: 0.55, letterSpacing: '0.12em' }}>구성 — A · B · C · D · E · F</div>
+                <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.8 }}>
+                  <div style={{ opacity: 0.55, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', marginBottom: 3 }}>A — 인증 (9)</div>
+                  <div>A-1 코드 입장 · A-2 운영자 로그인 · A-3 OAuth 콜백</div>
+                  <div style={{ opacity: 0.55, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', marginTop: 10, marginBottom: 3 }}>B — 운영자 (11)</div>
+                  <div>B-1 해커톤 목록 · B-2 5상태 대시보드 + 모달 3종</div>
+                  <div style={{ opacity: 0.55, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', marginTop: 10, marginBottom: 3 }}>C — 참가자 (7)</div>
+                  <div>C-1 팀 대기실 3종 (① 시작 전 · ② 튜토리얼 후 · ③ 종료) · 진입 버튼 없이 자동 전환<br/>C-2 셀프 튜토리얼 · C-3 1인 캔버스 · C-4 다인 캔버스 · 일시정지 오버레이</div>
+                  <div style={{ opacity: 0.55, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', marginTop: 10, marginBottom: 3 }}>D — 갤러리 (10)</div>
+                  <div>D-1 목록 (진행/종료/빈/로딩) · D-2 상세 (기본/댓글/댓글빈/로딩/내것/마지막)</div>
+                  <div style={{ opacity: 0.55, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', marginTop: 10, marginBottom: 3 }}>E — 다이얼로그 (5)</div>
+                  <div>E-1 프로젝트 설정 (공개·비공개) · E-4 합의 투표 (게임 수락 UI · voting + 합의 무산) · E-5 AI 선택지</div>
+                  <div style={{ opacity: 0.55, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', marginTop: 10, marginBottom: 3 }}>F — 심사 (1)</div>
+                  <div>F-1 심사위원 대시보드 (4축 채점)</div>
+                </div>
+
+                <div style={{ marginTop: 26, fontFamily: 'var(--font-mono)', fontSize: 10.5, opacity: 0.55, letterSpacing: '0.12em' }}>FORM FACTOR</div>
+                <div style={{ marginTop: 8, fontSize: 13.5, lineHeight: 1.7 }}>
+                  데스크탑 · 태블릿 전용<br/>
+                  <span style={{ opacity: 0.6 }}>최소 960×640 / 권장 1280×800</span>
+                </div>
+
+                <div style={{ marginTop: 26, fontFamily: 'var(--font-mono)', fontSize: 10.5, opacity: 0.55, letterSpacing: '0.12em' }}>참고 코드베이스</div>
+                <div style={{ marginTop: 8, fontSize: 12.5, lineHeight: 1.7, opacity: 0.85 }}>
+                  enk-hackathon-vite (MVP) · enk-opencode (iframe 임베드)<br/>
+                  <span style={{ opacity: 0.6 }}>OpenCode 내부는 색·모양 변경만 · 그 외 전부 재설계</span>
+                </div>
+
+                <div style={{ flex: 1 }} />
+                <div style={{ marginTop: 24, fontFamily: 'var(--font-mono)', fontSize: 10.5, opacity: 0.5 }}>
+                  Wanted Sans · Pretendard · JetBrains Mono<br/>
+                  ink #17171c · helmet yellow · concrete paper
+                </div>
+              </div>
+            </DCArtboard>
+
+            <DCArtboard id="a1" label="A-1 · 참가자 코드 입장 (기본)" width={1280} height={820}>
+              <div className="jt-art"><A1CodeLogin /></div>
+            </DCArtboard>
+
+            <DCArtboard id="a1-invalid" label="A-1 · 코드 오류" width={1280} height={820}>
+              <div className="jt-art"><A1CodeInvalid /></div>
+            </DCArtboard>
+
+            <DCArtboard id="a1-not-started" label="A-1 · 행사 미시작" width={1280} height={820}>
+              <div className="jt-art"><A1NotStarted /></div>
+            </DCArtboard>
+
+            <DCArtboard id="a1-ended" label="A-1 · 행사 종료" width={1280} height={820}>
+              <div className="jt-art"><A1Ended /></div>
+            </DCArtboard>
+
+            <DCArtboard id="a2" label="A-2 · 운영자 로그인 (기본)" width={1280} height={820}>
+              <div className="jt-art"><A2OperatorLogin /></div>
+            </DCArtboard>
+
+            <DCArtboard id="a2-inflight" label="A-2 · Google 로그인 창에서 계속하세요" width={1280} height={820}>
+              <div className="jt-art"><A2GoogleInFlight /></div>
+            </DCArtboard>
+
+            <DCArtboard id="a2-popup" label="A-2 · 팝업 차단 우회" width={1280} height={820}>
+              <div className="jt-art"><A2PopupBlocked /></div>
+            </DCArtboard>
+
+            <DCArtboard id="a3" label="A-3 · OAuth 콜백 (처리)" width={1280} height={820}>
+              <div className="jt-art"><A3OAuthCallback /></div>
+            </DCArtboard>
+
+            <DCArtboard id="a3-failed" label="A-3 · 인증 실패 + 5초 카운트다운" width={1280} height={820}>
+              <div className="jt-art"><A3OAuthFailed /></div>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection
+            id="operator"
+            title="B. 운영자 영역"
+            subtitle="5상태 단방향 (튜토리얼 대기/진행 + 해커톤 대기/진행/종료) · 읽기 전용 + 시작/종료 제어 · 1초 규칙·2클릭 규칙"
+          >
+            <DCArtboard id="b1" label="B-1 · 해커톤 목록 (5상태)" width={1280} height={920}>
+              <div className="jt-art"><B1HackathonList /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b1-empty" label="B-1 · 빈 상태 (신규 운영자)" width={1280} height={820}>
+              <div className="jt-art"><B1Empty /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-tutorial-waiting" label="B-2 · ① 튜토리얼 대기 — 참가자 접속 현황" width={1280} height={920}>
+              <div className="jt-art"><B2DashboardTutorialWaiting /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-tutorial-running" label="B-2 · ② 튜토리얼 진행 — 완료율 모니터" width={1280} height={920}>
+              <div className="jt-art"><B2DashboardTutorialRunning /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-hack-waiting" label="B-2 · ④ 해커톤 대기 — 시작 직전" width={1280} height={920}>
+              <div className="jt-art"><B2DashboardHackathonWaiting /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-started" label="B-2 · ⑤ 해커톤 진행 — 팀 활동" width={1280} height={920}>
+              <div className="jt-art"><B2DashboardStarted /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-paused" label="B-2 · 일시정지 (② 또는 ⑤ 위 오버레이)" width={1280} height={920}>
+              <div className="jt-art"><B2DashboardPaused /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-ended" label="B-2 · ⑥ 해커톤 종료 — 결과 요약 + 갤러리" width={1280} height={920}>
+              <div className="jt-art"><B2DashboardEnded /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-skip" label="B-2 모달 · 튜토리얼 건너뛰기 경고" width={1280} height={820}>
+              <div className="jt-art"><B2SkipTutorialModal /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-end" label="B-2 모달 · 종료 1단계 (이름 타이핑)" width={1280} height={820}>
+              <div className="jt-art"><B2EndModal /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-end-countdown" label="B-2 모달 · 종료 2단계 (30초 카운트다운)" width={1280} height={820}>
+              <div className="jt-art"><B2EndModalCountdown /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-tutorial-start-confirm" label="B-2 모달 · 튜토리얼 시작 확인 (① → ②)" width={1280} height={820}>
+              <div className="jt-art"><B2TutorialStartConfirm /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-tutorial-end-confirm" label="B-2 모달 · 튜토리얼 종료 확인 + 완료 현황 (② → ④)" width={1280} height={820}>
+              <div className="jt-art"><B2TutorialEndConfirm /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-hackathon-start-confirm" label="B-2 모달 · 해커톤 시작 확인 (④ → ⑤)" width={1280} height={820}>
+              <div className="jt-art"><B2HackathonStartConfirm /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-roster-detail" label="B-2 모달 · 팀 상세 (RosterRow 카드 클릭 → 멤버·접속)" width={1280} height={820}>
+              <div className="jt-art"><B2RosterDetail /></div>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection
+            id="participant"
+            title="C. 참가자 핵심 흐름"
+            subtitle="팀 대기실 3종 (시작 전 · 튜토리얼 후 · 종료) → 셀프 튜토리얼 → 캔버스 코딩 (1인팀 · 다인팀) · 단계 진입 버튼 없이 자동 전환 (참가자-로그인 v8)"
+          >
+            <DCArtboard id="c1" label="C-1 · 대기실 ① 시작 전 대기 (tutorial_waiting / 튜토리얼 없는 hackathon_waiting)" width={1280} height={820}>
+              <div className="jt-art"><C1RoomBefore /></div>
+            </DCArtboard>
+
+            <DCArtboard id="c1-after-tutorial" label="C-1 · 대기실 ② 튜토리얼 후 대기 (hackathon_waiting · 튜토리얼 후)" width={1280} height={820}>
+              <div className="jt-art"><C1RoomAfterTutorial /></div>
+            </DCArtboard>
+
+            <DCArtboard id="c1-ended" label="C-1 · 대기실 ③ 해커톤 종료 안내 (hackathon_ended)" width={1280} height={820}>
+              <div className="jt-art"><C1RoomEnded /></div>
+            </DCArtboard>
+
+            <DCArtboard id="c2" label="C-2 · 셀프 튜토리얼 (상단 접이식 가이드 카드)" width={1280} height={820}>
+              <div className="jt-art"><C2Tutorial /></div>
+            </DCArtboard>
+
+            <DCArtboard id="c3" label="C-3 · 1인팀 캔버스 (OpenCode 임베드)" width={1280} height={820}>
+              <div className="jt-art"><C3PersonalCoding /></div>
+            </DCArtboard>
+
+            <DCArtboard id="c4" label="C-4 · 다인팀 캔버스 (커서 + 전송 요청)" width={1280} height={820}>
+              <div className="jt-art"><C4TeamCanvas /></div>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection
+            id="gallery"
+            title="D. 갤러리 영역"
+            subtitle="참가자·운영자·심사위원 공용 · 브라우저 헤더 삭제 · B영역 LivePreview 재활용 · 갤러리 1+2차 기획(4단 위계·2-pane·이전/다음·❤️·댓글) + 페이지 정의서 D-1/D-2(빈/로딩 상태) 반영"
+          >
+            <DCArtboard id="d1" label="D-1 · 갤러리 목록 (진행 중 · 8개 공개 · 새 카드 디자인)" width={1280} height={920}>
+              <div className="jt-art"><D1GalleryList /></div>
+            </DCArtboard>
+
+            <DCArtboard id="d1-ended" label="D-1 · 갤러리 목록 (해커톤 종료 후 · 12개 자동 공개)" width={1280} height={920}>
+              <div className="jt-art"><D1GalleryListEnded /></div>
+            </DCArtboard>
+
+            <DCArtboard id="d1-empty" label="D-1 · 빈 상태 (아직 공개된 작품 없음)" width={1280} height={820}>
+              <div className="jt-art"><D1GalleryEmpty /></div>
+            </DCArtboard>
+
+            <DCArtboard id="d1-loading" label="D-1 · 로딩 상태 (스켈레톤)" width={1280} height={820}>
+              <div className="jt-art"><D1GalleryLoading /></div>
+            </DCArtboard>
+
+            <DCArtboard id="d2" label="D-2 · 갤러리 상세 (기본 · 정보 탭 · 좋아요 누름)" width={1280} height={920}>
+              <div className="jt-art"><D2GalleryDetail /></div>
+            </DCArtboard>
+
+            <DCArtboard id="d2-comments" label="D-2 · 댓글 탭 (댓글 4건)" width={1280} height={920}>
+              <div className="jt-art"><D2GalleryDetailComments /></div>
+            </DCArtboard>
+
+            <DCArtboard id="d2-comments-empty" label="D-2 · 댓글 빈 상태 (첫 댓글 작성 유도)" width={1280} height={920}>
+              <div className="jt-art"><D2GalleryDetailCommentsEmpty /></div>
+            </DCArtboard>
+
+            <DCArtboard id="d2-loading" label="D-2 · 라이브 프리뷰 로딩 (서버 기동 중)" width={1280} height={920}>
+              <div className="jt-art"><D2GalleryDetailLoading /></div>
+            </DCArtboard>
+
+            <DCArtboard id="d2-mine" label="D-2 · 내 프로젝트 (좋아요 비활성 · 공개 설정 아이콘 활성)" width={1280} height={920}>
+              <div className="jt-art"><D2GalleryDetailMine /></div>
+            </DCArtboard>
+
+            <DCArtboard id="d2-last" label="D-2 · 마지막 프로젝트 (다음 비활성)" width={1280} height={920}>
+              <div className="jt-art"><D2GalleryDetailLast /></div>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection
+            id="dialogs"
+            title="E. 공통 다이얼로그·오버레이"
+            subtitle="코딩 환경 위에 뜨는 모달들 · 갤러리 공개 / 합의 투표 / AI 선택지"
+          >
+            <DCArtboard id="e1" label="E-1 · 프로젝트 설정 (공개 활성화 + 사용법)" width={1280} height={820}>
+              <div className="jt-art"><E1ProjectSettings stateVariant="unsaved" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e1-private" label="E-1 · 프로젝트 설정 (비공개 기본)" width={1280} height={820}>
+              <div className="jt-art"><E1ProjectSettings stateVariant="private" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e1-saving" label="E-1 · 저장 중 (스피너)" width={1280} height={820}>
+              <div className="jt-art"><E1ProjectSettings stateVariant="saving" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e1-saved" label="E-1 · 저장 완료 (인라인 확인)" width={1280} height={820}>
+              <div className="jt-art"><E1ProjectSettings stateVariant="saved" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e1-unsaved-close" label="E-1 · 미저장 종료 경고 (변경 항목 표시)" width={1280} height={820}>
+              <div className="jt-art"><E1UnsavedCloseConfirm /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4" label="E-4 · 합의 투표 (15초 카운트다운 · 만장일치)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVote stateVariant="voting" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4-waiting" label="E-4 · 응답 대기 (본인 동의 후 · 팀원 응답 대기)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVote stateVariant="waiting" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4-v2" label="E-4 v2 · 합의 투표 (매치 수락 어휘 · 거대 ring)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVote stateVariant="voting-v2" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4-waiting-v2" label="E-4 v2 · 응답 대기 (매치 수락 어휘 · 거대 ring)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVote stateVariant="waiting-v2" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4-rejected" label="E-4 · 합의 무산 (캔버스 복귀 CTA)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVote stateVariant="rejected" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e5" label="E-5 · AI 선택지 투표 (3안 + 기타)" width={1280} height={820}>
+              <div className="jt-art"><E5AIChoiceVote /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e6-paused" label="E-6 · 일시정지 오버레이 (바이브코딩 화면 위 백드롭)" width={1280} height={820}>
+              <div className="jt-art"><E6Paused /></div>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection
+            id="judge"
+            title="F. 심사 영역"
+            subtitle="해커톤 종료 후 심사위원 전용 · 라이브 앱 체험 + 4축 채점 + 코멘트"
+          >
+            <DCArtboard id="f1" label="F-1 · 심사위원 대시보드 (채점 진행 중)" width={1280} height={820}>
+              <div className="jt-art"><F1JudgeDashboard /></div>
+            </DCArtboard>
+          </DCSection>
+        </DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,781 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>짓다 · 화면 뷰어</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css" />
+
+  <!-- 단일 소스: tokens.css 직접 로드 (2026-05-27 전환). 아래 인라인 <style>은 viewer-specific override만 유지. -->
+  <link rel="stylesheet" href="tokens.css" />
+
+  <!-- viewer 인라인 override (기존 토큰 값은 tokens.css와 다를 수 있음 — 우선순위: 인라인 > tokens.css) -->
+  <style>
+    :root {
+      --c-canvas: #ffffff;
+      --c-paper: #f4f2ec;
+      --c-stone: #e9e6dd;
+      --c-stone-2: #ddd9cd;
+      --c-hairline: #d9d5c9;
+      --c-hairline-strong: #b8b4a6;
+      --c-ink: #14130f;
+      --c-ink-2: #2a2823;
+      --c-ink-3: #4a473e;
+      --c-muted: #8a8779;
+      --c-slate: #69675c;
+
+      --c-helmet: #ffce2b;
+      --c-helmet-deep: #e6b500;
+      --c-helmet-soft: #fff4c2;
+      --c-stache: #14130f;
+      --c-rebar: #b87333;
+      --c-blueprint: #1f3a52;
+      --c-blueprint-soft: #dde4ec;
+      --c-safety: #ff6b1f;
+      --c-safety-soft: #ffe0cf;
+      --c-safety-deep: #cc4a0a;
+      --c-concrete: #c3bfb3;
+      --c-concrete-light: #ebe7dd;
+
+      --c-deep: #003c33;
+      --c-blue: var(--c-blueprint);
+      --c-blue-soft: var(--c-blueprint-soft);
+      --c-amber: #a06a0a;
+      --c-amber-soft: #fbeacf;
+      --c-mint: #096c4d;
+      --c-mint-soft: #d6f1de;
+      --c-tutorial: #2e2c8a;
+      --c-tutorial-soft: #e1e0fa;
+
+      /* Deprecated aliases — 단계적 마이그레이션 (danger→safety, 강조→helmet) */
+      --c-rose: var(--c-safety);
+      --c-rose-soft: var(--c-safety-soft);
+      --c-coral: var(--c-helmet);
+      --c-coral-soft: var(--c-helmet-soft);
+
+      --font-display: 'Wanted Sans Variable', 'Wanted Sans', system-ui, sans-serif;
+      --font-body: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, 'Menlo', monospace;
+
+      --r-xs: 2px;
+      --r-sm: 4px;
+      --r-md: 6px;
+      --r-lg: 10px;
+      --r-pill: 999px;
+
+      --shadow-sm: 0 1px 0 rgba(20, 19, 15, 0.04);
+      --shadow-md: 0 4px 16px rgba(20, 19, 15, 0.06), 0 1px 0 rgba(20, 19, 15, 0.04);
+      --shadow-lg: 0 12px 32px rgba(20, 19, 15, 0.10);
+
+      --gradient-brand-tape: repeating-linear-gradient(
+        -45deg,
+        var(--c-helmet-soft) 0px,
+        var(--c-helmet-soft) 36px,
+        var(--c-helmet)      36px,
+        var(--c-helmet)      40px
+      );
+      --anim-glow-duration: 2.4s;
+    }
+
+    .jt-art *,
+    .jt-art *::before,
+    .jt-art *::after { box-sizing: border-box; }
+
+    .jt-art {
+      width: 100%; height: 100%;
+      background: var(--c-paper);
+      color: var(--c-ink);
+      font-family: var(--font-body);
+      font-size: 14px;
+      letter-spacing: -0.005em;
+      line-height: 1.45;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .jt-art h1, .jt-art h2, .jt-art h3, .jt-art h4 {
+      font-family: var(--font-display);
+      font-weight: 700;
+      letter-spacing: -0.022em;
+      margin: 0;
+      color: var(--c-ink);
+    }
+
+    .jt-art button { font-family: inherit; cursor: pointer; }
+    .jt-mono { font-family: var(--font-mono); }
+    .jt-display { font-family: var(--font-display); }
+
+    .jt-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: var(--r-pill);
+      font-size: 11.5px; font-weight: 500; font-family: var(--font-mono);
+      letter-spacing: 0.02em; line-height: 1; white-space: nowrap;
+    }
+    .jt-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .jt-pill-pending { background: var(--c-stone); color: var(--c-ink-3); }
+    .jt-pill-tutorial { background: var(--c-tutorial-soft); color: var(--c-tutorial); }
+    .jt-pill-started { background: var(--c-mint-soft); color: var(--c-mint); }
+    .jt-pill-paused { background: var(--c-amber-soft); color: var(--c-amber); }
+    .jt-pill-ended { background: #ebebec; color: var(--c-ink-3); }
+    .jt-pill-danger { background: var(--c-rose-soft); color: var(--c-rose); }
+    .jt-pill-info { background: var(--c-blue-soft); color: var(--c-blue); }
+
+    .jt-pill-tutorial-waiting { background: #ebebec; color: #4a473e; border: 1px solid #d9d6cc; }
+    .jt-pill-tutorial-running { background: #e1e0fa; color: #2e2c8a; }
+    .jt-pill-tutorial-ended   { background: #d2ece5; color: #0a5a4a; }
+    .jt-pill-hack-waiting     { background: #ebebec; color: #4a473e; border: 1px solid #d9d6cc; }
+    .jt-pill-hack-running     { background: var(--c-mint-soft); color: var(--c-mint); }
+    .jt-pill-hack-ended       { background: #ffe1de; color: #882019; }
+
+    /* 2026-05-28: viewer-specific override만 유지 — border-radius 만 r-sm 으로 변경(viewer는 sm, tokens.css 기본은 pill).
+       기존의 .jt-btn 전체 재정의는 tokens.css 의 variant(border-color 등) override를 source 순서로 덮어버려 폐기.
+       모든 base 속성(display, height, padding, border, transition 등)은 tokens.css 에 위임. */
+    .jt-btn { border-radius: var(--r-sm); }
+    .jt-btn-sm { border-radius: var(--r-xs); }
+
+    /* === Interaction tokens (2026-05-27 추가 — tokens.css 미러) === */
+    --dur-instant: 75ms; --dur-fast: 150ms; --dur-base: 240ms;
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+    --focus-ring-color: var(--c-helmet);
+    --c-backdrop: rgba(20, 19, 15, 0.40);
+    --c-backdrop-strong: rgba(20, 19, 15, 0.55);
+    --c-backdrop-soft: rgba(20, 19, 15, 0.25);
+    --shadow-hover: 0 8px 20px rgba(15, 15, 20, 0.08), 0 2px 4px rgba(15, 15, 20, 0.04);
+    --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.30), 0 12px 24px rgba(0, 0, 0, 0.16);
+    --modal-w-sm: 420px; --modal-w-md: 560px; --modal-w-lg: 720px; --modal-w-xl: 920px;
+
+    .jt-btn { transition: background-color 150ms cubic-bezier(0.2,0,0,1), color 150ms cubic-bezier(0.2,0,0,1), border-color 150ms cubic-bezier(0.2,0,0,1), box-shadow 150ms cubic-bezier(0.2,0,0,1), transform 75ms cubic-bezier(0.2,0,0,1); }
+    .jt-btn:active:not([disabled]):not(.is-disabled) { transform: scale(0.97); }
+    .jt-btn:focus-visible { outline: 2px solid var(--c-helmet); outline-offset: 2px; }
+    .jt-btn-primary { box-shadow: 0 1px 2px rgba(15,15,20,0.04); }
+    .jt-btn-primary:hover { background: var(--c-ink-3); box-shadow: 0 6px 22px rgba(15,15,20,0.10), 0 1px 2px rgba(15,15,20,0.04); }
+    /* Outlined: bg fill만 (elevation 없음 — fill 메타포) */
+    .jt-btn-secondary:hover { background: var(--c-stone); border-color: var(--c-ink-3); }
+    /* Helmet: filled이므로 elevation lift */
+    .jt-btn-helmet { box-shadow: 0 1px 2px rgba(15,15,20,0.04); }
+    .jt-btn-helmet:hover { background: var(--c-helmet-deep); border-color: var(--c-helmet-deep); box-shadow: 0 6px 22px rgba(15,15,20,0.06), 0 1px 2px rgba(15,15,20,0.04); }
+
+    .jt-card { background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: var(--r-sm); }
+    /* Interactive card primitive — hover 시 border + shadow + 1px 들림.
+       인라인 style의 border/boxShadow specificity를 이기기 위해 !important. */
+    .jt-card-interactive {
+      cursor: pointer;
+      transition: background-color 150ms cubic-bezier(0.2,0,0,1), border-color 150ms cubic-bezier(0.2,0,0,1), box-shadow 150ms cubic-bezier(0.2,0,0,1), transform 75ms cubic-bezier(0.2,0,0,1);
+    }
+    .jt-card-interactive:hover {
+      border-color: var(--c-ink-3) !important;
+      box-shadow: 0 8px 20px rgba(15,15,20,0.10), 0 2px 4px rgba(15,15,20,0.05) !important;
+      transform: translateY(-1px);
+    }
+    .jt-card-interactive:active {
+      transform: translateY(0) scale(0.998);
+      box-shadow: 0 1px 2px rgba(15,15,20,0.04) !important;
+    }
+    .jt-card-interactive:focus-visible { outline: 2px solid var(--c-helmet); outline-offset: 2px; }
+
+    .jt-icon-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px;
+      border-radius: var(--r-sm);
+      background: transparent; color: var(--c-ink-3);
+      border: 1px solid transparent; cursor: pointer;
+      transition: background-color 150ms ease, color 150ms ease;
+    }
+    .jt-icon-btn:hover { background: var(--c-stone); color: var(--c-ink); }
+    .jt-icon-btn:active { transform: scale(0.94); }
+    .jt-icon-btn:focus-visible { outline: 2px solid var(--c-helmet); outline-offset: 2px; }
+
+    /* Modal primitives */
+    @keyframes jt-spin { to { transform: rotate(360deg); } }
+    .jt-spin { animation: jt-spin 1.2s linear infinite; }
+    .jt-spin-once { animation: jt-spin 600ms cubic-bezier(0,0,0.2,1); }
+
+    @keyframes jt-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes jt-modal-pop-in {
+      from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+      to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    @keyframes jt-modal-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+    .jt-modal-backdrop {
+      position: absolute; inset: 0;
+      background: var(--c-backdrop);
+      animation: jt-backdrop-in 240ms cubic-bezier(0,0,0.2,1);
+    }
+    .jt-modal-backdrop.is-strong { background: var(--c-backdrop-strong); }
+    .jt-modal-backdrop.is-soft   { background: var(--c-backdrop-soft); }
+    .jt-modal-backdrop.has-blur  { backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); }
+    .jt-input {
+      width: 100%; padding: 12px 14px;
+      font-family: inherit; font-size: 14px;
+      background: var(--c-canvas);
+      border: 1px solid var(--c-hairline-strong);
+      border-radius: var(--r-xs);
+      color: var(--c-ink); outline: none;
+    }
+    .jt-input:focus { border-color: var(--c-ink); box-shadow: 0 0 0 2px var(--c-helmet); }
+
+    .jt-row { display: flex; align-items: center; }
+    .jt-col { display: flex; flex-direction: column; }
+    .jt-spacer { flex: 1; }
+    .jt-eyebrow {
+      font-family: var(--font-mono);
+      font-size: 11px; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--c-muted);
+    }
+    .jt-divider { height: 1px; background: var(--c-hairline); }
+    .jt-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .jt-dot.live { background: var(--c-mint); box-shadow: 0 0 0 4px rgba(9, 108, 77, 0.12); }
+    .jt-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+      letter-spacing: 0.04em; background: var(--c-stone); color: var(--c-ink);
+      flex-shrink: 0;
+    }
+    .jt-blueprint-bg {
+      background-color: var(--c-ink);
+      background-image:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 32px 32px, 32px 32px;
+    }
+    .jt-concrete-bg {
+      background-color: var(--c-paper);
+      background-image:
+        linear-gradient(rgba(20,19,15,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20,19,15,0.04) 1px, transparent 1px);
+      background-size: 24px 24px, 24px 24px;
+    }
+    /* A 영역 — 운영자 메타포 배경 (concrete pad: stone-2 + stache 도면 라인). tokens.css 동기 미러. */
+    /* 참가자(A-1)는 기존 .jt-blueprint-bg 그대로 사용 — 별도 클래스 없음. */
+    .jt-blueprint-studio-bg {
+      background-color: var(--c-stone-2);
+      background-image:
+        radial-gradient(circle at 78% 22%, rgba(255, 206, 43, 0.10) 0%, transparent 45%),
+        linear-gradient(rgba(20, 19, 15, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(20, 19, 15, 0.05) 1px, transparent 1px);
+      background-size: auto, 24px 24px, 24px 24px;
+    }
+    .jt-stamp {
+      font-family: var(--font-mono);
+      font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+      border: 1px solid currentColor; padding: 3px 8px; display: inline-block;
+    }
+    .jt-bracket { position: relative; }
+    .jt-bracket::before, .jt-bracket::after {
+      content: ''; position: absolute; width: 12px; height: 12px;
+      border: 1.5px solid var(--c-stache);
+    }
+    .jt-bracket::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+    .jt-bracket::after  { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+    /* === Critical action button — shine sweep === */
+    .jt-brand-rule {
+      height: 1px;
+      background: var(--gradient-brand-tape);
+      background-size: 48px 1px;
+      opacity: 0.6;
+    }
+    .jt-eyebrow-tape::before {
+      content: "";
+      display: inline-block;
+      width: 8px; height: 8px;
+      background: var(--c-helmet);
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    /* 비가역 액션 버튼 — 검정 본체 + 외곽 노랑 ring (2026-05-27: border → box-shadow로 이동).
+       이전 border 2px helmet은 box-sizing으로 본체 영역을 4px 깎아 secondary보다 작아 보였음. */
+    .jt-btn-critical,
+    .jt-btn-critical-static {
+      background: var(--c-stache);
+      color: var(--c-helmet);
+      border: 1px solid var(--c-stache);
+      box-shadow: 0 0 0 2px var(--c-helmet);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .jt-btn-critical:hover,
+    .jt-btn-critical-static:hover { background: #000; box-shadow: 0 0 0 2px var(--c-helmet), 0 6px 20px rgba(20,19,15,0.35); }
+    .jt-btn-critical { position: relative; overflow: hidden; }
+    .jt-btn-critical::after {
+      content: "";
+      position: absolute; inset: 0;
+      background: linear-gradient(115deg, transparent 35%, rgba(255, 206, 43, 0.55) 50%, transparent 65%);
+      background-size: 220% 100%;
+      background-repeat: no-repeat;
+      background-position: 130% 0;
+      animation: jt-btn-shine var(--anim-glow-duration) ease-in-out infinite;
+      pointer-events: none;
+    }
+    /* 130%(좌측 완전 바깥) → -30%(우측 완전 빠짐) → dwell. 빛띠가 항상 버튼 바깥에서 시작 → 자연스러운 진입. */
+    @keyframes jt-btn-shine {
+      0%   { background-position: 130% 0; }
+      55%  { background-position: -30% 0; }
+      100% { background-position: -30% 0; }
+    }
+    .jt-countdown-ring-critical {
+      animation: jt-ring-pulse var(--anim-glow-duration) ease-in-out infinite;
+    }
+    @keyframes jt-ring-pulse {
+      0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+      50%      { filter: drop-shadow(0 0 12px var(--c-safety)); }
+    }
+    /* 모달 상단 스트립 — 12px (애니메이션 사선 / 고정 사선 / 단색 검정)
+       사선 패턴 스트라이프 폭 10√2(=14.1421356)px → x축 1주기 = 정확히 40px (솔기 없음) */
+    .jt-caution-strip,
+    .jt-caution-strip-static,
+    .jt-ink-strip {
+      height: 12px;
+      width: 100%;
+      flex-shrink: 0;
+    }
+    .jt-caution-strip,
+    .jt-caution-strip-static {
+      background: repeating-linear-gradient(
+        -45deg,
+        var(--c-helmet) 0 14.1421356px,
+        var(--c-ink) 14.1421356px 28.2842712px
+      );
+      background-size: 40px 100%;
+    }
+    .jt-caution-strip {
+      animation: jt-caution-scroll 1.6s linear infinite;
+      will-change: background-position;
+    }
+    @keyframes jt-caution-scroll {
+      0%   { background-position: 0 0; }
+      100% { background-position: 40px 0; }
+    }
+    .jt-ink-strip { background: var(--c-ink); }
+    @media (prefers-reduced-motion: reduce) {
+      .jt-btn-critical { box-shadow: 0 0 12px 2px rgba(255, 206, 43, 0.35); }
+      .jt-btn-critical::after { animation: none; background-position: 50% 0; opacity: 0.35; }
+      .jt-countdown-ring-critical { animation: none; filter: drop-shadow(0 0 6px var(--c-safety)); }
+      .jt-tape, .jt-tape-block { filter: drop-shadow(0 1px 2px rgba(20, 19, 15, 0.15)); }
+      .jt-caution-strip { animation: none; }
+    }
+
+    /* Safety Tape — 공사장 주황 안전 테이프 */
+    .jt-tape {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 18px;
+      background: var(--c-safety); color: var(--c-stache);
+      font-family: var(--font-mono); font-size: 11.5px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      line-height: 1.3; white-space: nowrap;
+      transform: rotate(-1.5deg);
+      filter: drop-shadow(0 2px 3px rgba(20, 19, 15, 0.18));
+      /* 톱니 깊이 px 고정 — 테이프 길이와 무관하게 일정한 찢긴 모양 */
+      clip-path: polygon(2px 8%, 0 22%, 3px 38%, 0 55%, 4px 72%, 0 88%, 3px 100%,
+        calc(100% - 3px) 100%, 100% 88%, calc(100% - 4px) 72%, 100% 55%, calc(100% - 3px) 38%, 100% 22%, calc(100% - 2px) 8%, calc(100% - 5px) 0, 5px 0);
+    }
+    .jt-tape-inline {
+      display: inline-block; padding: 1px 10px;
+      background: var(--c-safety); color: var(--c-stache);
+      font-weight: 700; line-height: inherit;
+      clip-path: polygon(3px 0, 0 50%, 3px 100%, calc(100% - 3px) 100%, 100% 50%, calc(100% - 3px) 0);
+    }
+    .jt-tape-block {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 10px 28px;
+      background: var(--c-safety); color: var(--c-stache);
+      font-family: var(--font-display); font-size: 18px; font-weight: 800;
+      letter-spacing: -0.01em; line-height: 1.2;
+      transform: rotate(-2deg);
+      filter: drop-shadow(0 3px 6px rgba(20, 19, 15, 0.22));
+      /* 톱니 깊이 px 고정 — block은 비율 18%(높이 ~40px 기준 8px 코너)로 .jt-tape와 동일 비례감 */
+      clip-path: polygon(3px 8%, 0 22%, 4px 38%, 0 55%, 5px 72%, 0 88%, 4px 100%,
+        calc(100% - 4px) 100%, 100% 88%, calc(100% - 5px) 72%, 100% 55%, calc(100% - 4px) 38%, 100% 22%, calc(100% - 3px) 8%, calc(100% - 7px) 0, 7px 0);
+    }
+
+  </style>
+
+  <style>
+    html, body { margin: 0; padding: 0; min-height: 100%; background: #1a1a1f; font-family: 'Pretendard Variable', system-ui, sans-serif; color: #e5e5ec; }
+    @keyframes blink { 50% { opacity: 0; } }
+    @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(24,99,220,0.5); } 50% { box-shadow: 0 0 0 6px rgba(24,99,220,0); } }
+
+    /* ── Toolbar ───────────────────────────────── */
+    #toolbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(20, 20, 25, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 12px 20px;
+      display: flex; gap: 10px; align-items: center;
+      font-size: 13px;
+    }
+    #toolbar select, #toolbar button, #toolbar a.btn {
+      font: inherit; padding: 7px 12px; border-radius: 4px;
+      border: 0; cursor: pointer;
+    }
+    #toolbar select {
+      background: #2a2a32; color: #fff;
+      border: 1px solid rgba(255,255,255,0.12);
+      min-width: 360px; max-width: 50vw;
+    }
+    #toolbar button.nav, #toolbar a.btn {
+      background: #ffce2b; color: #14130f; font-weight: 600;
+      text-decoration: none; line-height: 1;
+    }
+    #toolbar button.nav:hover, #toolbar a.btn:hover { background: #e6b500; }
+    #toolbar button.nav:disabled { opacity: 0.35; cursor: not-allowed; background: #555; color: #ccc; }
+    #toolbar .meta {
+      color: #8a8aa0; font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+      letter-spacing: 0.04em; white-space: nowrap;
+    }
+    #toolbar .spacer { flex: 1; }
+    #toolbar a.link {
+      color: #ffce2b; text-decoration: none; font-size: 12px;
+      padding: 6px 10px; border-radius: 4px;
+      border: 1px solid rgba(255, 206, 43, 0.3);
+    }
+    #toolbar a.link:hover { background: rgba(255,206,43,0.1); }
+
+    /* ── Stage ─────────────────────────────────── */
+    #stage {
+      padding: 40px 20px 80px;
+      display: flex; justify-content: center; align-items: flex-start;
+      min-height: calc(100vh - 60px);
+    }
+    .art-frame {
+      background: var(--c-paper);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
+      position: relative;
+      overflow: hidden;
+    }
+    .art-frame .id-badge {
+      position: absolute; top: 8px; right: 8px; z-index: 9999;
+      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      background: rgba(20,19,15,0.85); color: #ffce2b;
+      padding: 4px 8px; border-radius: 3px;
+      letter-spacing: 0.04em;
+      pointer-events: none;
+    }
+
+    /* ── Status banner (Phase 2 hint) ───────────── */
+    #status {
+      max-width: 1280px; margin: 0 auto 24px;
+      padding: 12px 16px;
+      background: rgba(255,206,43,0.08);
+      border: 1px solid rgba(255,206,43,0.25);
+      border-radius: 6px;
+      color: #d4b948; font-size: 12.5px; line-height: 1.6;
+    }
+    #status code {
+      background: rgba(0,0,0,0.3); padding: 1px 6px; border-radius: 3px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+    }
+
+    /* ── Loading ──────────────────────────────── */
+    #loading {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: #1a1a1f; color: #ffce2b;
+      font-family: 'JetBrains Mono', monospace; font-size: 14px;
+      z-index: 10000;
+    }
+    body.ready #loading { display: none; }
+
+    /* ── Help overlay ─────────────────────────── */
+    #help {
+      position: fixed; bottom: 20px; right: 20px;
+      background: rgba(20,20,25,0.95); color: #aaa;
+      padding: 10px 14px; border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      border: 1px solid rgba(255,255,255,0.1);
+      pointer-events: none;
+      opacity: 0.7;
+    }
+    #help kbd {
+      background: rgba(255,255,255,0.1); padding: 1px 5px; border-radius: 3px;
+      font-family: inherit; color: #fff;
+    }
+  </style>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="loading">화면 컴포넌트 로딩 중…</div>
+
+  <div id="toolbar">
+    <button id="prev" class="nav" title="이전 화면 (←)">←</button>
+    <button id="next" class="nav" title="다음 화면 (→)">→</button>
+    <select id="screen-select" title="화면 선택"></select>
+    <span class="meta" id="meta">—</span>
+    <div class="spacer"></div>
+    <a href="Jitda Renewal.html" class="link">캔버스 (전체)</a>
+    <a href="STRUCTURE.md" class="link">구조 맵</a>
+  </div>
+
+  <div id="stage">
+    <div id="root"></div>
+  </div>
+
+  <div id="help">
+    <kbd>←</kbd> <kbd>→</kbd> 화면 이동 · <kbd>/</kbd> 화면 검색
+  </div>
+
+  <!-- JSX 컴포넌트 (shared 먼저 로드) -->
+  <script type="text/babel" src="shared.jsx"></script>
+  <script type="text/babel" src="auth.jsx"></script>
+  <script type="text/babel" src="operator.jsx"></script>
+  <script type="text/babel" src="participant.jsx"></script>
+  <script type="text/babel" src="gallery.jsx"></script>
+  <script type="text/babel" src="dialogs.jsx"></script>
+  <script type="text/babel" src="judge.jsx"></script>
+
+  <script type="text/babel" data-presets="react">
+    // ──────────────────────────────────────────────────────────────
+    //  46개 화면 레지스트리
+    //  각 항목: { id, label, section, w?, h?, render }
+    //  w/h 기본값 1280×820. B영역 일부와 D영역 일부는 920 높이.
+    // ──────────────────────────────────────────────────────────────
+    const SCREENS = [
+      // ─ A. 인증 ─────────────────────────────────
+      { id: 'a1',              section: 'A. 인증',      label: 'A-1 · 참가자 코드 입장 (기본)',          render: () => <A1CodeLogin /> },
+      { id: 'a1-invalid',      section: 'A. 인증',      label: 'A-1 · 코드 오류',                         render: () => <A1CodeInvalid /> },
+      { id: 'a1-not-started',  section: 'A. 인증',      label: 'A-1 · 행사 미시작',                       render: () => <A1NotStarted /> },
+      { id: 'a1-ended',        section: 'A. 인증',      label: 'A-1 · 행사 종료',                         render: () => <A1Ended /> },
+      { id: 'a2',              section: 'A. 인증',      label: 'A-2 · 운영자 로그인 (기본)',              render: () => <A2OperatorLogin /> },
+      { id: 'a2-inflight',     section: 'A. 인증',      label: 'A-2 · Google 로그인 진행',                render: () => <A2GoogleInFlight /> },
+      { id: 'a2-popup',        section: 'A. 인증',      label: 'A-2 · 팝업 차단 우회',                    render: () => <A2PopupBlocked /> },
+      { id: 'a3',              section: 'A. 인증',      label: 'A-3 · OAuth 콜백 (처리)',                 render: () => <A3OAuthCallback /> },
+      { id: 'a3-failed',       section: 'A. 인증',      label: 'A-3 · 인증 실패 + 5초 카운트다운',        render: () => <A3OAuthFailed /> },
+
+      // ─ B. 운영자 ───────────────────────────────
+      { id: 'b1',                    section: 'B. 운영자',  label: 'B-1 · 해커톤 목록 (5상태)',              h: 920, render: () => <B1HackathonList /> },
+      { id: 'b1-empty',              section: 'B. 운영자',  label: 'B-1 · 빈 상태 (신규 운영자)',                    render: () => <B1Empty /> },
+      { id: 'b2-tutorial-waiting',   section: 'B. 운영자',  label: 'B-2 · ① 튜토리얼 대기 — 참가자 접속',    h: 920, render: () => <B2DashboardTutorialWaiting /> },
+      { id: 'b2-tutorial-running',   section: 'B. 운영자',  label: 'B-2 · ② 튜토리얼 진행 — 완료율 모니터',  h: 920, render: () => <B2DashboardTutorialRunning /> },
+      { id: 'b2-hack-waiting',       section: 'B. 운영자',  label: 'B-2 · ④ 해커톤 대기 — 시작 직전',        h: 920, render: () => <B2DashboardHackathonWaiting /> },
+      { id: 'b2-started',            section: 'B. 운영자',  label: 'B-2 · ⑤ 해커톤 진행 — 팀 활동',           h: 920, render: () => <B2DashboardStarted /> },
+      { id: 'b2-paused',             section: 'B. 운영자',  label: 'B-2 · 일시정지 (② 또는 ⑤ 위 오버레이)',  h: 920, render: () => <B2DashboardPaused /> },
+      { id: 'b2-ended',              section: 'B. 운영자',  label: 'B-2 · ⑥ 해커톤 종료 — 결과 + 갤러리',    h: 920, render: () => <B2DashboardEnded /> },
+      { id: 'b2-skip',               section: 'B. 운영자',  label: 'B-2 모달 · 튜토리얼 건너뛰기 경고',              render: () => <B2SkipTutorialModal /> },
+      { id: 'b2-end',                section: 'B. 운영자',  label: 'B-2 모달 · 종료 1단계 (이름 타이핑)',            render: () => <B2EndModal /> },
+      { id: 'b2-end-countdown',      section: 'B. 운영자',  label: 'B-2 모달 · 종료 2단계 (30초 카운트다운)',        render: () => <B2EndModalCountdown /> },
+      { id: 'b2-tutorial-start-confirm',  section: 'B. 운영자',  label: 'B-2 모달 · 튜토리얼 시작 확인 (① → ②)',              render: () => <B2TutorialStartConfirm /> },
+      { id: 'b2-tutorial-end-confirm',    section: 'B. 운영자',  label: 'B-2 모달 · 튜토리얼 종료 확인 + 완료 현황 (② → ④)', render: () => <B2TutorialEndConfirm /> },
+      { id: 'b2-hackathon-start-confirm', section: 'B. 운영자',  label: 'B-2 모달 · 해커톤 시작 확인 (④ → ⑤)',                render: () => <B2HackathonStartConfirm /> },
+      { id: 'b2-roster-detail',           section: 'B. 운영자',  label: 'B-2 모달 · 팀 상세 (RosterRow 카드 클릭 → 멤버·접속)', h: 920, render: () => <B2RosterDetail /> },
+
+      // ─ C. 참가자 ───────────────────────────────
+      { id: 'c1',                    section: 'C. 참가자',  label: 'C-1 · 대기실 ① 시작 전 (tutorial_waiting / 튜토리얼 없는 hackathon_waiting)', render: () => <C1RoomBefore /> },
+      { id: 'c1-after-tutorial',     section: 'C. 참가자',  label: 'C-1 · 대기실 ② 튜토리얼 후 (hackathon_waiting · 튜토리얼 후)', render: () => <C1RoomAfterTutorial /> },
+      { id: 'c1-ended',              section: 'C. 참가자',  label: 'C-1 · 대기실 ③ 해커톤 종료 (hackathon_ended)',   render: () => <C1RoomEnded /> },
+      { id: 'c1-long-name',          section: 'C. 참가자',  label: 'C-1 · 대기실 ① 시작 전 · edge: 긴 팀명 (25+자)', render: () => <C1TeamRoom state="roomBefore" team={MOCK_TEAM_LONG_NAME} /> },
+      { id: 'c1-many-members',       section: 'C. 참가자',  label: 'C-1 · 대기실 ① 시작 전 · edge: 다인팀 (7명)',   render: () => <C1TeamRoom state="roomBefore" team={MOCK_TEAM_MANY_MEMBERS} /> },
+      { id: 'c1-ended-long-name',    section: 'C. 참가자',  label: 'C-1 · 대기실 ③ 종료 · edge: 긴 팀명',           render: () => <C1TeamRoom state="roomEnded" team={MOCK_TEAM_LONG_NAME} /> },
+      { id: 'c1-ended-many-members', section: 'C. 참가자',  label: 'C-1 · 대기실 ③ 종료 · edge: 다인팀 (7명)',      render: () => <C1TeamRoom state="roomEnded" team={MOCK_TEAM_MANY_MEMBERS} /> },
+      { id: 'c2',                    section: 'C. 참가자',  label: 'C-2 · 셀프 튜토리얼 (상단 접이식)',               render: () => <C2Tutorial /> },
+      { id: 'c3',                    section: 'C. 참가자',  label: 'C-3 · 1인팀 캔버스 (OpenCode 임베드)',            render: () => <C3PersonalCoding /> },
+      { id: 'c4',                    section: 'C. 참가자',  label: 'C-4 · 다인팀 캔버스 (커서 + 전송 요청)',          render: () => <C4TeamCanvas /> },
+
+      // ─ D. 갤러리 ───────────────────────────────
+      { id: 'd1',                    section: 'D. 갤러리',  label: 'D-1 · 목록 (진행 중 · 8개 공개)',         h: 920, render: () => <D1GalleryList /> },
+      { id: 'd1-ended',              section: 'D. 갤러리',  label: 'D-1 · 목록 (종료 후 · 12개 자동 공개)',    h: 920, render: () => <D1GalleryListEnded /> },
+      { id: 'd1-empty',              section: 'D. 갤러리',  label: 'D-1 · 빈 상태 (아직 공개된 작품 없음)',           render: () => <D1GalleryEmpty /> },
+      { id: 'd1-loading',            section: 'D. 갤러리',  label: 'D-1 · 로딩 상태 (스켈레톤)',                       render: () => <D1GalleryLoading /> },
+      { id: 'd2',                    section: 'D. 갤러리',  label: 'D-2 · 상세 (기본 · 정보 탭 · 좋아요)',     h: 920, render: () => <D2GalleryDetail /> },
+      { id: 'd2-comments',           section: 'D. 갤러리',  label: 'D-2 · 댓글 탭 (4건)',                       h: 920, render: () => <D2GalleryDetailComments /> },
+      { id: 'd2-comments-empty',     section: 'D. 갤러리',  label: 'D-2 · 댓글 빈 상태',                        h: 920, render: () => <D2GalleryDetailCommentsEmpty /> },
+      { id: 'd2-loading',            section: 'D. 갤러리',  label: 'D-2 · 라이브 프리뷰 로딩 (서버 기동 중)',   h: 920, render: () => <D2GalleryDetailLoading /> },
+      { id: 'd2-mine',               section: 'D. 갤러리',  label: 'D-2 · 내 프로젝트 (공개 설정 활성)',        h: 920, render: () => <D2GalleryDetailMine /> },
+      { id: 'd2-last',               section: 'D. 갤러리',  label: 'D-2 · 마지막 프로젝트 (다음 비활성)',       h: 920, render: () => <D2GalleryDetailLast /> },
+
+      // ─ E. 다이얼로그 ───────────────────────────
+      { id: 'e1',                    section: 'E. 다이얼로그', label: 'E-1 · 프로젝트 설정 (공개 활성 + 사용법)',     render: () => <E1ProjectSettings stateVariant="unsaved" /> },
+      { id: 'e1-private',            section: 'E. 다이얼로그', label: 'E-1 · 비공개 기본',                              render: () => <E1ProjectSettings stateVariant="private" /> },
+      { id: 'e1-saving',             section: 'E. 다이얼로그', label: 'E-1 · 저장 중 (스피너)',                          render: () => <E1ProjectSettings stateVariant="saving" /> },
+      { id: 'e1-saved',              section: 'E. 다이얼로그', label: 'E-1 · 저장 완료 (인라인 확인)',                  render: () => <E1ProjectSettings stateVariant="saved" /> },
+      { id: 'e1-unsaved-close',      section: 'E. 다이얼로그', label: 'E-1 · 미저장 종료 경고',                          render: () => <E1UnsavedCloseConfirm /> },
+      { id: 'e4',                    section: 'E. 다이얼로그', label: 'E-4 · 합의 투표 (15초 · 만장일치)',                render: () => <E4ConsensusVote stateVariant="voting" /> },
+      { id: 'e4-waiting',            section: 'E. 다이얼로그', label: 'E-4 · 응답 대기 (본인 동의 후 · 팀원 응답 대기)', render: () => <E4ConsensusVote stateVariant="waiting" /> },
+      { id: 'e4-v2',                 section: 'E. 다이얼로그', label: 'E-4 v2 · 합의 투표 (매치 수락 어휘 · 거대 ring)', render: () => <E4ConsensusVote stateVariant="voting-v2" /> },
+      { id: 'e4-waiting-v2',         section: 'E. 다이얼로그', label: 'E-4 v2 · 응답 대기 (매치 수락 어휘 · 거대 ring)', render: () => <E4ConsensusVote stateVariant="waiting-v2" /> },
+      { id: 'e4-rejected',           section: 'E. 다이얼로그', label: 'E-4 · 합의 무산 (캔버스 복귀 CTA)',                render: () => <E4ConsensusVote stateVariant="rejected" /> },
+      { id: 'e5',                    section: 'E. 다이얼로그', label: 'E-5 · AI 선택지 투표 (3안 + 기타)',              render: () => <E5AIChoiceVote /> },
+      { id: 'e6-paused',             section: 'E. 다이얼로그', label: 'E-6 · 일시정지 오버레이 (바이브코딩 위 백드롭)', render: () => <E6Paused /> },
+      // E-7 폐기 (2026-05-27): 참가자 종료 예고 없음 정책 — 운영자 b2-end-countdown 만료 시 곧바로 c1-ended로 전환.
+
+      // ─ F. 심사 ─────────────────────────────────
+      { id: 'f1',                    section: 'F. 심사',    label: 'F-1 · 심사위원 대시보드 (4축 채점)',              render: () => <F1JudgeDashboard /> },
+    ];
+
+    const SCREEN_BY_ID = Object.fromEntries(SCREENS.map(s => [s.id, s]));
+    const DEFAULT_W = 1280;
+    const DEFAULT_H = 820;
+
+    // ──────────────────────────────────────────────────────────────
+    //  ACTIONS 맵 — 화면 ID × data-action 값 → 이동할 화면 ID
+    //  와이어링된 주요 CTA만 정의 (Phase 2 minimal).
+    //  JSX에 [data-action="..."] 속성 추가 필요.
+    // ──────────────────────────────────────────────────────────────
+    const ACTIONS = {
+      // A. 인증 흐름
+      'a1':                  { 'submit': 'c1', 'operator-login': 'a2' }, // 입장 / 운영자 진입
+      'a1-invalid':          { 'retry': 'a1', 'operator-login': 'a2' },  // 다시 시도 / 운영자
+      'a2':                  { 'google': 'a3', 'email': 'b1' },          // Google / 이메일 분기
+      'a3-failed':           { 'retry': 'a2', 'back-to-login': 'a2' },   // 재시도 / 돌아가기
+
+      // B. 운영자 5상태 단방향 머신 (2026-05-26: ③ 폐기 → 5상태 모델)
+      // 모든 4개 전이는 확인 모달을 거친다 (어드민-역할-기획 §"규칙" 단방향 전이 — 모두 확인 필수)
+      'b1':                  { 'open': 'b2-tutorial-waiting' },                              // 카드 클릭
+      'b2-tutorial-waiting': { 'start': 'b2-tutorial-start-confirm', 'skip': 'b2-skip', 'open-team': 'b2-roster-detail' },    // ① → 확인 모달 / 건너뛰기 / 팀 카드 클릭
+      'b2-tutorial-running': { 'end-tutorial': 'b2-tutorial-end-confirm' },                  // ② → 확인 모달
+      'b2-hack-waiting':     { 'start-hackathon': 'b2-hackathon-start-confirm', 'open-team': 'b2-roster-detail' },            // ④ → 확인 모달 / 팀 카드 클릭
+      'b2-roster-detail':    { 'close-roster-detail': 'b2-tutorial-waiting' },              // 백드롭·X 클릭 시 원래 화면(예시: ①)으로 복귀
+      'b2-started':          { 'pause': 'b2-paused', 'end': 'b2-end' },                      // ⑤ → paused / 종료 모달
+      'b2-paused':           { 'resume': 'b2-started', 'end': 'b2-end' },
+      'b2-ended':            { 'open-gallery': 'd1-ended' },                                  // ⑥ → 갤러리
+
+      // B 모달 6종 (3개 기존 + 3개 신규)
+      'b2-skip':                  { 'cancel': 'b2-tutorial-waiting', 'proceed': 'b2-hack-waiting' },     // ① 건너뛰기 → ④
+      'b2-tutorial-start-confirm':{ 'cancel': 'b2-tutorial-waiting', 'confirm': 'b2-tutorial-running' }, // ① → ②
+      'b2-tutorial-end-confirm':  { 'cancel': 'b2-tutorial-running', 'confirm': 'b2-hack-waiting' },     // ② → ④
+      'b2-hackathon-start-confirm':{'cancel': 'b2-hack-waiting',    'confirm': 'b2-started' },           // ④ → ⑤
+      'b2-end':                   { 'cancel': 'b2-started',          'proceed': 'b2-end-countdown' },    // ⑤ 종료 1단계
+      'b2-end-countdown':         { 'cancel': 'b2-started',          'confirm': 'b2-ended' },            // ⑤ 종료 2단계
+
+      // E. 다이얼로그
+      'e4':                  { 'agree': 'e4-waiting', 'reject': 'e4-rejected' }, // 동의 → 대기 / 거부 → 무산(만장일치 룰)
+      'e4-waiting':          { 'back-to-canvas': 'c4' }, // 데모 한정 — 실 운영은 전원 동의 시 success, timeout 시 e4-rejected
+      'e4-v2':               { 'agree': 'e4-waiting-v2', 'reject': 'e4-rejected' }, // v2 세트
+      'e4-waiting-v2':       { 'back-to-canvas': 'c4' },
+      'e4-rejected':         { 'back-to-canvas': 'c4' },  // 합의 무산 → 다인팀 캔버스 복귀
+
+      // D. 갤러리
+      'd1':                  { 'open-card': 'd2' },
+      'd1-ended':            { 'open-card': 'd2' },
+    };
+
+    // 현재 화면 — 클릭 핸들러가 참조
+    let CURRENT_ID = null;
+
+    // ──────────────────────────────────────────────────────────────
+    //  DOM 초기화
+    // ──────────────────────────────────────────────────────────────
+    const $select = document.getElementById('screen-select');
+    const $meta   = document.getElementById('meta');
+    const $prev   = document.getElementById('prev');
+    const $next   = document.getElementById('next');
+    const $root   = document.getElementById('root');
+    const reactRoot = ReactDOM.createRoot($root);
+
+    // Optgroup으로 영역별 그룹화
+    let currentSection = null;
+    let currentOptgroup = null;
+    SCREENS.forEach((s) => {
+      if (s.section !== currentSection) {
+        currentOptgroup = document.createElement('optgroup');
+        currentOptgroup.label = s.section;
+        $select.appendChild(currentOptgroup);
+        currentSection = s.section;
+      }
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = s.label;
+      currentOptgroup.appendChild(opt);
+    });
+
+    function getIndex(id) {
+      const i = SCREENS.findIndex(s => s.id === id);
+      return i === -1 ? 0 : i;
+    }
+
+    function render(id, pushHistory = false) {
+      const screen = SCREEN_BY_ID[id] || SCREENS[0];
+      const idx = getIndex(screen.id);
+
+      $select.value = screen.id;
+      CURRENT_ID = screen.id;
+      const wireCount = Object.keys(ACTIONS[screen.id] || {}).length;
+      const wireMark = wireCount > 0 ? ` · ⚡${wireCount}` : '';
+      $meta.textContent = `${String(idx + 1).padStart(2, '0')} / ${SCREENS.length} · ${screen.id}${wireMark}`;
+      $prev.disabled = idx === 0;
+      $next.disabled = idx === SCREENS.length - 1;
+      document.title = `짓다 · ${screen.label}`;
+
+      if (pushHistory) {
+        const url = new URL(location);
+        url.searchParams.set('id', screen.id);
+        history.pushState({ id: screen.id }, '', url);
+      }
+
+      const w = screen.w || DEFAULT_W;
+      const h = screen.h || DEFAULT_H;
+
+      reactRoot.render(
+        <div className="art-frame jt-art" style={{ width: w, height: h }}>
+          <div className="id-badge">{screen.id}{wireMark}</div>
+          {screen.render()}
+        </div>
+      );
+
+      document.body.classList.add('ready');
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    //  클릭 위임 — [data-action="..."] 요소 클릭 시 ACTIONS 맵에서 이동
+    // ──────────────────────────────────────────────────────────────
+    document.addEventListener('click', (e) => {
+      const target = e.target.closest('[data-action]');
+      if (!target) return;
+      const action = target.getAttribute('data-action');
+      const screenActions = ACTIONS[CURRENT_ID];
+      if (!screenActions) return;
+      const to = screenActions[action];
+      if (!to) return;
+      e.preventDefault();
+      e.stopPropagation();
+      render(to, true);
+    }, { capture: false });
+
+    function navigate(delta) {
+      const idx = getIndex($select.value);
+      const newIdx = idx + delta;
+      if (newIdx < 0 || newIdx >= SCREENS.length) return;
+      render(SCREENS[newIdx].id, true);
+    }
+
+    // 이벤트
+    $select.addEventListener('change', e => render(e.target.value, true));
+    $prev.addEventListener('click', () => navigate(-1));
+    $next.addEventListener('click', () => navigate(+1));
+
+    document.addEventListener('keydown', e => {
+      const tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); navigate(-1); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); navigate(+1); }
+      if (e.key === '/') { e.preventDefault(); $select.focus(); }
+    });
+
+    window.addEventListener('popstate', () => {
+      const id = new URLSearchParams(location.search).get('id') || SCREENS[0].id;
+      render(id, false);
+    });
+
+    // 초기 렌더 — JSX 컴포넌트가 정의된 후 실행되도록 약간 지연
+    function tryInitialRender() {
+      // 모든 핵심 컴포넌트가 정의되었는지 확인
+      const required = ['A1CodeLogin', 'B1HackathonList', 'C1RoomBefore', 'D1GalleryList', 'E1ProjectSettings', 'F1JudgeDashboard'];
+      const allReady = required.every(name => typeof window[name] === 'function');
+      if (!allReady) {
+        setTimeout(tryInitialRender, 50);
+        return;
+      }
+      const initialId = new URLSearchParams(location.search).get('id') || SCREENS[0].id;
+      render(initialId, false);
+    }
+    tryInitialRender();
+  </script>
+</body>
+</html>
