@@ -124,25 +124,6 @@ function ParticipantPhaseHover({ currentStatus }) {
   );
 }
 
-// 운영자 LiveStatus 포팅 — 참가자 시점. 실시간 연결 mint pulse + 새로고침 버튼.
-function ParticipantLiveStatus() {
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }} title="실시간 연결됨 · 방금 갱신">
-      <span style={{ position: 'relative', display: 'inline-block', width: 14, height: 14, flexShrink: 0 }}>
-        <span className="jt-status-pulse" style={{
-          position: 'absolute', inset: 2,
-          background: 'var(--c-mint)', borderRadius: '50%',
-        }} />
-        <span style={{
-          position: 'absolute', inset: 4,
-          background: 'var(--c-mint)', borderRadius: '50%',
-        }} />
-      </span>
-      <span className="jt-mono" style={{ fontSize: 11, color: 'var(--c-muted)', letterSpacing: '0.04em' }}>LIVE</span>
-    </span>
-  );
-}
-
 // 팀명 hash 기반 결정적 회전 — 같은 팀은 어느 화면에서나 같은 자세 (operator.jsx postitRotation 동일 알고리즘).
 function heroPostitRotation(name) {
   const rotations = ['var(--postit-rot-a)', 'var(--postit-rot-b)', 'var(--postit-rot-c)', 'var(--postit-rot-d)'];
@@ -233,7 +214,7 @@ function TeamPostitV2({ team, ended }) {
         })}
       </div>
 
-      {/* 푸터 — 공용 RosterLegend + 팀 변경 요청 힌트. */}
+      {/* 푸터 — 공용 RosterLegend. */}
       <div style={{
         flex: '0 0 auto',
         padding: '14px 24px 20px',
@@ -241,15 +222,6 @@ function TeamPostitV2({ team, ended }) {
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
         <RosterLegend states={['on', 'off']} />
-        <span style={{ flex: 1 }} />
-        <span title="해커톤이 시작되면 팀을 변경할 수 없습니다.&#10;변경이 필요하면 운영자에게 알려주세요." style={{
-          display: 'inline-flex', alignItems: 'center', gap: 4,
-          fontSize: 10.5, fontFamily: 'var(--font-mono)',
-          color: 'var(--c-muted)', cursor: 'help', opacity: 0.8,
-        }}>
-          {Icon.info(11)}
-          <span>팀 변경</span>
-        </span>
       </div>
     </div>
   );
@@ -338,7 +310,6 @@ function C1TeamRoomV2({ state = 'roomBefore', team = MOCK_TEAM_STANDARD }) {
           <ParticipantPhaseHover currentStatus={s.status} />
         </div>
         <div style={{ flex: 1 }} />
-        {!s.ended && <ParticipantLiveStatus />}
       </div>
 
       {/* 본문 — 3:2 컬럼: 좌측 메시지 / 우측 세로형 팀 포스트잇.
@@ -519,36 +490,34 @@ function OpenCodeShell({
   preview,
   previewState = 'ready',
   previewUrl = 'sapari.jitda.run',
+  tutorial = false,
   leftWidth = 460,
   overlay,
 }) {
-  // ── 입력창 높이 UX: 평소 작게(rest) → 포커스(클릭) 시 확장(focus) → 핸들 드래그/확대 토글 ──
-  const DOC_MIN = 44, DOC_MAX = 460, DOC_REST = 54, DOC_FOCUS = 150, DOC_EXPANDED = 392;
-  const [docH, setDocH] = React.useState(DOC_REST);
-  const [expanded, setExpanded] = React.useState(false);
+  // ── 입력창 높이 UX: '작은' 높이와 '확대' 높이를 각각 기억(둘 다 기본값으로 시작). ──
+  //   '자동 확대' ON + 포커스 → 확대 높이 / blur → 작은 높이. 핸들 드래그는 *현재 모드*의 높이를 갱신.
+  const DOC_MIN = 44, DOC_MAX = 460;
+  const [smallH, setSmallH] = React.useState(54);   // 작은 상태 기억 높이
+  const [bigH, setBigH] = React.useState(300);      // 확대 상태 기억 높이
+  const [autoExpand, setAutoExpand] = React.useState(true); // 기본 ON
+  const [focused, setFocused] = React.useState(false);
   const [dragging, setDragging] = React.useState(false);
-  const manualRef = React.useRef(false);   // 핸들 드래그로 직접 조절하면 포커스 자동높이 중단
-  const docHeight = expanded ? DOC_EXPANDED : docH;
-  const onDocFocus = () => {
-    if (manualRef.current || expanded) return;
-    if (docH < DOC_FOCUS) setDocH(DOC_FOCUS);
-  };
-  const onDocBlur = () => {
-    if (manualRef.current || expanded) return;
-    setDocH(DOC_REST);
-  };
+  const isBig = autoExpand && focused;
+  const docHeight = isBig ? bigH : smallH;
+  const onDocFocus = () => setFocused(true);
+  const onDocBlur = () => setFocused(false);
+  const toggleAuto = () => setAutoExpand((v) => !v);
   const onHandleDown = (e) => {
     e.preventDefault();
-    manualRef.current = true;
+    const big = isBig;                       // 드래그 시작 시점의 모드 고정
     const startY = e.clientY;
-    const startH = expanded ? DOC_EXPANDED : docH;
-    if (expanded) setExpanded(false);
+    const startH = big ? bigH : smallH;
     setDragging(true);
     document.body.style.cursor = 'ns-resize';
     document.body.style.userSelect = 'none';
     const onMove = (ev) => {
       const next = Math.min(DOC_MAX, Math.max(DOC_MIN, startH - (ev.clientY - startY)));
-      setDocH(next);
+      if (big) setBigH(next); else setSmallH(next);   // 현재 모드의 기억 높이만 갱신
     };
     const onUp = () => {
       setDragging(false);
@@ -679,10 +648,11 @@ function OpenCodeShell({
               <button className="oc-icon-btn" aria-label="다시 실행" disabled>
                 <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M11.67 4.58 17.08 10l-5.41 5.42M16.67 10H2.92" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
-              <button className={'oc-icon-btn' + (expanded ? ' is-on' : '')} aria-label={expanded ? '작게 보기' : '크게 보기'} aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
-                {expanded
-                  ? <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M9.58 14.58v-4h-4M10.42 5.42v4h4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  : <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M4.58 10.42v5h5M10.42 4.58h5v5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              <span style={{ width: 1, height: 16, background: 'var(--c-hairline)', margin: '0 2px 0 4px' }} />
+              {/* 자동 확대 토글 — ON이면 입력창 클릭(포커스) 시 자동으로 커짐. OFF면 핸들 드래그로 수동 */}
+              <button className="oc-auto-toggle" role="switch" aria-checked={autoExpand} title="켜면 입력창을 클릭할 때 자동으로 커져요" onClick={toggleAuto}>
+                <span className={'oc-auto-track' + (autoExpand ? ' is-on' : '')}><span className="oc-auto-thumb" /></span>
+                <span style={{ fontSize: 11, fontWeight: 500, whiteSpace: 'nowrap', color: autoExpand ? 'var(--c-ink-2)' : 'var(--c-muted)' }}>자동 확대</span>
               </button>
             </div>
 
@@ -700,7 +670,7 @@ function OpenCodeShell({
         display: 'flex', flexDirection: 'column',
         background: 'var(--c-canvas)',
       }}>
-        <OcPreviewHeader url={previewUrl} live={previewState === 'ready'} />
+        <SafariChrome url={previewUrl} tutorial={tutorial} />
         <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex' }}>
           {previewNode}
         </div>
@@ -1197,35 +1167,26 @@ function TutorialPostit({ steps, step, done, sending, open, onToggle, onNext, on
   const rightDisabled = isLast ? !done : !canNext;
   const rightGlow = isLast ? done : canNext;
 
-  // 접힘 — 소형 포스트잇 탭 (현재 단계·상태 요약 / 클릭 시 펼침)
+  // 접힘 — 소형 포스트잇 칩 (한 줄, 클릭 시 펼침). 작게 두어 미리보기를 거의 안 가림
   if (!open) {
-    const statusText = sending ? 'AI 반영 중' : done ? '완료 ✓' : curr.name;
     return (
       <div className="oc-postit-wrap" style={{ position: 'absolute', top: 16, right: 18, zIndex: 'var(--z-overlay)' }}>
-        <button onClick={onToggle} className="jt-postit-card jt-postit-tape-md" title="튜토리얼 가이드 펼치기"
+        <button onClick={onToggle} className="jt-postit-card" title="튜토리얼 가이드 펼치기" aria-label="튜토리얼 가이드 펼치기"
           style={{
-            width: 196, padding: '12px 14px 13px', border: 'none', textAlign: 'left', cursor: 'pointer',
-            borderRadius: 'var(--r-xs)', display: 'flex', flexDirection: 'column', gap: 5,
+            padding: '7px 11px 8px', border: 'none', cursor: 'pointer',
+            borderRadius: 'var(--r-xs)', display: 'inline-flex', alignItems: 'center', gap: 7, whiteSpace: 'nowrap',
             '--postit-rot': 'var(--postit-rot-b)', '--postit-tint': 'var(--c-tutorial-soft)',
           }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-            <span className="jt-eyebrow" style={{ color: 'var(--c-tutorial)', fontSize: 9.5 }}>TUTORIAL</span>
-            <div style={{ flex: 1 }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--c-tutorial)', fontWeight: 700 }}>{step}/{steps.length}</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: done ? 'var(--c-mint)' : 'var(--c-ink)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              {sending && <BouncingDots size={4} color="var(--c-tutorial)" />}{statusText}
-            </span>
-            <div style={{ flex: 1 }} />
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-slate)" strokeWidth="2"><polyline points="6 9 12 15 18 9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-          </div>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', flexShrink: 0, background: done ? 'var(--c-mint)' : 'var(--c-tutorial)' }} />
+          {sending && <BouncingDots size={4} color="var(--c-tutorial)" />}
+          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-ink)' }}>튜토리얼 <span style={{ color: 'var(--c-tutorial)', fontFamily: 'var(--font-mono)' }}>{step}/{steps.length}</span></span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--c-slate)" strokeWidth="2"><polyline points="6 9 12 15 18 9" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
       </div>
     );
   }
 
-  // 펼침 — 가이드 포스트잇
+  // 펼침 — 가이드 포스트잇 (플로팅). 미리보기를 일부 가리지만, 보려면 접으면 됨
   const statusNode = sending
     ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--c-tutorial)' }}><BouncingDots size={4} color="var(--c-tutorial)" /> AI가 작업하는 중이에요…</span>
     : isLast && done ? <span style={{ color: 'var(--c-mint)', fontWeight: 700 }}>🎉 모든 단계 완료! 이제 무엇이든 만들 수 있어요</span>
@@ -1241,7 +1202,7 @@ function TutorialPostit({ steps, step, done, sending, open, onToggle, onNext, on
           display: 'flex', flexDirection: 'column', gap: 11,
           '--postit-rot': 'var(--postit-rot-b)', '--postit-tint': 'var(--c-tutorial-soft)',
         }}>
-        {/* 헤더 — 라벨 + 접기 (단계는 아래 스텝퍼가 단일 표시) */}
+        {/* 헤더 — 라벨 + 접기 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span className="jt-eyebrow" style={{ color: 'var(--c-tutorial)', fontSize: 10 }}>튜토리얼 가이드</span>
           <div style={{ flex: 1 }} />
@@ -1250,19 +1211,15 @@ function TutorialPostit({ steps, step, done, sending, open, onToggle, onNext, on
           </button>
         </div>
 
-        {/* 진행 스텝퍼 (현재 단계 라벨만) */}
         <C2Stepper steps={steps} step={step} />
 
-        {/* 제목 + 개념 한 줄 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <h2 style={{ fontSize: 17, lineHeight: 1.25, margin: 0 }}>{curr.title}</h2>
           <p style={{ fontSize: 12.5, color: 'var(--c-ink-2)', lineHeight: 1.5, margin: 0 }}>{curr.concept}</p>
         </div>
 
-        {/* 동작 블록 (action별) */}
         <PostitActionBlock step={curr} />
 
-        {/* 단계 이동 — 이전(항상) / 다음(완료 시 활성+glow). 마지막은 자유 연습으로. */}
         <div style={{ display: 'flex', gap: 7 }}>
           <button className="jt-btn jt-btn-secondary jt-btn-sm" onClick={onPrev} disabled={step <= 1} title="이전 단계" style={{ flex: '0 0 auto', justifyContent: 'center' }}>{Icon.arrowLeft(12)}</button>
           <button
@@ -1274,7 +1231,6 @@ function TutorialPostit({ steps, step, done, sending, open, onToggle, onNext, on
           </button>
         </div>
 
-        {/* 상태 안내 */}
         <span style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', textAlign: 'center', lineHeight: 1.4 }}>{statusNode}</span>
       </div>
     </div>
@@ -1356,10 +1312,22 @@ function C2Tutorial({ step: initialStep = 2 }) {
         {/* C-2 튜토리얼: 액션 버튼 없음 (튜토리얼 중 메뉴 접근 차단) */}
         <JitdaToolbar status="tutorial_running" />
 
-        {/* 가이드는 상단 배너가 아니라 우측 상단 포스트잇 토글(relative 컨테이너 내부 absolute) */}
+        {/* 튜토리얼 구분 띠 — 주황 테이프. 본 해커톤과 헷갈리지 않게, 포스트잇 접어도 항상 보임 */}
+        <div className="oc-tutorial-strip">
+          <span className="jt-tape">튜토리얼</span>
+          <span style={{ color: 'var(--c-ink-2)' }}>지금은 연습이에요 — 여기서 만든 건 본 해커톤으로 이어지지 않아요.</span>
+          <div style={{ flex: 1 }} />
+          <span className="oc-guide-hint">
+            아래에서 단계별 가이드를 확인하세요
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3v10M3.5 8.5 8 13l4.5-4.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </span>
+        </div>
+
+        {/* 가이드는 우측 상단 플로팅 포스트잇(접으면 소형 칩). relative 컨테이너 내부 absolute. */}
         <div style={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}>
           {/* OpenCode 임베드 (튜토리얼 환경). 전송 → 단계 완료 트리거 */}
           <OpenCodeShell
+            tutorial
             title="자기소개 웹페이지 만들기"
             promptCard="내 자기소개 웹페이지를 만들어줘. 이름, 소개글, 취미, 연락처 섹션이 있으면 좋겠어. 깔끔하고 모던한 디자인으로."
             onSend={handleSend}

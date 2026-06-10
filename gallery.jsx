@@ -666,6 +666,15 @@ function NavArrow({ dir, project, disabled }) {
 
 
 // ─── 좌측 라이브 패널 ────────────────────────────────────
+// 작품 라이브 앱 URL — project.url 없으면 팀명 슬러그로 생성 (서브도메인 형태)
+function appUrl(project) {
+  if (project && project.url) return project.url;
+  const map = { '터미널 사파리': 'sapari', 'JS의 비밀': 'js-secret', '디버그 라이프': 'debug-life', '커널 패닉': 'kernel-panic', 'undefined': 'undef' };
+  const t = (project && project.team) || 'app';
+  const slug = map[t] || ('team-' + (Array.from(t).reduce((a, c) => a + c.charCodeAt(0), 0) % 90 + 10));
+  return slug + '.jitda.run';
+}
+
 function DetailLivePane({ project, state }) {
   return (
     <section style={{
@@ -686,80 +695,8 @@ function DetailLivePane({ project, state }) {
         position: 'relative',
         minHeight: 0
       }}>
-        {/* Safari (Tahoe) 스타일 chrome — 컴팩트, 데코레이션 전용 */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          padding: '5px 11px',
-          background: '#f5f5f7',
-          borderBottom: '0.5px solid #d8d8da',
-          flexShrink: 0,
-          height: 32, boxSizing: 'border-box'
-        }}>
-          {/* 트래픽 라이트 — 작고 모던하게 */}
-          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF5F57', boxShadow: 'inset 0 0 0 0.5px rgba(0,0,0,0.06)' }} />
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FEBC2E', boxShadow: 'inset 0 0 0 0.5px rgba(0,0,0,0.06)' }} />
-            <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840', boxShadow: 'inset 0 0 0 0.5px rgba(0,0,0,0.06)' }} />
-          </div>
-
-          {/* 사이드바 아이콘 (SF Symbol 톤 — 얇은 스트로크) */}
-          <svg width="13" height="13" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginLeft: 4 }}>
-            <rect x="1.5" y="2.5" width="11" height="9" rx="1.5" stroke="#86868b" strokeWidth="0.9" />
-            <line x1="5" y1="2.5" x2="5" y2="11.5" stroke="#86868b" strokeWidth="0.9" />
-          </svg>
-
-          {/* 중앙 pill 주소창 */}
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center', minWidth: 0 }}>
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 7,
-              padding: '0 10px',
-              width: '100%', maxWidth: 380, height: 22,
-              background: '#ffffff',
-              border: '0.5px solid #d6d6d8',
-              borderRadius: 6,
-              fontSize: 11.5,
-              color: '#1d1d1f'
-            }}>
-              {/* aA 리더 아이콘 (Tahoe Safari) */}
-              <span style={{
-                fontSize: 10, color: '#86868b', flexShrink: 0,
-                fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
-                letterSpacing: '-0.04em', lineHeight: 1
-              }}>
-                <span style={{ fontSize: 8.5 }}>a</span>
-                <span style={{ fontSize: 11 }}>A</span>
-              </span>
-              <span style={{
-                flex: 1, textAlign: 'center',
-                overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
-                color: state === 'loading' ? '#86868b' : '#1d1d1f',
-                fontWeight: 400, letterSpacing: '-0.01em'
-              }}>
-                {state === 'loading' ? '연결 중…' : project.title}
-              </span>
-              {/* 새로고침 — 얇은 SVG */}
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ flexShrink: 0 }}>
-                <path d="M8.3 5a3.3 3.3 0 1 1-1-2.35M8.3 1.5v2h-2" stroke="#86868b" strokeWidth="0.9" strokeLinecap="round" fill="none" />
-              </svg>
-            </div>
-          </div>
-
-          {/* 우측 액션 (공유 · 탭 그룹) */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 11,
-            flexShrink: 0
-          }}>
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <path d="M7 1.5v7" stroke="#86868b" strokeWidth="0.9" strokeLinecap="round" />
-              <path d="M4.8 3.7L7 1.5l2.2 2.2" stroke="#86868b" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-              <path d="M3 7.5v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-4" stroke="#86868b" strokeWidth="0.9" strokeLinecap="round" fill="none" />
-            </svg>
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-              <rect x="1.5" y="2.5" width="5" height="9" rx="1" stroke="#86868b" strokeWidth="0.9" fill="none" />
-              <rect x="7.5" y="2.5" width="5" height="9" rx="1" stroke="#86868b" strokeWidth="0.9" fill="none" />
-            </svg>
-          </div>
-        </div>
+        {/* Safari (Tahoe) chrome — 공용 SafariChrome (가운데 URL·새로고침·새탭·복사 동작) */}
+        <SafariChrome url={appUrl(project)} />
         {state === 'loading' && <PreviewLoading />}
         {state === 'loaded' && <PreviewLoaded project={project} />}
       </div>

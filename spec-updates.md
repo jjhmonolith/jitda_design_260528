@@ -3865,3 +3865,15 @@ paper 배경(#faf9f6) 위 흰색(#ffffff) 카드 → 명도 차이 1.5%. 카드 
 **가시 영향**: display 800 굵기 헤드라인이 Wanted Sans → Pretendard로 바뀜. 둘 다 산세리프라 차이는 미세. mono 영역은 D2Coding이 우선 적용되어 한글·영문 등폭 일관성 향상.
 
 **검증**: `grep`으로 `Wanted Sans`/`JetBrains`/`font-sans` 잔존 호출 0건 확인 (changelog 코멘트 제외).
+
+---
+
+## 2026-06-10 · C-1 대기실 LIVE 인디케이터 · 팀 변경 힌트 제거
+
+**변경**: 참가자 팀 대기실(`C1TeamRoomV2`)에서 두 요소 제거 — 사용자 결정 ("라이브 버튼·팀 변경 불필요").
+- meta row의 `ParticipantLiveStatus` (LIVE pulse) 제거 + 미사용 함수 본체 삭제 (`participant.jsx`).
+- `TeamPostitV2` 푸터의 "팀 변경" info 힌트 제거 → 푸터는 `RosterLegend`만 잔존.
+
+**범위**: 공용 컴포넌트라 C-1 전 화면(표준·긴 팀명·다인팀)·전 상태(roomBefore/AfterTutorial/Ended)에 일괄 반영. 로스터는 팀원 전체 표시 유지.
+
+**검증**: `viewer.html?id=c1-many-members` 새로고침 — LIVE·팀 변경 미표시, 7명 전원 노출 확인. `grep "LIVE\|팀 변경\|ParticipantLiveStatus" participant.jsx` 0건.

@@ -446,8 +446,84 @@ function avatarLabel(name) {
   return name.length >= 2 ? name.slice(-2) : name;
 }
 
+// ── macOS Safari(Tahoe) 컴팩트 chrome — OpenCode 미리보기·갤러리 공용 ──────────
+// 가운데 주소창=URL, 새로고침(스핀 동작), 우측: 새 탭에서 열기 + URL 복사(복사 피드백).
+function SafariChrome({ url = 'sapari.jitda.run', onRefresh, tutorial = false }) {
+  const [spin, setSpin] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
+  const spinT = React.useRef(null);
+  const copyT = React.useRef(null);
+  const fullUrl = url.startsWith('http') ? url : 'https://' + url;
+  const S = '#86868b';
+  const doRefresh = () => {
+    setSpin(false);
+    requestAnimationFrame(() => setSpin(true));
+    if (spinT.current) clearTimeout(spinT.current);
+    spinT.current = setTimeout(() => setSpin(false), 720);
+    if (onRefresh) onRefresh();
+  };
+  const doCopy = () => {
+    try { navigator.clipboard && navigator.clipboard.writeText(fullUrl); } catch (e) {}
+    setCopied(true);
+    if (copyT.current) clearTimeout(copyT.current);
+    copyT.current = setTimeout(() => setCopied(false), 1500);
+  };
+  const doOpen = () => { try { window.open(fullUrl, '_blank', 'noopener'); } catch (e) {} };
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: 10,
+      padding: '5px 11px', background: '#f5f5f7',
+      borderBottom: '0.5px solid #d8d8da', flexShrink: 0,
+      height: 38, boxSizing: 'border-box',
+    }}>
+      {/* 트래픽 라이트 */}
+      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF5F57', boxShadow: 'inset 0 0 0 0.5px rgba(0,0,0,0.06)' }} />
+        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FEBC2E', boxShadow: 'inset 0 0 0 0.5px rgba(0,0,0,0.06)' }} />
+        <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840', boxShadow: 'inset 0 0 0 0.5px rgba(0,0,0,0.06)' }} />
+      </div>
+      {/* 좌측 버튼 — 새 탭에서 열기 (동작 안 하던 사이드바 아이콘 대체) */}
+      <button onClick={doOpen} className="safari-chrome-btn" title="새 탭에서 열기" aria-label="새 탭에서 열기" style={{ marginLeft: 2 }}>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M9.5 2.8h3.7v3.7M13.2 2.8 7.6 8.4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M12 9.2v2.6a1.6 1.6 0 0 1-1.6 1.6H4.2a1.6 1.6 0 0 1-1.6-1.6V5.6A1.6 1.6 0 0 1 4.2 4h2.6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" />
+        </svg>
+      </button>
+      {/* 중앙 pill — aA + URL + 새로고침 */}
+      <div style={{ flex: 1, display: 'flex', justifyContent: 'center', minWidth: 0 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 7,
+          padding: '0 4px 0 10px', width: '100%', maxWidth: 420, height: 24,
+          background: '#fff', border: '0.5px solid #d6d6d8', borderRadius: 7,
+          fontSize: 11.5, color: '#1d1d1f',
+        }}>
+          <span style={{ color: S, flexShrink: 0, fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif', letterSpacing: '-0.04em', lineHeight: 1 }}>
+            <span style={{ fontSize: 8.5 }}>a</span><span style={{ fontSize: 11 }}>A</span>
+          </span>
+          <span style={{ flex: 1, textAlign: 'center', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', fontFamily: 'var(--font-mono)', color: '#1d1d1f', letterSpacing: '-0.01em' }}>{url}</span>
+          <button onClick={doRefresh} className="safari-chrome-btn safari-chrome-btn-sm" title="새로고침" aria-label="새로고침">
+            <svg width="11" height="11" viewBox="0 0 10 10" fill="none" style={{ animation: spin ? 'jt-spin 0.72s linear' : 'none' }}>
+              <path d="M8.3 5a3.3 3.3 0 1 1-1-2.35M8.3 1.5v2h-2" stroke="currentColor" strokeWidth="0.9" strokeLinecap="round" fill="none" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      {/* 우측 버튼 — URL 복사 (튜토리얼에선 숨김). 좌우 1개씩 */}
+      <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0, width: tutorial ? 18 : 'auto', justifyContent: 'flex-end' }}>
+        {!tutorial && (
+          <button onClick={doCopy} className="safari-chrome-btn" title="URL 복사" aria-label="URL 복사" style={copied ? { color: 'var(--c-mint)' } : undefined}>
+            {copied
+              ? <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3.4 8.4 6.4 11.4 12.6 4.8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              : <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5.6" y="5.6" width="7.4" height="7.4" rx="1.6" stroke="currentColor" strokeWidth="1.1" /><path d="M10.4 5.6V4.1A1.6 1.6 0 0 0 8.8 2.5H4.1A1.6 1.6 0 0 0 2.5 4.1v4.7A1.6 1.6 0 0 0 4.1 10.4h1.5" stroke="currentColor" strokeWidth="1.1" /></svg>}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 Object.assign(window, {
-  JitdaLogo, JitdaIcon, JitdaWordmark, JitdaMark, StatusPill, BrowserChrome, PhoneFrame,
+  JitdaLogo, JitdaIcon, JitdaWordmark, JitdaMark, StatusPill, BrowserChrome, SafariChrome, PhoneFrame,
   AppHeader, SpecNote, StatusBar, Icon,
   avatarLabel,
   ProjectCard, BouncingDots,

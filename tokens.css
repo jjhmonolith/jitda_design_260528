@@ -1217,6 +1217,62 @@
 .oc-preview-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(110, 72, 20, 0.14); }
 .oc-preview-card:active { transform: translateY(0) scale(0.997); }
 
+/* ============================================================
+   튜토리얼 구분 띠 — 본 해커톤과 헷갈리지 않게 (포스트잇 접어도 항상 보임)
+   주황 테이프(jt-tape) '튜토리얼' + 안내 한 줄. 본행사엔 없음.
+   ------------------------------------------------------------ */
+.oc-tutorial-strip {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 12px;
+  height: 32px; padding: 0 16px 0 14px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--c-hairline);
+  color: var(--c-ink-2); font-size: 12px; line-height: 1;
+}
+/* 우측 가이드 안내 — 튜토리얼 포스트잇으로 눈길 유도 */
+.oc-guide-hint {
+  display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;
+  margin-right: 16px;  /* 화살표가 포스트잇 접기 버튼(우측 끝) 위로 오도록 */
+  color: var(--c-tutorial); font-weight: 700; font-size: 12px;
+}
+.oc-guide-hint svg { animation: oc-hint-nudge 1.3s var(--ease-standard) infinite; }
+@keyframes oc-hint-nudge {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(3px); }
+}
+
+/* composer '자동 확대' 토글 (포커스 시 자동 확대 on/off) */
+.oc-auto-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: none; cursor: pointer; padding: 0 4px;
+  transition: var(--trans-press);
+}
+.oc-auto-toggle:active { transform: scale(0.97); }
+.oc-auto-toggle:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 2px; border-radius: 6px; }
+.oc-auto-track {
+  position: relative; width: 28px; height: 16px; border-radius: 999px; flex-shrink: 0;
+  background: var(--c-hairline-strong);
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+.oc-auto-track.is-on { background: var(--c-ink); }
+.oc-auto-thumb {
+  position: absolute; top: 2px; left: 2px; width: 12px; height: 12px;
+  border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+  transition: left var(--dur-fast) var(--ease-standard);
+}
+.oc-auto-track.is-on .oc-auto-thumb { left: 14px; }
+
+/* Safari chrome 우측 버튼(새 탭에서 열기·URL 복사) + 중앙 새로고침 — Safari 톤 ghost */
+.safari-chrome-btn {
+  background: none; border: none; cursor: pointer;
+  padding: 4px; border-radius: 5px; color: #6b6b70;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), transform var(--dur-instant) var(--ease-standard);
+}
+.safari-chrome-btn-sm { padding: 2px; }
+.safari-chrome-btn:hover { background: rgba(0, 0, 0, 0.06); color: #1d1d1f; }
+.safari-chrome-btn:active { transform: scale(0.9); }
+.safari-chrome-btn:focus-visible { outline: 2px solid var(--focus-ring-color); outline-offset: 1px; }
+
 /* 튜토리얼 포스트잇 열기/접기 진입 — wrapper만 애니메이트(내부 postit rotation 보존) */
 @keyframes oc-postit-in {
   from { opacity: 0; transform: translateY(-8px) scale(0.96); }
