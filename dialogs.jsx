@@ -375,13 +375,11 @@ function BlurredCodingBackground() {
 //  · 거절 안내 헤드라인은 고정 문구 "합의가 무산됐어요" — 이름 명시 폐지(사회적 압박 회피).
 //  · 별도 cooldown 화면 제거. 2026-05-26 v2: rejected 푸터의 5초 ring + 비활성 [재요청] 버튼도 폐기 — 무산 직후 재요청은 핵심 액션이 아님.
 //
-// 상태별 정보 노출 정책 (2026-05-27 v3 갱신):
-//  · voting     — 링 + 헤드라인 + 큰 CTA + 4열 포트레이트. 상세는 E4VotingBody 주석 참조.
-//  · waiting    — 동의 후 팀원 응답 대기. 상세는 E4WaitingBody 주석 참조.
-//  · rejected   — 합의 무산. 상세는 E4FailureBody 주석 참조.
-//  · voting-v2  — 2026-05-27 신설. LoL 매치 수락 어휘 직접 차용 — 거대 ring(480px) 중심, 미수락자 아바타만 ring 내부, 수락 버튼 ring 6시 overlap. 상세는 E4VotingV2Body 주석 참조.
-//  · waiting-v2 — 2026-05-27 신설. voting-v2 세트. 동일 거대 ring, 수락 버튼 자리에 "✓ 동의했어요" 상태 pill.
-function E4ConsensusVote({ stateVariant = 'voting' }) {
+// 상태별 정보 노출 정책 (2026-06-01 v4 — v1 디자인 폐기):
+//  · voting-v2  — LoL 매치 수락 어휘 직접 차용. 거대 ring(480px) 중심, 미수락자 아바타만 ring 내부, 수락 버튼 ring 6시 overlap. 상세는 E4VotingV2Body 주석 참조.
+//  · waiting-v2 — voting-v2 세트. 동일 거대 ring, 수락 버튼 자리에 "✓ 동의했어요" 상태 pill. 상세는 E4WaitingV2Body 주석 참조.
+//  · rejected-v2 — 합의 무산. 정지된 safety ring + 84px X 아이콘 + 패자 outcome row + 자동 캔버스 복귀 카운트다운. 상세는 E4FailureV2Body 주석 참조.
+function E4ConsensusVote({ stateVariant = 'voting-v2', teamSize = 'small' }) {
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#f5f3ee' }}>
       <CanvasContextHeader />
@@ -389,11 +387,9 @@ function E4ConsensusVote({ stateVariant = 'voting' }) {
         <CanvasBackdrop />
         <div className="jt-modal-backdrop has-blur" />
 
-        {stateVariant === 'voting'     && <E4VotingBody />}
-        {stateVariant === 'waiting'    && <E4WaitingBody />}
-        {stateVariant === 'voting-v2'  && <E4VotingV2Body />}
-        {stateVariant === 'waiting-v2' && <E4WaitingV2Body />}
-        {stateVariant === 'rejected'   && <E4FailureBody />}
+        {stateVariant === 'voting-v2'   && <E4VotingV2Body teamSize={teamSize} />}
+        {stateVariant === 'waiting-v2'  && <E4WaitingV2Body teamSize={teamSize} />}
+        {stateVariant === 'rejected-v2' && <E4FailureV2Body teamSize={teamSize} />}
       </div>
     </div>
   );
@@ -406,175 +402,8 @@ function CanvasContextHeader() {
   return <JitdaToolbar status="hackathon_running" actions={<ParticipantCanvasActions />} />;
 }
 
-// ── 원형 카운트다운 링 ────────────────────────────────────────
-// LoL 매치 수락 UI 어휘: 남은 시간만큼 헬멧 노랑 호가 12시(top)부터 시계방향으로 채워짐. 시간이 흐르면 12시에서부터 호가 사라짐.
-// 외곽 halo는 `jt-countdown-ring-critical` 재사용(2.4s pulse).
-//
-// 애니메이션 (2026-05-26):
-//   · `animate=true`(기본) — rAF로 60fps 부드러운 호 감소 + 1초 단위 숫자 ceil.
-//     0에 도달하면 정지. 마운트 시점 기준으로 흐름.
-//   · `animate=false` — `seconds` 값으로 정적 표시 (스크린샷용·rejected 시 멈춤).
-//   · `seconds` prop = 시작값(default total). voting=15, cooldown=5 등으로 매번 새로 시작.
-//
-// 다른 화면(e4 ↔ e4-prompt) 간 "같이 흐르는" 효과는 마운트 시점이 가까우면 시각적으로 합치됨.
-// 실제 앱에서는 전역 상태 또는 서버 타임스탬프로 정확 동기화 필요.
-function RingTimer({ seconds: initialSeconds = null, total = 15, size = 168, color = 'var(--c-helmet)', track = 'var(--c-stone)', pulse = true, label = 'SEC', animate = true }) {
-  const startSeconds = initialSeconds ?? total;
-  const startedAtRef = React.useRef(null);
-  if (startedAtRef.current === null) startedAtRef.current = Date.now();
-
-  const [remaining, setRemaining] = React.useState(startSeconds);
-
-  React.useEffect(() => {
-    if (!animate) {
-      setRemaining(startSeconds);
-      return;
-    }
-    let raf;
-    const tick = () => {
-      const elapsed = (Date.now() - startedAtRef.current) / 1000;
-      const left = Math.max(0, startSeconds - elapsed);
-      setRemaining(left);
-      if (left > 0) raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => raf && cancelAnimationFrame(raf);
-  }, [animate, startSeconds]);
-
-  // 회색(소비) 영역이 12시에서 시작해 시계방향으로 늘어남 — 시계 바늘처럼.
-  // elapsed가 커질수록 grayDeg가 0→360°로 증가하면서 회색 sector가 12시에서 시계방향으로 회전.
-  const elapsed = Math.max(0, Math.min(total, total - remaining));
-  const grayDeg = Math.max(0, Math.min(360, (elapsed / total) * 360));
-  const inner = Math.round(size * 0.78);
-  const numFontSize = Math.round(size * 0.26);
-  const display = remaining <= 0 ? 0 : Math.ceil(remaining);
-
-  return (
-    <div
-      className={pulse ? 'jt-countdown-ring-critical' : undefined}
-      style={{
-        position: 'relative',
-        width: size, height: size,
-        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-      {/* conic ring — 12시(top) 시작 · 시계 바늘처럼 시계방향 진행.
-         소비된 시간(track 색)이 12시→3시→6시→9시→12시 순서로 sector가 커진다. */}
-      <div style={{
-        position: 'absolute', inset: 0, borderRadius: '50%',
-        background: `conic-gradient(from 0deg, ${track} 0deg ${grayDeg}deg, ${color} ${grayDeg}deg 360deg)`,
-      }} />
-      {/* inner disc */}
-      <div style={{
-        position: 'relative',
-        width: inner, height: inner, borderRadius: '50%',
-        background: 'var(--c-canvas)',
-        boxShadow: 'inset 0 1px 2px rgba(20,19,15,0.08)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-      }}>
-        <span style={{
-          fontFamily: 'var(--font-mono)', fontWeight: 700,
-          fontSize: numFontSize, lineHeight: 1,
-          color: 'var(--c-ink)', letterSpacing: '-0.04em',
-          fontVariantNumeric: 'tabular-nums',
-        }}>{String(display).padStart(2, '0')}</span>
-        {label && (
-          <span style={{
-            fontFamily: 'var(--font-mono)', fontSize: Math.max(9, Math.round(size * 0.06)),
-            color: 'var(--c-muted)', letterSpacing: '0.18em',
-          }}>{label}</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ── 팀원 포트레이트 카드 (voting / rejected 공용) ────────────
-// LoL 매치 수락 화면의 팀원 슬롯 패턴. 동그란 아바타 + 상태 ring + 상태 칩.
-// 2026-05-27 v2: 카드 자체에 상태별 fill 적용 — 멀리서도 동의/거절/대기 식별 가능.
-//   agreed=mint-soft 채움 + mint 보더 / rejected=safety-soft 채움 + safety 보더 / pending=옅은 stone bg + 점선 보더
-function TeammatePortrait({ name, color, state }) {
-  const map = {
-    requester:{
-      ring: 'var(--c-helmet)', label: '요청자',
-      chipBg: 'var(--c-helmet-soft)', chipFg: 'var(--c-ink)', icon: Icon.check(11),
-      cardBg: 'var(--c-helmet-soft)', cardBorder: 'var(--c-helmet)', cardBorderStyle: 'solid',
-    },
-    agreed:   {
-      ring: 'var(--c-mint)', label: '동의',
-      chipBg: '#ffffff', chipFg: 'var(--c-mint)', icon: Icon.check(11),
-      cardBg: 'var(--c-mint-soft)', cardBorder: 'var(--c-mint)', cardBorderStyle: 'solid',
-    },
-    rejected: {
-      ring: 'var(--c-safety)', label: '거절',
-      chipBg: '#ffffff', chipFg: 'var(--c-safety-deep)', icon: Icon.x(11),
-      cardBg: 'var(--c-safety-soft)', cardBorder: 'var(--c-safety)', cardBorderStyle: 'solid',
-    },
-    pending:  {
-      ring: 'var(--c-stone-2)', label: '대기 중',
-      chipBg: 'var(--c-stone)', chipFg: 'var(--c-ink-3)', icon: '⏳',
-      cardBg: 'rgba(255,255,255,0.92)', cardBorder: 'var(--c-stone-2)', cardBorderStyle: 'dashed',
-    },
-    timeout:  {
-      ring: 'var(--c-stone-2)', label: '응답 없음',
-      chipBg: 'var(--c-stone)', chipFg: 'var(--c-muted)', icon: '–',
-      cardBg: '#ebebec', cardBorder: 'var(--c-stone-2)', cardBorderStyle: 'solid',
-    },
-    offline:  {
-      ring: 'var(--c-stone-2)', label: '오프라인',
-      chipBg: '#ebebec', chipFg: 'var(--c-muted)', icon: '–',
-      cardBg: '#ebebec', cardBorder: 'var(--c-stone-2)', cardBorderStyle: 'solid',
-    },
-  };
-  const s = map[state] || map.pending;
-  const isReject = state === 'rejected';
-  const isMuted  = state === 'offline' || state === 'timeout';
-  return (
-    <div
-      style={{
-        position: 'relative',
-        width: 124, padding: '16px 12px 14px',
-        background: s.cardBg,
-        border: `2px ${s.cardBorderStyle} ${s.cardBorder}`,
-        borderRadius: 12,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-        opacity: isMuted ? 0.65 : 1,
-        overflow: 'hidden',
-        transition: 'background-color var(--dur-base) var(--ease-decelerate), border-color var(--dur-base) var(--ease-decelerate)',
-      }}>
-      <div style={{
-        width: 60, height: 60, borderRadius: '50%',
-        background: color, color: '#fff',
-        border: `3px solid ${s.ring}`,
-        boxShadow: isReject ? '0 0 0 4px rgba(255,107,31,0.25)' : 'none',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700,
-      }}>{name[0]}</div>
-      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--c-ink)' }}>{name}</div>
-      <span style={{
-        display: 'inline-flex', alignItems: 'center', gap: 4,
-        background: s.chipBg, color: s.chipFg,
-        padding: '4px 10px', borderRadius: 999,
-        fontSize: 11, fontWeight: 700,
-        fontFamily: 'var(--font-mono)', letterSpacing: '0.02em',
-      }}>
-        {typeof s.icon === 'string' ? <span>{s.icon}</span> : s.icon}
-        {s.label}
-      </span>
-    </div>
-  );
-}
-
-// ── 4명 팀원 픽스처 (4가지 칩을 한 화면에서 보여주기) ───
-// 요청자(자동 동의) / 동의 / 거절 / 무응답(timeout) — 만장일치 룰에서 한 명이 거절하거나
-// 한 명이라도 응답 없으면 합의 무산. 한 시나리오로 모든 상태 시각화.
-function e4Teammates() {
-  return [
-    { name: '김민준', color: 'var(--c-helmet)', state: 'requester' },
-    { name: '이서윤', color: 'var(--c-blue)',  state: 'agreed' },
-    { name: '박지호', color: 'var(--c-mint)',  state: 'rejected' },
-    { name: '최유나', color: 'var(--c-amber)', state: 'timeout' },
-  ];
-}
+// ── v1 헬퍼 (RingTimer · TeammatePortrait · e4Teammates) 는 2026-06-01 v1 폐기와 함께 제거 ──
+// v2는 `useCountdown` + `MatchAcceptRing` (480px conic ring) + `PendingAvatar` / outcome avatar 인라인 어휘 사용.
 
 // 풀스크린 다크 오버레이 위에서 쓰는 공용 카피·구분선 톤
 const E4_LIGHT = '#fff';
@@ -619,133 +448,13 @@ function E4Divider({ children }) {
   );
 }
 
-// ── voting body (링·헤드라인·CTA·팀원 카드) ────────────
-// 2026-05-27 v2: 사용자 결정 — 레이아웃 B안(버튼 위·카드 아래) 채택.
-//   · "현재 응답"이 맨 아래(post-decision 모니터링 어휘)
-//   · CTA 버튼 사이즈 증대(18×40 padding, fontSize 16/17 — 시간 압박 화면 핵심 액션 시각 위계 강화)
-//   · 카드 자체에 상태별 fill 적용(agreed=mint-soft·rejected=safety-soft·pending=neutral) — 멀리서도 식별
-//   · voting 중 실시간 상태 변경 시뮬레이션 — t=2.5s 이서윤 agree, t=6.5s 박지호 agree, 최유나는 timeout 까지 pending
-function E4VotingBody() {
-  const [members, setMembers] = React.useState([
-    { name: '김민준', color: 'var(--c-helmet)', state: 'requester' },
-    { name: '이서윤', color: 'var(--c-blue)',  state: 'pending' },
-    { name: '박지호', color: 'var(--c-mint)',  state: 'pending' },
-    { name: '최유나', color: 'var(--c-amber)', state: 'pending' },
-  ]);
-
-  React.useEffect(() => {
-    const t1 = setTimeout(() => setMembers(m => m.map(x => x.name === '이서윤' ? { ...x, state: 'agreed' } : x)), 2500);
-    const t2 = setTimeout(() => setMembers(m => m.map(x => x.name === '박지호' ? { ...x, state: 'agreed' } : x)), 6500);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
-
-  return (
-    <div role="alertdialog" aria-modal="true" aria-label="팀 합의 투표" style={{
-      position: 'absolute', inset: 0,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '32px 40px', gap: 22,
-      animation: 'jt-modal-fade-in var(--dur-base) var(--ease-decelerate)',
-    }}>
-      <E4Eyebrow>자동 거절까지</E4Eyebrow>
-      <RingTimer seconds={15} total={15} size={140} color="var(--c-helmet)" track="rgba(255,255,255,0.14)" pulse />
-      <E4Headline
-        title="이 프롬프트, 보낼까요?"
-        sub={<><strong style={{ color: 'var(--c-helmet)' }}>김민준</strong>님이 전송을 요청했어요</>}
-      />
-
-      {/* CTA — 디자인 시스템 클래스 기반. inline은 size override만 (height/padding/fontSize/borderRadius/gap).
-          시각/hover/active/focus는 jt-btn-danger-outlined-dark / jt-btn-critical 이 담당. */}
-      <div style={{ display: 'flex', gap: 14, marginTop: 12 }}>
-        <button data-action="reject" className="jt-btn jt-btn-danger-outlined-dark" style={{
-          height: 64, padding: '0 26px', fontSize: 16, gap: 8, borderRadius: 12, borderWidth: 2,
-        }}>
-          {Icon.x(16)} 거부
-        </button>
-        <button data-action="agree" className="jt-btn jt-btn-critical on-dark" style={{
-          height: 64, padding: '0 52px', fontSize: 17, gap: 10, borderRadius: 12,
-        }}>
-          {Icon.bolt(16)} 동의 · AI에 전송
-        </button>
-      </div>
-
-      <E4Divider>현재 응답</E4Divider>
-
-      <div style={{ display: 'flex', gap: 14 }}>
-        {members.map((m, i) => (
-          <TeammatePortrait key={i} {...m} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── waiting body (동의 후 다른 팀원 응답 대기) ──────────────
-// 2026-05-27 신설: 본인이 동의 클릭 → e4 → e4-waiting → (전원 동의 or timeout).
-// 취소 불가(사용자 결정 — 한 번 동의하면 15s 타이머 끝까지 고정. 투표 의미 보존).
-// voting 과 동일 vertical 구조(CTA 슬롯에 상태 pill 대체) → 화면 전환 시 시각 점프 최소화.
-// 데모 — 본인=이서윤 가정. 진입 시 이서윤 agreed 확정. t=3s 박지호 추가 agree, 최유나는 timeout 까지 pending.
-function E4WaitingBody() {
-  const [members, setMembers] = React.useState([
-    { name: '김민준', color: 'var(--c-helmet)', state: 'requester' },
-    { name: '이서윤', color: 'var(--c-blue)',  state: 'agreed' },
-    { name: '박지호', color: 'var(--c-mint)',  state: 'pending' },
-    { name: '최유나', color: 'var(--c-amber)', state: 'pending' },
-  ]);
-
-  React.useEffect(() => {
-    const t1 = setTimeout(() => setMembers(m => m.map(x => x.name === '박지호' ? { ...x, state: 'agreed' } : x)), 3000);
-    return () => clearTimeout(t1);
-  }, []);
-
-  return (
-    <div role="status" aria-live="polite" aria-label="팀원 응답 대기 중" style={{
-      position: 'absolute', inset: 0,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '32px 40px', gap: 22,
-      animation: 'jt-modal-fade-in var(--dur-base) var(--ease-decelerate)',
-    }}>
-      <E4Eyebrow>자동 거절까지</E4Eyebrow>
-      <RingTimer seconds={15} total={15} size={140} color="var(--c-helmet)" track="rgba(255,255,255,0.14)" pulse />
-      <E4Headline
-        title="팀원 응답을 기다리고 있어요"
-        sub="모두 동의하면 AI에 자동으로 전송됩니다"
-      />
-
-      {/* CTA 슬롯 자리에 상태 pill — 본인이 이미 동의했음 확정 표시 */}
-      <div style={{ display: 'flex', marginTop: 12 }}>
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 10,
-          background: 'rgba(255,255,255,0.10)',
-          color: '#fff',
-          border: '1.5px solid rgba(255,255,255,0.22)',
-          padding: '18px 32px', borderRadius: 999,
-          fontSize: 15, fontWeight: 700,
-        }}>
-          <span style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: 26, height: 26, borderRadius: '50%',
-            background: 'var(--c-mint)', color: '#fff',
-          }}>{Icon.check(14)}</span>
-          동의했어요 · 응답 완료
-        </div>
-      </div>
-
-      <E4Divider>현재 응답</E4Divider>
-
-      <div style={{ display: 'flex', gap: 14 }}>
-        {members.map((m, i) => (
-          <TeammatePortrait key={i} {...m} />
-        ))}
-      </div>
-    </div>
-  );
-}
+// ── v1 voting / waiting body 는 2026-06-01 v1 폐기와 함께 제거. 합의 투표는 v2 (거대 ring) 만 정본. ──
 
 // ─────────────────────────────────────────────────────────────
-// V2 디자인 — LoL 매치 수락 어휘 직접 차용 (2026-05-27 신설)
+// V2 디자인 — LoL 매치 수락 어휘 직접 차용 (2026-05-27 신설, 2026-06-01 정본)
 // ─────────────────────────────────────────────────────────────
 // 거대 ring(480px) 중심 + 미수락자 아바타만 ring 내부 + 수락 버튼 ring 6시 overlap.
-// 기존 e4(작은 링 + 4열 카드)는 유지. e4-v2·e4-waiting-v2는 alternate set.
+// 2026-06-01: v1(작은 링·4열 카드) 폐기. v2가 합의 투표 정본.
 
 // rAF 카운트다운 헬퍼 — voting-v2·waiting-v2 둘 다 공유
 function useCountdown(total) {
@@ -772,31 +481,51 @@ function useCountdown(total) {
 // 버튼 영역 60° (300° sweep)는 게이지 비노출.
 // full=true 면 100% 고정 표시 (waiting-v2).
 // 구현: 노랑 base 풀 ring + 검정 stripe overlay(dasharray로 일정 간격 punctuate) + mask로 게이지 호 길이 제한
-function MatchAcceptRing({ remaining = 0, total = 15, full = false, size = 480, strokeWidth = 16 }) {
-  const fraction = full ? 1 : Math.max(0, Math.min(1, (total - remaining) / total));
+function MatchAcceptRing({
+  remaining = 0, total = 10, full = false, size = 480, strokeWidth = 16,
+  palette = 'helmet',   // 'helmet'(노랑·기본) | 'safety'(주황·rejected-v2)
+  animate = true,        // false 면 energy wave SMIL 비활성 (rejected 정지 상태)
+  flashIn = null,        // 'helmet'(노랑) | 'safety'(주황) — mount flash overlay tint. null 면 full에 따라 자동.
+}) {
+  // palette별 색상 토큰
+  const colors = palette === 'safety' ? {
+    stripe: '#ff6b1f',
+    glow1: 'rgba(255, 107, 31, 0.55)',
+    glow2: 'rgba(255, 107, 31, 0.32)',
+    waveTint: 'rgba(255, 220, 200, 0.55)',
+  } : {
+    stripe: '#ffce2b',
+    glow1: 'rgba(255, 206, 43, 0.55)',
+    glow2: 'rgba(255, 206, 43, 0.32)',
+    waveTint: 'rgba(255, 245, 200, 0.55)',
+  };
+  // 2026-05-29 v2: sweep 300°→320°로 확장, start 210°→200° 이동.
+  //   목적: 버튼 양옆 빈공간 제거. consumption = 시간이 지난 비율 (0 = 풀, 1 = 완전 소진).
+  const consumption = full ? 0 : Math.max(0, Math.min(1, (total - remaining) / total));
   const cx = size / 2;
   const cy = size / 2;
   const r = (size / 2) - strokeWidth - 8;
   const innerR = r - strokeWidth / 2 - 2;
-  const C = 2 * Math.PI * r;
-  const sweepDeg = 300;
-  const sweepLen = C * (sweepDeg / 360);
-  const visibleAngDeg = sweepDeg * fraction;
+  const sweepDeg = 320;
+  const startDeg = 200;                                 // gauge 시작 각도 (12시=0° 기준 CW)
+  const consumedAngDeg = sweepDeg * consumption;
+  const visibleAngDeg = sweepDeg - consumedAngDeg;
   const stripeInnerR = r - strokeWidth / 2;
   const stripeOuterR = r + strokeWidth / 2;
-  const diagShiftDeg = (strokeWidth / r) * (180 / Math.PI);             // 45° 사선
+  const diagShiftDeg = (strokeWidth / r) * (180 / Math.PI);
+  const boundaryAngDeg = startDeg + consumedAngDeg;     // 현재 boundary 절대 각도
+  const gaugeEndAngDeg = startDeg + sweepDeg;           // 항상 고정 (5시 약간 왼쪽)
   const pt = (R, angleDeg) => {
     const rad = (angleDeg - 90) * Math.PI / 180;
     return [cx + R * Math.cos(rad), cy + R * Math.sin(rad)];
   };
-  // unique id (한 페이지에 voting-v2 + waiting-v2 동시 렌더 시 clipPath 충돌 방지)
   const uid = React.useId ? React.useId().replace(/:/g, '') : Math.random().toString(36).slice(2, 8);
 
-  // 게이지 전체 영역의 평행사변형 path (energy wave clip 영역으로 사용)
+  // 게이지 잔여 영역의 평행사변형 (energy wave clip 영역으로 사용)
   const gaugeClipPath = (() => {
-    if (fraction <= 0) return null;
-    const a0 = 210;
-    const a1 = 210 + visibleAngDeg;
+    if (visibleAngDeg <= 0.001) return null;
+    const a0 = boundaryAngDeg;
+    const a1 = gaugeEndAngDeg;
     const [ix0, iy0] = pt(stripeInnerR, a0);
     const [ix1, iy1] = pt(stripeInnerR, a1);
     const [ox1, oy1] = pt(stripeOuterR, a1 + diagShiftDeg);
@@ -808,10 +537,10 @@ function MatchAcceptRing({ remaining = 0, total = 15, full = false, size = 480, 
            `A ${stripeOuterR} ${stripeOuterR} 0 ${largeArc} 0 ${ox0.toFixed(2)} ${oy0.toFixed(2)} Z`;
   })();
 
-  // energy wave path — 폭 8° 정도의 좁은 평행사변형, 7시 시작 위치
+  // energy wave path — 폭 9° 좁은 평행사변형, 기본 위치 gauge 시작
   const waveAngDeg = 9;
   const wavePath = (() => {
-    const a0 = 210;
+    const a0 = startDeg;
     const a1 = a0 + waveAngDeg;
     const [ix0, iy0] = pt(stripeInnerR, a0);
     const [ix1, iy1] = pt(stripeInnerR, a1);
@@ -843,21 +572,21 @@ function MatchAcceptRing({ remaining = 0, total = 15, full = false, size = 480, 
       <circle cx={cx} cy={cy} r={innerR}
               fill="rgba(13,13,17,0.94)" />
 
-      {/* 2. stripe group + energy wave — drop-shadow filter 가 이 group 의 shape (= 게이지가 채워진 부분) 에만 적용되어
-             후방 helmet glow halo 가 게이지와 함께 자람 (이전 SVG 전체 filter 폐기 — dark disc 까지 halo 캐스팅했음). */}
-      {fraction > 0 && (
-        <g style={{ filter: 'drop-shadow(0 0 14px rgba(255,206,43,0.55)) drop-shadow(0 0 32px rgba(255,206,43,0.32))' }}>
-          {/* 3. caution stripe — 평행사변형 path (두 호 + 두 대각선) ring 곡률 따라 사선 무늬 */}
-          {(() => {
-            const stripeArcLen = 18;
-            const stripeAngDeg = (stripeArcLen / r) * (180 / Math.PI);
-            const visibleArc = sweepLen * fraction;
-            const numFullStripes = Math.floor(visibleArc / stripeArcLen);
-            const partialArc = visibleArc - numFullStripes * stripeArcLen;
-            const partialAngDeg = (partialArc / r) * (180 / Math.PI);
-            const stripeAt = (i, lenAngDeg) => {
-              const a0 = 210 + i * stripeAngDeg;
-              const a1 = a0 + lenAngDeg;
+      {/* 2. stripe group + energy wave — drop-shadow filter 가 이 group 의 shape (= 잔여 게이지) 에만 적용되어
+             후방 helmet glow halo 가 stripe 줄어드는 만큼 함께 줄어듦. */}
+      {visibleAngDeg > 0.001 && (
+        <g style={{ filter: `drop-shadow(0 0 14px ${colors.glow1}) drop-shadow(0 0 32px ${colors.glow2})` }}>
+          {/* 3. gauge fill — safety palette일 땐 solid 주황 띠 1개 path (caution stripe 어휘 폐기).
+                 helmet palette는 기존 caution stripe (64 grid 평행사변형). */}
+          {palette === 'safety' && gaugeClipPath && (
+            <path d={gaugeClipPath} fill={colors.stripe} />
+          )}
+          {palette !== 'safety' && (() => {
+            const totalStripes = 64;                                 // sweepDeg / 64 = 5° per stripe (sweep 320°)
+            const stripeAngDeg = sweepDeg / totalStripes;
+            const stripeAt = (i, startAngOffset, lenAngDeg) => {
+              const a0 = startDeg + i * stripeAngDeg + startAngOffset;
+              const a1 = startDeg + i * stripeAngDeg + startAngOffset + lenAngDeg;
               const [ix0, iy0] = pt(stripeInnerR, a0);
               const [ix1, iy1] = pt(stripeInnerR, a1);
               const [ox1, oy1] = pt(stripeOuterR, a1 + diagShiftDeg);
@@ -867,79 +596,144 @@ function MatchAcceptRing({ remaining = 0, total = 15, full = false, size = 480, 
                      `L ${ox1.toFixed(2)} ${oy1.toFixed(2)} ` +
                      `A ${stripeOuterR} ${stripeOuterR} 0 0 0 ${ox0.toFixed(2)} ${oy0.toFixed(2)} Z`;
             };
+            const partialIdx = Math.floor(consumedAngDeg / stripeAngDeg);     // boundary가 걸친 stripe
+            const boundaryWithin = consumedAngDeg - partialIdx * stripeAngDeg; // 0 ~ stripeAngDeg
             const segments = [];
-            for (let i = 0; i < numFullStripes; i++) {
-              const isYellow = i % 2 === 0;
+            // boundary가 stripe 내부일 때: 그 stripe의 trailing 부분만 그림
+            if (boundaryWithin > 0.001 && partialIdx < totalStripes) {
+              const isYellow = partialIdx % 2 === 0;
+              const remainLen = stripeAngDeg - boundaryWithin;
               segments.push(
-                <path key={i} d={stripeAt(i, stripeAngDeg)} fill={isYellow ? '#ffce2b' : '#17171c'} />
+                <path key={`p${partialIdx}`}
+                      d={stripeAt(partialIdx, boundaryWithin, remainLen)}
+                      fill={isYellow ? colors.stripe : '#17171c'} />
               );
             }
-            if (partialAngDeg > 0.001) {
-              const i = numFullStripes;
+            // 완전히 잔여인 stripes (boundary 이후)
+            const firstFullIdx = boundaryWithin > 0.001 ? partialIdx + 1 : partialIdx;
+            for (let i = firstFullIdx; i < totalStripes; i++) {
               const isYellow = i % 2 === 0;
               segments.push(
-                <path key={`p${i}`} d={stripeAt(i, partialAngDeg)} fill={isYellow ? '#ffce2b' : '#17171c'} />
+                <path key={i} d={stripeAt(i, 0, stripeAngDeg)} fill={isYellow ? colors.stripe : '#17171c'} />
               );
             }
             return <g>{segments}</g>;
           })()}
 
           {/* 4. energy wave — 좁은 밝은 streak가 ring을 따라 시계방향 traverse (SMIL animateTransform).
-                 clipPath로 visible 게이지 영역에 한정 → 가득 차지 않은 voting 중에는 채워진 부분에서만 보임.
-                 "에너지가 차오르듯 일렁이는" 느낌 (이전 깜빡 pulse 폐기). */}
-          <g clipPath={`url(#gauge-clip-${uid})`}>
-            <g>
-              <path d={wavePath} fill="rgba(255, 245, 200, 0.55)" />
-              <animateTransform
-                attributeName="transform"
-                type="rotate"
-                from={`0 ${cx} ${cy}`}
-                to={`${sweepDeg} ${cx} ${cy}`}
-                dur="2.6s"
-                repeatCount="indefinite"
-              />
+                 clipPath 는 boundary→gauge end 잔여 영역만 노출 → 소진된 좌측에서는 wave 보이지 않음.
+                 게이지 줄어들수록 wave 보이는 cycle 비율이 짧아짐 (남은 에너지가 줄어드는 시각). */}
+          {animate && (
+            <g clipPath={`url(#gauge-clip-${uid})`}>
+              <g>
+                <path d={wavePath} fill={colors.waveTint} />
+                <animateTransform
+                  attributeName="transform"
+                  type="rotate"
+                  from={`0 ${cx} ${cy}`}
+                  to={`${sweepDeg} ${cx} ${cy}`}
+                  dur="2.6s"
+                  repeatCount="indefinite"
+                />
+              </g>
             </g>
-          </g>
+          )}
+
+          {/* 5. flash-in overlay — waiting-v2 / rejected-v2 mount 시 한번 번쩍.
+                 voting 부분 게이지 → 풀 게이지 점프 자연스럽게 흡수. palette 따라 cream/peach 톤. */}
+          {full && gaugeClipPath && (
+            <g className="jt-gauge-flash-in" style={{
+              filter: palette === 'safety'
+                ? `drop-shadow(0 0 40px rgba(255,220,200,0.9)) drop-shadow(0 0 90px ${colors.glow1})`
+                : `drop-shadow(0 0 40px rgba(255,245,200,0.9)) drop-shadow(0 0 90px ${colors.glow1})`,
+            }}>
+              <path d={gaugeClipPath} fill={palette === 'safety' ? 'rgba(255, 230, 215, 0.92)' : 'rgba(255, 250, 220, 0.95)'} />
+            </g>
+          )}
         </g>
       )}
     </svg>
   );
 }
 
-// 미수락자 아바타 (작은 점선 테두리 — "응답 대기 중" 시각 단서)
-function PendingAvatar({ name, color }) {
+// "더 있음" 인디케이터 — 1줄 표기 룰에서 MAX 초과 시 마지막 슬롯을 "..." 으로 채움.
+// 2026-05-29: 8인+ 팀에서 두 줄 wrap 방지. hover 시 숨겨진 인원 수 툴팁.
+function MoreIndicator({ size = 32, hiddenCount = 0, dashed = true }) {
   return (
-    <div title={name + ' · 응답 대기 중'} style={{
-      display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+    <div title={hiddenCount > 0 ? `${hiddenCount}명 더` : '더 있음'} style={{
+      display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 5,
     }}>
       <div style={{
-        width: 40, height: 40, borderRadius: '50%',
-        background: color, color: '#fff',
+        width: size, height: size, borderRadius: '50%',
+        background: 'rgba(255,255,255,0.06)',
+        color: 'rgba(255,255,255,0.65)',
+        border: dashed ? '2px dashed rgba(255,255,255,0.30)' : '2px solid rgba(255,255,255,0.20)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontFamily: 'var(--font-mono)', fontSize: 15, fontWeight: 700,
-        border: '2px dashed rgba(255,255,255,0.5)',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-      }}>{name[0]}</div>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>{name}</div>
+        fontFamily: 'var(--font-mono)', fontSize: Math.round(size * 0.42), fontWeight: 700,
+        letterSpacing: '0.05em', lineHeight: 1,
+      }}>···</div>
     </div>
   );
 }
 
-// ── voting-v2 body (거대 ring · 6시 수락 버튼 · 미수락자만 노출) ─
-// 데모: 초기 [김민준=요청자 / 이서윤·박지호·최유나=pending]. t=2.5s 이서윤 agree → pending 3→2.
-function E4VotingV2Body() {
-  const [members, setMembers] = React.useState([
-    { name: '김민준', color: 'var(--c-helmet)', state: 'requester' },
-    { name: '이서윤', color: 'var(--c-blue)',  state: 'pending' },
-    { name: '박지호', color: 'var(--c-mint)',  state: 'pending' },
-    { name: '최유나', color: 'var(--c-amber)', state: 'pending' },
-  ]);
-  React.useEffect(() => {
-    const t1 = setTimeout(() => setMembers(m => m.map(x => x.name === '이서윤' ? { ...x, state: 'agreed' } : x)), 2500);
-    return () => clearTimeout(t1);
-  }, []);
+// 미수락자 아바타 (작은 점선 테두리 — "응답 대기 중" 시각 단서)
+// 2026-05-29: compact prop 추가. 팀 인원 많으면(>4) 32px 축소판으로 ring 내부 공간 절약.
+function PendingAvatar({ name, color, compact = false }) {
+  const sz = compact ? 32 : 40;
+  const fs = compact ? 11 : 12;
+  const captionFs = compact ? 9 : 10;
+  return (
+    <div title={name + ' · 응답 대기 중'} style={{
+      display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: compact ? 4 : 6,
+    }}>
+      <div style={{
+        width: sz, height: sz, borderRadius: '50%',
+        background: color, color: '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: 'var(--font-body)', fontSize: fs, fontWeight: 700, letterSpacing: '-0.04em',
+        border: '2px dashed rgba(255,255,255,0.5)',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+      }}>{avatarLabel(name)}</div>
+      {!compact && <div style={{ fontFamily: 'var(--font-mono)', fontSize: captionFs, color: 'rgba(255,255,255,0.6)' }}>{name}</div>}
+    </div>
+  );
+}
 
-  const remaining = useCountdown(15);
+// ── voting-v2 fixture (4인) ─────────
+const V2_TEAM_SMALL = [
+  { name: '김민준', color: 'var(--c-helmet)', state: 'requester' },
+  { name: '이서윤', color: 'var(--c-blue)',  state: 'pending' },
+  { name: '박지호', color: 'var(--c-mint)',  state: 'pending' },
+  { name: '최유나', color: 'var(--c-amber)', state: 'pending' },
+];
+// ── voting-v2 fixture (10인 — 큰 팀, MAX 5 초과로 "..." 트리거) ─────
+const V2_TEAM_LARGE = [
+  { name: '김민준', color: 'var(--c-helmet)',  state: 'requester' },
+  { name: '이서윤', color: 'var(--c-blue)',    state: 'agreed' },
+  { name: '박지호', color: 'var(--c-mint)',    state: 'pending' },
+  { name: '최유나', color: 'var(--c-amber)',   state: 'pending' },
+  { name: '정도윤', color: 'var(--c-tutorial)',state: 'pending' },
+  { name: '한예준', color: 'var(--c-rebar)',   state: 'pending' },
+  { name: '오시아', color: 'var(--c-deep)',    state: 'pending' },
+  { name: '서지안', color: 'var(--c-safety)',  state: 'pending' },
+  { name: '송하준', color: 'var(--c-ink-3)',   state: 'pending' },
+  { name: '강민서', color: 'var(--c-slate)',   state: 'pending' },
+];
+
+// ── voting-v2 body (거대 ring · 6시 수락 버튼 · 미수락자만 노출) ─
+// 데모: 초기 [요청자 1 + pending N-1]. t=2.5s 한 명 agree.
+function E4VotingV2Body({ teamSize = 'small' } = {}) {
+  const initial = teamSize === 'large' ? V2_TEAM_LARGE : V2_TEAM_SMALL;
+  const [members, setMembers] = React.useState(initial);
+  // small: 4명 + 이서윤만 t=2.5s에 agree.
+  // large: 8명 + 박지호(인덱스 2)가 t=2.5s에 agree (이서윤은 이미 agreed로 시작).
+  React.useEffect(() => {
+    const flipName = teamSize === 'large' ? '박지호' : '이서윤';
+    const t1 = setTimeout(() => setMembers(m => m.map(x => x.name === flipName ? { ...x, state: 'agreed' } : x)), 2500);
+    return () => clearTimeout(t1);
+  }, [teamSize]);
+
+  const remaining = useCountdown(10);
   const pendingOnly = members.filter(m => m.state === 'pending');
   const display = remaining <= 0 ? 0 : Math.ceil(remaining);
 
@@ -952,7 +746,7 @@ function E4VotingV2Body() {
     }}>
       {/* 거대 ring + 내부 콘텐츠 */}
       <div style={{ position: 'relative', width: 480, height: 480 }}>
-        <MatchAcceptRing remaining={remaining} total={15} size={480} />
+        <MatchAcceptRing remaining={remaining} total={10} size={480} />
 
         {/* ring 내부 콘텐츠 */}
         <div style={{
@@ -980,9 +774,20 @@ function E4VotingV2Body() {
                 fontFamily: 'var(--font-mono)', fontSize: 10,
                 color: 'rgba(255,255,255,0.5)', letterSpacing: '0.18em', textTransform: 'uppercase',
               }}>응답 대기 · {pendingOnly.length}명</div>
-              <div style={{ display: 'flex', gap: 14 }}>
-                {pendingOnly.map((m, i) => <PendingAvatar key={i} {...m} />)}
-              </div>
+              {(() => {
+                const MAX = 5;
+                const isLarge = pendingOnly.length > 4;
+                const sz = isLarge ? 32 : 40;
+                const showMore = pendingOnly.length > MAX;
+                const slots = showMore ? pendingOnly.slice(0, MAX - 1) : pendingOnly;
+                const hidden = pendingOnly.length - slots.length;
+                return (
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: isLarge ? 10 : 14, whiteSpace: 'nowrap' }}>
+                    {slots.map((m, i) => <PendingAvatar key={i} {...m} compact={isLarge} />)}
+                    {showMore && <MoreIndicator size={sz} hiddenCount={hidden} />}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -994,22 +799,20 @@ function E4VotingV2Body() {
           filter: 'drop-shadow(0 0 24px rgba(255,206,43,0.45)) drop-shadow(0 14px 24px rgba(0,0,0,0.55))',
         }}>
           <button data-action="agree" className="jt-btn jt-btn-critical on-dark" style={{
-            width: 220, height: 60, padding: 0, fontSize: 17, gap: 10, borderRadius: 10,
+            width: 190, height: 62, padding: 0, fontSize: 20, gap: 10, borderRadius: 10,
             fontFamily: 'var(--font-display)',
           }}>
-            {Icon.bolt(16)} 수락
+            {Icon.bolt(18)} 수락
           </button>
         </div>
       </div>
 
-      {/* 거절 버튼 — ring 아래 secondary. jt-btn-ghost-dark (다크 backdrop ghost variant).
-          높이 40 고정 — waiting-v2 의 캡션 영역과 동일 height로 둬서 두 화면 ring 수직 중심이 일치. */}
-      <div style={{ marginTop: 48, height: 40, display: 'flex', alignItems: 'center' }}>
-        <button data-action="reject" className="jt-btn jt-btn-ghost-dark" style={{
-          height: 40, padding: '0 28px', fontSize: 13.5, gap: 8, borderRadius: 10,
-          borderWidth: 1.5,
-        }}>
-          {Icon.x(13)} 거절
+      {/* 거절 버튼 — ring 아래 secondary. 디자인 시스템 표준 사이즈 (jt-btn 36px height) 사용.
+          variant: jt-btn-danger-outlined-dark (v1 voting 거부와 semantic 통일 — 거절=danger).
+          marginTop: 16 — waiting-v2 캡션과 동일 (ring 수직 중심 일치). */}
+      <div style={{ marginTop: 16, height: 36, display: 'flex', alignItems: 'center' }}>
+        <button data-action="reject" className="jt-btn jt-btn-danger-outlined-dark">
+          {Icon.x(12)} 거절
         </button>
       </div>
     </div>
@@ -1018,18 +821,20 @@ function E4VotingV2Body() {
 
 // ── waiting-v2 body (거대 ring · 6시 "동의 완료" pill · 미수락자만 노출) ─
 // voting-v2 와 동일 ring 어휘. 본인 동의 후 다른 팀원 대기. 취소 불가.
-// 데모: 본인=이서윤 가정. 진입 시 이서윤 agreed 확정. t=3s 박지호 추가 agree.
-function E4WaitingV2Body() {
-  const [members, setMembers] = React.useState([
-    { name: '김민준', color: 'var(--c-helmet)', state: 'requester' },
-    { name: '이서윤', color: 'var(--c-blue)',  state: 'agreed' },
-    { name: '박지호', color: 'var(--c-mint)',  state: 'pending' },
-    { name: '최유나', color: 'var(--c-amber)', state: 'pending' },
-  ]);
+// 데모: 본인=이서윤 가정. 진입 시 이서윤 agreed 확정. t=3s 다음 팀원 agree.
+function E4WaitingV2Body({ teamSize = 'small' } = {}) {
+  // small: V2_TEAM_SMALL 기반 + 이서윤 agreed 로 override
+  // large: V2_TEAM_LARGE 그대로 (이서윤 이미 agreed)
+  const initial = teamSize === 'large'
+    ? V2_TEAM_LARGE
+    : V2_TEAM_SMALL.map(m => m.name === '이서윤' ? { ...m, state: 'agreed' } : m);
+  const [members, setMembers] = React.useState(initial);
   React.useEffect(() => {
-    const t1 = setTimeout(() => setMembers(m => m.map(x => x.name === '박지호' ? { ...x, state: 'agreed' } : x)), 3000);
+    // small: t=3s에 박지호 agree. large: t=3s에 정도윤 agree.
+    const flipName = teamSize === 'large' ? '정도윤' : '박지호';
+    const t1 = setTimeout(() => setMembers(m => m.map(x => x.name === flipName ? { ...x, state: 'agreed' } : x)), 3000);
     return () => clearTimeout(t1);
-  }, []);
+  }, [teamSize]);
 
   // waiting-v2: 카운트다운 미사용 — 게이지 full 고정. (실 앱에서 timeout 시 e4-rejected 자동 전이는 서버 이벤트로 처리)
   const pendingOnly = members.filter(m => m.state === 'pending');
@@ -1072,9 +877,20 @@ function E4WaitingV2Body() {
                 fontFamily: 'var(--font-mono)', fontSize: 10,
                 color: 'rgba(255,255,255,0.5)', letterSpacing: '0.18em', textTransform: 'uppercase',
               }}>응답 대기 · {pendingOnly.length}명</div>
-              <div style={{ display: 'flex', gap: 14 }}>
-                {pendingOnly.map((m, i) => <PendingAvatar key={i} {...m} />)}
-              </div>
+              {(() => {
+                const MAX = 5;
+                const isLarge = pendingOnly.length > 4;
+                const sz = isLarge ? 32 : 40;
+                const showMore = pendingOnly.length > MAX;
+                const slots = showMore ? pendingOnly.slice(0, MAX - 1) : pendingOnly;
+                const hidden = pendingOnly.length - slots.length;
+                return (
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: isLarge ? 10 : 14, whiteSpace: 'nowrap' }}>
+                    {slots.map((m, i) => <PendingAvatar key={i} {...m} compact={isLarge} />)}
+                    {showMore && <MoreIndicator size={sz} hiddenCount={hidden} />}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -1086,18 +902,18 @@ function E4WaitingV2Body() {
           filter: 'drop-shadow(0 0 20px rgba(34,180,135,0.4)) drop-shadow(0 14px 24px rgba(0,0,0,0.55))',
         }}>
           <button disabled className="jt-btn jt-btn-success-static on-dark" style={{
-            width: 220, height: 60, padding: 0, fontSize: 17, gap: 10, borderRadius: 10,
+            width: 190, height: 62, padding: 0, fontSize: 20, gap: 10, borderRadius: 10,
             fontFamily: 'var(--font-display)',
             cursor: 'default', opacity: 1,  /* disabled 의 opacity 0.4 override — 정보 상태이므로 흐려지면 안 됨 */
           }}>
-            {Icon.check(16)} 동의했어요
+            {Icon.check(18)} 수락했어요
           </button>
         </div>
       </div>
 
-      {/* ring 아래 캡션 — voting-v2 의 거절 버튼 자리에 매칭하는 height 40 영역으로 두 화면 ring 수직 중심 일치. */}
+      {/* ring 아래 캡션 — voting-v2 의 거절 버튼 자리(height 36 / marginTop 16)와 매칭 → 두 화면 ring 수직 중심 일치. */}
       <div style={{
-        marginTop: 48, height: 40, display: 'flex', alignItems: 'center',
+        marginTop: 16, height: 36, display: 'flex', alignItems: 'center',
         fontFamily: 'var(--font-mono)', fontSize: 11,
         color: 'rgba(255,255,255,0.4)', letterSpacing: '0.16em', textTransform: 'uppercase',
       }}>응답 취소 불가 · 타이머 종료 대기</div>
@@ -1105,56 +921,160 @@ function E4WaitingV2Body() {
   );
 }
 
-// ── rejected body (실패 안내 + 포트레이트 + 캔버스 복귀 CTA) ──
-// 거절/타임아웃을 통합한 단일 화면. 헤드라인은 고정 문구 "합의가 무산됐어요"
-// (이름 명시 폐지 — 사회적 압박/책임 전가 회피).
-// 2026-05-26 v2: 5초 ring + 재요청 (대기 중) 버튼 폐기 — 무산 직후 재요청은 핵심 액션이 아님.
-// 핵심 액션은 "캔버스로 돌아가서 수정"이므로 primary CTA 단일화로 시선 집중.
-function E4FailureBody() {
+// ── rejected v2 body (LoL 매치 무산 어휘 · safety palette · 풀 ring 정지) ──
+// 2026-05-29: v2 세트 (voting-v2 / waiting-v2) 연속성. 게이지 풀 + safety 주황 stripes + energy wave 정지.
+// 내부: safety X icon + "합의가 무산됐어요" 헤드라인 + 4 결과 portraits + 6시 [캔버스로 돌아가기] CTA.
+// 어휘 변경: helmet 노랑(가능성·진행) → safety 주황(실패·돌아가기). flash-in 도 주황 톤.
+// rejected-v2 fixtures — 4가지 outcome (요청자·동의·거절·응답없음) 모두 보이도록 구성
+const V2_OUTCOMES_SMALL = [
+  { name: '김민준', color: 'var(--c-helmet)', state: 'requester' },
+  { name: '이서윤', color: 'var(--c-blue)',  state: 'agreed' },
+  { name: '박지호', color: 'var(--c-mint)',  state: 'rejected' },
+  { name: '최유나', color: 'var(--c-amber)', state: 'timeout' },
+];
+// 10인 outcomes — losers(rejected+timeout) 6명으로 MAX 5 초과 → "..." 트리거
+const V2_OUTCOMES_LARGE = [
+  { name: '김민준', color: 'var(--c-helmet)',  state: 'requester' },
+  { name: '이서윤', color: 'var(--c-blue)',    state: 'agreed' },
+  { name: '박지호', color: 'var(--c-mint)',    state: 'agreed' },
+  { name: '최유나', color: 'var(--c-amber)',   state: 'agreed' },
+  { name: '정도윤', color: 'var(--c-tutorial)',state: 'rejected' },
+  { name: '한예준', color: 'var(--c-rebar)',   state: 'rejected' },
+  { name: '오시아', color: 'var(--c-deep)',    state: 'rejected' },
+  { name: '서지안', color: 'var(--c-safety)',  state: 'timeout' },
+  { name: '송하준', color: 'var(--c-ink-3)',   state: 'timeout' },
+  { name: '강민서', color: 'var(--c-slate)',   state: 'timeout' },
+];
+
+function E4FailureV2Body({ teamSize = 'small' } = {}) {
+  const members = teamSize === 'large' ? V2_OUTCOMES_LARGE : V2_OUTCOMES_SMALL;
+
+  // 3초 카운트다운 후 자동 [돌아가기] click — 실 운영에서 timeout 시 자동 캔버스 복귀.
+  const [autoSecs, setAutoSecs] = React.useState(3);
+  React.useEffect(() => {
+    if (autoSecs <= 0) {
+      // 0 도달 — 버튼 click dispatch (viewer ACTIONS 위임으로 라우팅)
+      const btn = document.querySelector('[role="alertdialog"] [data-action="back-to-canvas"]');
+      btn?.click();
+      return;
+    }
+    const t = setTimeout(() => setAutoSecs(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [autoSecs]);
+  // outcome avatar 어휘: 32px circle + state-driven ring + 작은 칩
+  const outcomeLabel = {
+    requester: { ring: 'var(--c-helmet)', chip: '요청자', chipBg: 'var(--c-helmet-soft)', chipFg: 'var(--c-stache)' },
+    agreed:    { ring: 'var(--c-mint)',   chip: '동의',   chipBg: '#ffffff',               chipFg: 'var(--c-mint)' },
+    rejected:  { ring: 'var(--c-safety)', chip: '거절',   chipBg: '#ffffff',               chipFg: 'var(--c-safety-deep)' },
+    timeout:   { ring: 'rgba(255,255,255,0.35)', chip: '응답 없음', chipBg: 'rgba(255,255,255,0.10)', chipFg: 'rgba(255,255,255,0.6)' },
+  };
+
   return (
-    <div style={{
-      position: 'absolute', inset: 0,
+    <div role="alertdialog" aria-modal="true" aria-label="합의 무산 (v2)" style={{
+      position: 'absolute', inset: 0, zIndex: 51,
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '32px 40px', gap: 18,
+      padding: '32px 40px', gap: 0,
+      animation: 'jt-modal-fade-in var(--dur-base) var(--ease-decelerate)',
     }}>
-      <div style={{
-        width: 84, height: 84, borderRadius: '50%',
-        background: 'var(--c-safety)', color: '#fff',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 10px 28px rgba(255,107,31,0.45), 0 0 0 6px rgba(255,107,31,0.18)',
-      }}>{Icon.x(48)}</div>
+      <div style={{ position: 'relative', width: 480, height: 480 }}>
+        {/* 정지된 풀 게이지 — safety palette + animate=false (에너지 정지) */}
+        <MatchAcceptRing full={true} palette="safety" animate={false} size={480} />
 
-      <E4Headline
-        title="합의가 무산됐어요"
-        sub="캔버스를 수정한 뒤 다시 시도하세요"
-      />
+        {/* 내부 콘텐츠 */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          padding: 70, textAlign: 'center', gap: 14,
+        }}>
+          {/* 84px safety X — v1 rejected와 동일 어휘 */}
+          <div style={{
+            width: 84, height: 84, borderRadius: '50%',
+            background: 'var(--c-safety)', color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 10px 28px rgba(255,107,31,0.45), 0 0 0 6px rgba(255,107,31,0.18)',
+            marginBottom: 4,
+          }}>{Icon.x(48)}</div>
 
-      <E4Divider>합의 실패</E4Divider>
+          <h2 style={{
+            fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 800,
+            color: '#fff', letterSpacing: '-0.022em',
+            margin: 0, lineHeight: 1.25,
+          }}>합의가 무산됐어요</h2>
+          <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.55 }}>
+            캔버스를 수정한 뒤 다시 시도하세요
+          </div>
 
-      <div style={{ display: 'flex', gap: 14 }}>
-        {e4Teammates().map((m, i) => (
-          <TeammatePortrait key={i} {...m} />
-        ))}
+          {/* outcome portraits — 실패 원인이 된 사람(rejected/timeout)만 1줄로 표기. MAX 5 초과 시 "...". */}
+          {(() => {
+            const losers = members.filter(m => m.state === 'rejected' || m.state === 'timeout');
+            if (losers.length === 0) return null;
+            const MAX = 5;
+            const isLarge = losers.length > 4;
+            const sz = isLarge ? 32 : 40;
+            const fs = isLarge ? 11 : 13;
+            const showMore = losers.length > MAX;
+            const slots = showMore ? losers.slice(0, MAX - 1) : losers;
+            const hidden = losers.length - slots.length;
+            return (
+              <div style={{
+                marginTop: 10, display: 'flex', justifyContent: 'center',
+                gap: isLarge ? 10 : 14, whiteSpace: 'nowrap',
+              }}>
+                {slots.map((m, i) => {
+                  const o = outcomeLabel[m.state];
+                  const isMuted = m.state === 'timeout';
+                  return (
+                    <div key={i} style={{
+                      display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+                      opacity: isMuted ? 0.7 : 1,
+                    }}>
+                      <div style={{
+                        width: sz, height: sz, borderRadius: '50%',
+                        background: m.color, color: '#fff',
+                        border: `2px solid ${o.ring}`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: 'var(--font-mono)', fontSize: fs, fontWeight: 700,
+                        boxShadow: m.state === 'rejected' ? '0 0 0 3px rgba(255,107,31,0.25)' : 'none',
+                      }}>{avatarLabel(m.name)}</div>
+                      {!isLarge && <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, color: 'rgba(255,255,255,0.65)' }}>{m.name}</div>}
+                      <span style={{
+                        display: 'inline-flex', alignItems: 'center',
+                        background: o.chipBg, color: o.chipFg,
+                        padding: '2px 7px', borderRadius: 999,
+                        fontSize: 9.5, fontWeight: 700,
+                        fontFamily: 'var(--font-mono)', letterSpacing: '0.02em',
+                      }}>{o.chip}</span>
+                    </div>
+                  );
+                })}
+                {showMore && <MoreIndicator size={sz} hiddenCount={hidden} dashed={false} />}
+              </div>
+            );
+          })()}
+        </div>
+
+        {/* 6시 캔버스로 돌아가기 버튼 — voting-v2 수락 버튼 자리·크기 동일 */}
+        <div style={{
+          position: 'absolute', left: '50%', bottom: 16, transform: 'translateX(-50%)',
+          filter: 'drop-shadow(0 0 24px rgba(255,206,43,0.45)) drop-shadow(0 14px 24px rgba(0,0,0,0.55))',
+        }}>
+          <button data-action="back-to-canvas" className="jt-btn jt-btn-critical on-dark" style={{
+            width: 190, height: 62, padding: 0, fontSize: 18, gap: 10, borderRadius: 10,
+            fontFamily: 'var(--font-display)',
+          }}>
+            {Icon.arrowLeft(16)} 돌아가기
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 14, opacity: 0.7, letterSpacing: '0.02em', marginLeft: 2 }}>({autoSecs}s)</span>
+          </button>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 14 }}>
-        <button
-          data-action="back-to-canvas"
-          className="jt-btn jt-btn-primary"
-          style={{
-            padding: '16px 36px',
-            fontSize: 15.5,
-            fontWeight: 700,
-            gap: 10,
-            boxShadow: '0 8px 24px rgba(20,19,15,0.35)',
-          }}
-        >
-          {Icon.arrowLeft(16)} 캔버스로 돌아가기
-        </button>
-      </div>
+      {/* ring 아래 — 캡션 폐기. 빈 placeholder로 voting/waiting 와 동일 height 36 / marginTop 16 유지 (ring 수직 정렬). */}
+      <div style={{ marginTop: 16, height: 36 }} aria-hidden="true" />
     </div>
   );
 }
+
+// ── v1 rejected body 는 2026-06-01 v1 폐기와 함께 제거. v2(E4FailureV2Body)가 정본. ──
 
 function CanvasBackdrop() {
   // OpenCode 다크 UI 의 흐릿한 모습 — 합의 투표/AI 선택지 카드의 배경 컨텍스트
@@ -1317,11 +1237,12 @@ function E5AIChoiceVote() {
                           <div style={{ display: 'flex' }}>
                             {c.votes.map((v, j) => (
                               <div key={j} className="jt-avatar" style={{
-                                width: 22, height: 22, fontSize: 10,
+                                width: 22, height: 22, fontSize: 9,
+                                fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: '-0.04em',
                                 background: ['var(--c-helmet)', 'var(--c-blue)', 'var(--c-mint)', 'var(--c-amber)'][['김민준', '이서윤', '박지호', '최유나'].indexOf(v)],
                                 color: '#fff', marginLeft: j > 0 ? -6 : 0,
                                 border: '2px solid var(--c-canvas)',
-                              }}>{v[0]}</div>
+                              }}>{v.length >= 2 ? v.slice(-2) : v}</div>
                             ))}
                           </div>
                           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--c-slate)' }}>{c.votes.length}표</span>
@@ -1422,89 +1343,12 @@ function E1UnsavedCloseConfirm() {
   );
 }
 
-// ── E-6. 일시정지 오버레이 ─────────────────────────────────────
-// 운영자가 hackathon_running 상태에서 [일시정지]를 누르면 참가자 바이브코딩
-// 화면(C-3 1인팀 / C-4 다인팀) 위에 백드롭으로 덮여 등장.
-// 참가자는 직접 닫을 수 없고 운영자의 [재시작]만 해제 — 작업물은 그대로 보존.
-//
-// 디자인 일관성: E-4 합의 무산(`E4FailureBody`) 패턴을 그대로 따른다.
-//  · 풀스크린 다크 dim(0.40) + 블러된 OpenCode 셀(CanvasBackdrop)을 배경으로 깐다
-//  · 가운데 84×84 헬멧 옐로우 아이콘 원(⏸) + halo
-//  · E4Headline display 32px 타이틀 + 보조 카피
-//  · E4Divider mono caps 구분선
-//  · CTA 대신 "운영자의 재시작을 기다리는 중" 펄스 칩 (참가자 직접 액션 불가)
-//
-// GNB는 `<JitdaToolbar status="hackathon_running" paused />`로 ⏸ 일시정지 pill 노출.
-function E6Paused() {
-  return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#f5f3ee' }}>
-      <JitdaToolbar status="hackathon_running" paused actions={<ParticipantCanvasActions />} />
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        <CanvasBackdrop />
-        <div className="jt-modal-backdrop has-blur" />
-
-        <E6PausedBody />
-      </div>
-    </div>
-  );
-}
-
-// ── paused body — E-4 합의 무산과 동일 위계·간격·타입스케일 ────
-function E6PausedBody() {
-  return (
-    <div role="alertdialog" aria-modal="true" aria-label="해커톤 일시정지" style={{
-      position: 'absolute', inset: 0,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '32px 40px', gap: 18,
-      animation: 'jt-modal-fade-in var(--dur-base) var(--ease-decelerate)',
-    }}>
-      {/* 84px 원형 아이콘 — E4FailureBody와 동일 사이즈·shadow 스타일 (색만 helmet 옐로우) */}
-      <div
-        className="jt-countdown-ring-critical"
-        style={{
-          width: 84, height: 84, borderRadius: '50%',
-          background: 'var(--c-helmet)', color: 'var(--c-stache)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 10px 28px rgba(230,181,0,0.45), 0 0 0 6px rgba(255,206,43,0.22)',
-        }}>{Icon.pause(40)}</div>
-
-      <E4Headline
-        title="잠시 멈췄어요"
-        sub="운영자가 재시작하면 작업이 그대로 이어집니다"
-      />
-
-      <E4Divider>작업 보존됨</E4Divider>
-
-      {/* CTA 대신 상태 칩 — 참가자는 직접 액션 불가 (운영자 [재시작]만 해제) */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 14 }}>
-        <div style={{
-          fontFamily: 'var(--font-mono)',
-          fontSize: 12.5,
-          color: E4_LIGHT,
-          letterSpacing: '0.02em',
-          background: 'rgba(255,255,255,0.10)',
-          border: '1px solid rgba(255,255,255,0.22)',
-          padding: '12px 22px',
-          borderRadius: 999,
-          display: 'inline-flex', alignItems: 'center', gap: 10,
-          backdropFilter: 'blur(4px)',
-        }}>
-          <span style={{
-            width: 8, height: 8, borderRadius: '50%',
-            background: 'var(--c-helmet)',
-            boxShadow: '0 0 0 4px rgba(255,206,43,0.22)',
-            animation: 'pulse 1.6s infinite',
-            display: 'inline-block',
-          }} />
-          운영자의 재시작을 기다리는 중
-        </div>
-      </div>
-    </div>
-  );
-}
+// E-6 폐기 (2026-05-29): 일시정지/재시작 기능 자체를 제거.
+// 진행 중 휴식은 운영자 구두 안내로 처리하고, 작업물은 자동 저장된다.
+// 어드민 기획 v11 · 로그인 기획 v9 정합.
 
 // E-7 폐기 (2026-05-27): 참가자에게는 종료 예고 없음 정책.
 // 30초 유예는 운영자 전용이며, 종료 확정 시 참가자 화면은 C-3/C-4 → 대기실 ③(c1-ended)로 직접 전환.
 // 참가자-로그인-기획.md §자동 전환 매트릭스 "[해커톤 종료] → 대기실 ③"와 정합.
 
-Object.assign(window, { E1ProjectSettings, E1UnsavedCloseConfirm, E4ConsensusVote, E5AIChoiceVote, E6Paused });
+Object.assign(window, { E1ProjectSettings, E1UnsavedCloseConfirm, E4ConsensusVote, E5AIChoiceVote });

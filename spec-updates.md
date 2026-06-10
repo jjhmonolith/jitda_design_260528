@@ -5,6 +5,919 @@
 
 ---
 
+## §24 2026-06-04 OpenCodeShell 라이트 paper + 2-pane 재설계 (c2·c3·c4 공용 셸 교체)
+
+**계기**: 사용자 지시 — `06-design/static-open-code-no-script-desktop.html` (OpenCode "Codle" 변형 스냅샷, `data-theme="jitda" data-color-scheme="light"`) 기반으로 바이브코딩 진행 화면 재설계. 레퍼런스를 읽어 보니 기존 셸과 두 가지 큰 차이:
+- **테마 역전**: 기존 다크 SaaS(`#0d0d11`) → 레퍼런스 라이트 paper(`var(--c-paper)` 어휘, paper-edge polygon clip-path 도입)
+- **레이아웃 차이**: 기존 단일 채팅 컬럼 → 좌측 채팅(`codle-session-column` ≈460px) + 우측 미리보기 패널(`review-panel`) 2-pane
+
+**기획-디자인 갭 식별**: `2026-05-18_동시편집-캔버스-기획.md` L205·L248 에 이미 *"OpenCode에는 채팅 패널과 미리보기 패널이 있다"* / *"우측: 미리보기 (기존 OpenCode 미리보기 그대로)"* 가 명시돼 있었으나, 디자인 시안의 단일 컬럼 다크 셸이 이를 반영 못한 상태. **본 §24가 갭 해소**.
+
+**결정**:
+1. `participant.jsx` `OpenCodeShell` (L494~) 전면 재작성 — 배경 `var(--c-paper)`, 텍스트 `var(--c-ink)/--c-ink-2/--c-slate`, hairline `var(--c-hairline)`, 캔버스 surface `var(--c-canvas)`. 다크 hex 직접 사용 금지(`#0d0d11`·`#1a1a20`·`#d4d4dc` 등 13개 인스턴스 제거).
+2. **사용자 발화 paper-edge** — 레퍼런스 `--paper-edge` polygon 값(`polygon(1.2% 3.51%, 18.06% 2.84%, ...)`) 을 `OC_PAPER_EDGE` 상수로 차용해 `OcUserMessage`에 `clipPath`로 적용. 배경 `var(--c-helmet-wash)`(노란 paper-tinted) — 짓다 5상태 `hackathon_running` 컨텍스트 아래 helmet 어휘와 정렬.
+3. **2 컬럼 본문** — 좌측 채팅 컬럼 `flex: 0 0 460px` + 우측 미리보기 패널 `flex: 1`. 그 사이 `var(--c-hairline)` 1px divider.
+4. **우측 미리보기 패널** — 기본 `OcDefaultPreview` (음료 추천 앱 4 카드 가짜 렌더 · 살구색 배경). props `preview` 로 화면별 교체 가능.
+5. **하단 dock(composer)** — `var(--c-canvas)` 카드 + `var(--c-hairline-strong)` 보더 + `radius 8`. chip(Build/Claude Opus 4.5/Default) 은 mono pill, 첨부·크게보기·전송 아이콘 버튼 추가, 전송은 `var(--c-ink)` 솔리드 검정.
+6. **OpenCode 내부 상단 바 제거** — 1차 시안에는 햄버거·세션 제목 드롭다운·host/MCP 상태·패널 토글 아이콘이 들어간 별도 상단 바를 만들었으나, **레퍼런스 HTML 에는 그 바가 존재하지 않는다**(`codle-session-column` 이 thread 를 바로 렌더). 사용자 지적으로 잘못된 추측 확인 후 즉시 제거. 짓다 GNB(JitdaToolbar) 아래 곧바로 2-pane 본문.
+7. **우측 패널 탭 유지** — `미리보기` / `파일 N` 탭 (`OcTab`) + `OcFileChangesPanel`. props `rightTab` (`'preview'|'files'`) · `fileChanges` 로 화면별 제어. 좌측 채팅 본문 인라인 `OcFileRow` 와 우측 `파일` 탭은 동일 정보의 서로 다른 표상(인라인은 응답 흐름 안, 탭은 모아 보기) — 중복이 아닌 보완.
+8. **paper-edge 어휘 잔존 컴포넌트** — `OcStepsRow`(chevron + mono · slate), `OcParagraph`(ink-2/slate), `OcFileRow`(canvas + 상태 배지 mint=A·helmet-deep=M·safety=D), `OcChip`(mono pill), `OcResponseLabel`(`return null` — 라이트 paper 에서 "Response" 라벨이 노이즈).
+9. **호출처 정렬** — C2(튜토리얼) `promptInput` 다크 hex(`#8a8a92`·`#d4d4dc`) → `var(--c-ink-2)`·`var(--c-ink-3)`. C4(다인팀) 팀 모드 액션 바 — 다크 backdrop(`rgba(13,13,17,0.85)`) → `var(--c-canvas)` pill + helmet-deep dot. 팀 커서 위치 재조정(다크 텍스트 영역 위 → 우측 미리보기 영역 위, `top/left` 갱신).
+
+**영향 파일**:
+- `participant.jsx` L494~ — `OpenCodeShell` 본체 + `OcUserMessage`·`OcStepsRow`·`OcResponseLabel`·`OcParagraph`·`OcFileRow`·`OcChip`·`ocIconBtnStyle`·`OcDefaultPreview` (재작성·신설), `OcTab`·`OcFileChangesPanel` 폐기
+- C2/C4 `promptInput` · C4 `overlay` 라이트 어휘 정렬
+- viewer.html · Renewal.html · tokens.css · 다른 영역 JSX 무수정 (`OpenCodeShell`/`Oc*` 는 participant.jsx 내부 전용 · `Object.assign` 변동 없음)
+
+**검증**: viewer `?id=c2`·`?id=c3`·`?id=c4` 모두 콘솔 0 에러(favicon 404 제외). 시각 확인: c3 helmet-wash paper-edge 메시지·살구색 미리보기, c4 TeamCursor + paper-edge 메시지 + 우측 미리보기, c2 튜토리얼 가이드 + 새 셸 연동. dialogs.jsx·judge.jsx 에서 `OpenCodeShell`·`Oc*` 참조 0건 — e4/e5 (오버레이 화면) 회귀 없음.
+
+**검증 포인트(향후)**:
+- (a) paper-edge polygon clip-path 가 모바일/저해상도에서 픽셀 단위 깨짐 없는지 — 현재 viewer 1280×820 만 검증
+- (b) `OcDefaultPreview` 의 살구색 배경(`#fdeed7`)이 토큰화돼야 하는지 (현재 인라인 hex — 추후 `--c-preview-bg` 토큰 후보)
+- (c) "Show steps" 디스클로저가 실제 OpenCode 에서는 클릭 시 본문 펼침 — 정적 디자인에선 chevron 만 노출. 실 앱 구현 시 인터랙션 명세 별도 필요
+- (d) C4 다인팀 액션 바 위치(`bottom: 86`) 가 chat 컬럼 460px 와 묶인 magic number — composer 높이 변화 시 재조정 필요. 추후 dock 영역 컴포넌트화 시 anchor 로 정리
+- (e) Codle 레퍼런스 원본은 3 컬럼 구조(채팅 | 미리보기 | 별도 파일 트리)를 가정하지만 본 시안은 2 컬럼으로 축약(1280×820 폭 제약 + `미리보기/파일` 탭이 파일 트리 역할 일부 흡수). 별도 파일 트리 컬럼 도입은 후속 결정 필요시 별도 ledger.
+
+**반증 시나리오**:
+- (i) helmet-wash 노란 user message 가 hackathon_running 외 컨텍스트(tutorial_running 등)에서 의미 충돌 — 현재 c2 튜토리얼에서도 같은 노란색 노출. tutorial purple 변형 도입 여부는 사용자 결정 필요
+- (ii) paper-edge polygon 이 한국어 긴 본문(>3줄) 에서 가장자리가 잘리는 시각 결함 — `max-width: 88%` 로 완화했으나 실 사용 데이터로 재검증 필요
+- (iii) "OpenCode 원본은 색·모양 변경만, 그 외 재설계" (Renewal.html L587 명시) 원칙과의 정합 — 본 §24는 색·구조 모두 변경. 단, 기획서 L201-254 "OpenCode 채팅+미리보기 2패널"이 우선 근거. 두 원칙 충돌 시 기획서 우선이 §0 우선순위 룰에 부합
+
+---
+
+## §23b 2026-06-02 B-2 종료 화면 보강 + D-1 운영자 갤러리 신설
+
+§23 적용 후 사용자 피드백 6건을 한꺼번에 반영. §23은 그대로 유효, 본 항목은 보강·삭제·신설 모음.
+
+**1. AI 사용량 순위 → 시상대(podium) 어휘**
+- 기존: `SummaryRankRow` 5행 + tutorial purple 막대
+- 변경: 1·2·3등은 `SummaryPodium` (시상대 메타포 — 2등 좌·1등 중앙·3등 우, 1등이 가장 높음). 색은 1등 helmet(gold)/2등 stone-2(silver)/3등 helmet-deep(bronze 대신 진한 노랑). 팀명·값은 시상대 위, 큰 #N은 시상대 안.
+- 4·5등은 막대 없이 작은 행(`SummaryRankRowMini`). 사용자 룰 "막대그래프 없어도될듯".
+- 갤러리 인기 순위는 현 디자인(`SummaryRankRow` 막대+행) 그대로 유지. 사용자 결정 "아니다 인기순위는 그냥둬".
+
+**2. LIVE 라벨 노이즈 제거**
+- 기존: `LIVE · 종료 후에도 누적 중 · 마지막 갱신 HH:MM:SS`
+- 변경: `LIVE · 종료 후에도 누적 중`. `SummaryLiveLabel` `updated` prop 폐기. `SummaryView`의 `lastUpdated` state·`setLastUpdated` 호출 제거 (라이브 시뮬은 좋아요·댓글만 유지).
+
+**3. 운영 결산 eyebrowNote 제거**
+- 기존: `● 운영 결산   행사 종료 시점 확정`
+- 변경: `● 운영 결산`만. (`eyebrowDot` 검정 + `eyebrow` 라벨만으로 영역 성격 식별 가능 — 부기 카피는 중복.)
+
+**4. 곡선 아래 한 줄 인사이트 카피 제거**
+- 기존: 곡선 하단 "완만 → 가팔라짐 · 종료 1시간 전부터 사용량 급증 (막판 몰아치기형)"
+- 변경: 카피 라인 통째 삭제. 곡선 자체가 모양으로 인사이트 전달, 텍스트 보조는 군더더기.
+
+**5. "전체 N팀" → 모달 막대 리스트 (간소화)**
+- 기존: 텍스트 버튼만(액션 없음)
+- 변경: 클릭 시 `AiUsageTeamsModal` 열림. `AbsentTeamsModal` 포스트잇 어휘 차용 (variant="postit" · 회전 hash · jt-postit-tape-lg). 본문은 스크롤 가능한 막대 행 리스트 (`AiUsageTeamRow` · #순위 · 팀명 · tutorial purple 막대 · 토큰 값). 26팀 전체 노출.
+- viewer ACTIONS `b2-ended`에 `open-token-all`·`close-token-all` self-loop 추가 (b2-started `open-absent`/`close-absent` 패턴과 동일).
+- 모달 헤더 카피: "팀별 AI 사용량 · 26팀 · 행사 종료 시점 확정" — §23b 결정 3에서 본 영역 eyebrow에서 뺀 "행사 종료 시점 확정" 카피는 *모달 헤더*에 한 번 노출(맥락 필요 시).
+
+**6. D-1 운영자 갤러리 신설 (운영자 흐름 복귀 보강)**
+- 사용자 지적 "운영자용 갤러리에서는 대시보드로 돌아가기 버튼 추가해줘".
+- 기존: `b2-ended.open-gallery: d1-ended` → 참가자 갤러리 화면으로 진입 (운영자 자리 잃음, 복귀 동선 없음).
+- 변경:
+  - `gallery.jsx` `D1GalleryListEnded`에 `role` prop 추가 (`'participant'` 기본 · `'operator'`). operator일 때 `GalleryHeader role="operator"` + 본문 상단 `BackLink label="대시보드로 돌아가기" dataAction="back-to-dashboard"` + `mineTeam=null` (본인 팀 강조 제거).
+  - `BackLink`에 `dataAction` prop 추가 (와이어링 가능). `GallerySubHeader`에 `backDataAction` prop 추가 (BackLink로 전달).
+  - 신규 화면 `d1-ended-operator` — viewer SCREENS·Renewal.html artboard 1개씩 추가. 컴포넌트는 `<D1GalleryListEnded role="operator" />`로 재사용.
+  - viewer ACTIONS: `b2-ended.open-gallery: d1-ended-operator` (이전 `d1-ended` 직결 변경). `d1-ended-operator.back-to-dashboard: b2-ended` + `open-card: d2`.
+
+**영향 파일**:
+- `operator.jsx` L2120 `SummaryView` 영역 — `lastUpdated` state·setter 제거, `SummaryLiveLabel updated` prop 호출 제거, `eyebrowNote="행사 종료 시점 확정"` 제거, 곡선 아래 카피 제거, "전체 N팀" 버튼 `onClick`+`data-action` 추가, 신규 컴포넌트 4개(`SummaryPodium`/`SummaryRankRowMini`/`AiUsageTeamsModal`/`AiUsageTeamRow`)
+- `gallery.jsx` — `BackLink` `dataAction` prop, `GallerySubHeader` `backDataAction` prop, `D1GalleryListEnded` `role` prop
+- `viewer.html` — SCREENS 1건(`d1-ended-operator`) + ACTIONS 4건(`b2-ended` self-loop 2 · `d1-ended-operator` 2)
+- `Jitda Renewal.html` — artboard 1건(`d1-ended-operator`)
+- `STRUCTURE.md` §3 D-1 행 1개 추가, §7 와이어링 표 2건 갱신, 풀 스토리 갱신, 변경 이력 1줄
+
+**검증**: viewer `?id=b2-ended` (podium·LIVE 노이즈 제거·모달), `?id=d1-ended-operator` (대시보드 복귀 버튼). 콘솔 0 에러(favicon 제외).
+
+**검증 포인트(향후)**:
+- (a) 시상대 메타포가 K-12 교사에게 직관적인지 — gold/silver/bronze 어휘 친숙성 검증
+- (b) 1등 helmet과 3등 helmet-deep이 명도 차이만으로 충분히 구별되는지 (사용자 색약 등 접근성)
+- (c) 모달이 viewer에서만 작동(자체 state) — 실 앱은 URL 쿼리·해시로 모달 상태 보존 필요
+- (d) `d1-ended-operator`가 참가자 `d1-ended`와 컴포넌트 공유 — 향후 운영자 전용 메타(통계·관리 액션) 추가 필요 시 분리 가능
+- (e) `b2-started`에서 진행 중 갤러리 진입(`open-gallery: d1`)도 동일 운영자 복귀 패턴 필요한지 — 후속 결정
+
+---
+
+## §23 2026-06-02 B-2 ⑥ 해커톤 종료 화면 재설계 — 운영 결산(고정) + 갤러리 호응(라이브) 2영역
+
+**계기**: 사용자 지적 "현재 종료 화면(b2-ended)은 12팀 카드 그리드가 D-1 갤러리와 어휘 중복이라 불필요하다. 운영자가 종료 직후 실제로 필요로 하는 정보가 뭔지 다시 검토하라."
+
+**비판적 검토 — 운영자 JTBD 4가지**:
+1. 결산 보고 (상급자/주최측)
+2. 이슈 처리 — *비공개 자동 강제 공개로 제거됨* (사용자 확인)
+3. 산출물 배포/아카이브
+4. 회고/하이라이트
+
+**도메인 제약 2건 (사용자 확인으로 설계 변경)**:
+- 비공개 팀도 종료 시 **자동 강제 공개** → "공개율" KPI·"비공개 처리 필요" 패널 모두 제거
+- 좋아요·댓글은 **종료 후에도 계속 누적** → 종료 화면이 "박제된 결산"이 아니라 "갤러리 진입 + 라이브 호응 추적"의 성격을 가짐
+
+**핵심 결정**:
+1. **2영역 시간 성격 분리** — `eyebrow` 라벨·dot 색으로 시각 분리:
+   - **운영 결산(고정)**: 행사 종료 시점 확정, 안 바뀜 — AI 사용량 총량·곡선·팀 순위
+   - **갤러리 호응(라이브)**: 종료 후에도 누적 — 좋아요·댓글 총량·팀 인기 순위 + mint pulse LIVE
+2. **좌우 2단 병치** — 두 영역 가로 grid(`1fr 1fr`). 각 영역 내부는 본문(곡선/타일) 위 + 순위 TOP 5 아래의 세로 stacking.
+3. **카드 그리드 폐기** — `<ActivityGrid variant="summary" />` + `<Pagination>` 호출 제거. D-1 갤러리와 어휘 중복 해소.
+4. **AI 사용량 본문**:
+   - 큰 누적 토큰 숫자(`formatTokens` mono 어휘) + 팀 평균 부기
+   - SVG 누적 곡선(`SummaryTokenCurve`) — X축 0:00~4:20, 튜토 종료(0:32) 점선 마커, Y축 0~totalTokens, S-curve with late acceleration (막판 몰아치기형 mock)
+   - 한 줄 인사이트 카피 ("완만 → 가팔라짐 · 종료 1시간 전부터 사용량 급증")
+   - 팀별 순위 TOP 5 — b2-started `TokenTeamCard` 어휘(#N · jt-mono · 가로 막대) 차용. tutorial purple bar.
+5. **갤러리 호응 본문**:
+   - 좋아요·댓글 메트릭 타일 2개(`SummaryMetricTile` · safety/mint accent)
+   - "갤러리는 종료 후에도 계속 운영됩니다" 정책 안내 박스(paper bg + dashed border)
+   - 팀별 인기 TOP 5 — safety orange bar + ♥ 아이콘 suffix, "지금 기준" 라이브 라벨
+   - 갤러리 진입 CTA(`jt-btn-critical`)는 영역 헤더 우측 action 슬롯
+6. **라이브 시뮬레이션** — `setInterval(2800ms)` 좋아요 +1~3팀 / 댓글 +1 가끔, `lastUpdated` 시각 mono 표기. b2-started ActivityView 시뮬 패턴 차용.
+
+**핵심 KPI 3카드 정렬 변경**:
+- 이전: 참가팀 / 운영 시간 / 갤러리 좋아요(355 고정)
+- 이후: 참가팀(인원 부기) / 운영 시간(튜토+본행사) / **AI 사용량(누적 토큰·팀 평균)** — 좋아요는 라이브라 KPI에서 빠지고 갤러리 호응 영역 안으로 이동
+
+**영향 파일**:
+- `operator.jsx` L2120: `SummaryView` 전면 재작성, sub-components 8개 신설(`SummaryKpiRow`, `SummaryBlock`, `SummaryLiveLabel`, `SummaryAiUsage`, `SummaryTokenCurve`, `SummaryGalleryResponse`, `SummaryMetricTile`, `SummaryRankRow`). `ActivityGrid summary variant`·`Pagination` 호출 끊김(legacy 코드는 유지 — 1주 무사용 확인 후 정리 검토)
+- 라벨/와이어링 변경 없음 → `viewer.html` SCREENS·ACTIONS, `Jitda Renewal.html` artboard 무수정. `tokens.css` 무수정.
+
+**검증**: viewer.html `?id=b2-ended` 렌더 — 콘솔 0 에러(favicon 제외), KPI 3카드 정상, 누적 곡선 SVG 렌더, 좋아요/댓글 setInterval 라이브 증가 확인. b2-started 회귀 없음 (TokenLeaderZone 어휘 그대로 사용).
+
+**검증 포인트(향후)**:
+- (a) 토큰을 시간 해상도로 저장하는지 — 백엔드 스키마 확인 필요. 총합만 저장한다면 곡선은 mock 영구화 또는 제거.
+- (b) `STARTED_TEAMS` mock의 총량(~277k)이 실제 30팀×4시간 행사 토큰량과 정렬되는지 — 실측 후 mock 정렬.
+- (c) "팀별 순위" 좌측 정렬에서 *적게 쓴 팀*이 노출 안 됨 → 사용자 결정으로 격차 라벨링 부담 회피, 다만 운영자가 "활동 저조 팀"을 어디서 보는지 후속 검토.
+- (d) 운영자가 종료 후 며칠에 걸쳐 다시 들어오는지 — 라이브 영역의 가치는 재방문 빈도에 비례. 재방문 0이면 이메일 알림이 더 적합.
+- (e) "AI 사용량 ≈ 좋아요 순위" 시 *건강한 행사*, 어긋날 시 *효율/헤맴* 같은 비교 시각화는 v2 이후 후속 결정.
+
+---
+
+## §22 2026-06-02 브랜드 로고 교체 (캐릭터 + jitda 통합 워드마크)
+
+**계기**: `06-design/Jitda UI design/jitda_logo.svg` 신규 로고 자산 도입. 기존 헬멧+콧수염 마크는 폐기.
+
+**변경 요약**:
+- `shared.jsx` `JitdaMark` 전면 재작성 — 별도 `JitdaLogo` 아이콘 + "짓다"/"Jitda" 텍스트 스팬 구성 폐기. 단일 SVG 인라인(노란 캐릭터 + 다크 `jitda` 워드마크)으로 통합.
+- API: `size`는 렌더 높이(px). 너비는 원본 비율 774.61:304.29 자동. 기본값 24. `hideText` prop 제거 (워드마크 포함 SVG라 의미 없음).
+- `mono` 모드: `#3f3934`(다크 잉크) → `#ffffff`로 스왑. 노란 캐릭터 색(`#ffce2c`/`#fcc204`/`#e9ad03`)은 어두운 배경에서도 식별성 위해 유지.
+- `JitdaLogo`(구 헬멧 마크)는 외부 사용처 없음. window export는 유지하나 내부 호출 끊김 — 추후 정리 후보.
+- `viewer.html`: `shared.jsx?v=` 캐시 토큰을 `20260601g` → `20260602a`로 갱신.
+
+**호출 영향 (5곳, 시각적 사이즈 소폭 축소)**:
+- `auth.jsx:30` (A-1) `size={22}` — 가로 56×세로 22.
+- `auth.jsx:89` (A-2 mono) `size={22}` — 가로 56×세로 22, ink #fff.
+- `shared.jsx:221` (BrowserChrome 헤더) `size={18}` — 가로 46×세로 18.
+- `participant.jsx:448`, `gallery.jsx:65` 동일.
+
+**검증**: viewer.html A-1·A-2 새로고침, `svg[aria-label="짓다 Jitda"]` 단일 노드 렌더 + 콘솔 0 에러 + mono에서 ink fill = `#ffffff` 확인.
+
+---
+
+## §21 2026-06-01 B-2 ⑤ 해커톤 진행 화면 재설계 + 손들기 기능 신설
+
+**계기**: 사용자 지적 "해커톤 진행 도중 각 팀의 라이브 미리보기는 운영자 의사결정에 무의미하다 — 240×140 썸네일에선 글자·UI 식별 불가하고, 30~60팀 그리드에선 정작 *주의가 필요한 팀*이 군중 속에 묻힌다. 운영자가 실제로 필요로 하는 정보가 무엇인지 다시 설계하라."
+
+**핵심 결정 (사용자 피드백 4건 반영)**:
+1. **남은 시간 KPI 제거** — 해커톤 종료는 운영자가 누르는 액션이지 사전 확정 시각 아님. 헤더 `경과 시간`만 노출.
+2. **불참 팀 별도 섹션 분리** — `firstActivity === false`(행사 시작 후 한 번도 활동 없음)인 팀을 *위험*과 분리. 초반에 "위험 vs 미접속" 오분류 방지.
+3. **공지 보내기 기능 폐기** — 본 화면에 broadcast UI 두지 않음. 운영자 → 학생 채널은 대면 운영 + (향후) 손들기 응답에 위임.
+4. **손들기 기능 신설** — 학생 능동 신호. 별도 기획서 `03-planning/product/2026-06-01_손들기-기획.md` 참조.
+
+**변경 요약**:
+1. **`operator.jsx`**:
+   - `ActivityView` 전면 재작성. 라이브 미리보기 그리드(`ActivityGrid`/`ActivityRow`/`LivePreview` 기반) 폐기 — 운영자 의사결정에 무익.
+   - 4단 우선순위 컴포지션: `ActivityHeader` (큰 숫자 메트릭) → `ActivityDistributionBar` (4-segment stacked) → `HandRaisedSection` (P0, 빈 상태 시 섹션 자체 숨김) → `AlertSection` (P1, 위험·주의 정체) → `AbsentSection` (P3, 별도 섹션).
+   - 신규 컴포넌트 7종: `ActivityHeader`, `ActivityDistributionBar`, `SectionHeader`, `HandRaisedSection`, `HandRaisedRow`, `AlertSection`, `AlertRow`, `AbsentSection`. 시각 어휘는 `TutorialProgressView`·`TutorialProgressBar`·`TutorialKanbanColumn` 헤더와 정합 (accent line + eyebrow + mono count).
+   - 정렬 원칙: 모든 리스트 "심각도 내림차순" — 손든 팀은 `handRaisedSec` 큰 순, 정체 팀은 `idleMin` 큰 순.
+   - `STARTED_TEAMS` mock 데이터 갱신: `activity`/`last`/(legacy) 폐기 → `idleMin`(정수 분)·`firstActivity`(boolean)·`handRaisedSec`(int|null)로 교체. 시연 분포 — 손든 2 / 불참 4 / 위험 1(20분 임계) / 주의 4(10~20분) / 정상 19. `published`는 유지.
+   - 분류 룰: `handRaisedSec != null` → 손든 / `!firstActivity` → 불참 / `idleMin >= 20` → 위험 / `idleMin >= 10` → 주의 / 그 외 → 정상. 손든 팀은 정체 카운트에 중복 합산 안 함(handRaised로만 분류).
+   - `DashboardShell` mode='activity' 호출부 갱신: `pagedTeams`/페이지네이션 props 제거, `teams` 전체와 `totalTeams`만 전달 (페이지네이션 폐기 — 4 섹션 모두 한 화면에 들어옴).
+2. **`shared.jsx`**:
+   - `Icon.hand` (lucide Hand 4-finger silhouette) — 손들기 신호 전용.
+   - `Icon.clock`, `Icon.activity` — 진행 시간·활동 추이 보조용 (현 화면 미사용, 향후 spark 차트 대비).
+3. **`viewer.html` / `Jitda Renewal.html`**: 컴포넌트 ID(`b2-started`) + export(`B2DashboardStarted`) 그대로 — 신규 등록 불필요.
+
+**§21-6 2026-06-02 후속 — 6열 단일 칸반(토큰 + 손든 + 잠시 멈춤) + 손든 blue 어휘 + 토큰 막대 그래프**
+
+**계기**: 사용자 룰 — 전체 레이아웃 6열로 재구성, 각 zone 10행, 토큰 zone 좌측 카드 + 우측 막대 그래프. 손든 색이 주의(helmet-wash)와 비슷해 비직관적 → 다른 색으로 변경.
+
+**변경**:
+1. **6열 grid 단일 칸반 (3 zone × 2col)**:
+   - 토큰 zone (col 1-2): 별도 `TokenLeaderZone` 신설. 좌 col 팀 포스트잇 + 우 col 가로 막대 그래프 + 축약 토큰 라벨. 각 row = 한 팀, 1등(`maxTokens`) 기준 % bar length.
+   - 손든 zone (col 3-4): 2col sub-grid × 10행 = 20 카드/페이지.
+   - 잠시 멈춤 zone (col 5-6): 2col sub-grid × 10행 = 20 카드/페이지.
+   - 페이지네이션 통합: `totalPages = max(tokenPages, handRaisedPages, alertsPages)` — 모든 zone 동시 다음 페이지.
+   - 직전 단독 `TokenLeaderboard` 섹션 폐기 → 칸반 내부로 통합.
+2. **토큰 막대 그래프 (`TokenBarCell`)**: 1등 막대 helmet, 2등부터 ink-3. 우측 축약 라벨(22.4k / 1.2M) + 호버 시 풀 숫자.
+3. **토큰 카드 (`TokenTeamCard`)**: 직전 v5 "카드 위 큰 숫자" 폐기 — 숫자 옆 막대로 이관. 카드 안엔 순위 + 팀명 + 인원만.
+4. **손든 카드 색 변경 (helmet-soft → blue-soft)**:
+   - 직전 v5 helmet-soft tint가 주의(helmet-wash)와 색조 충돌. 사용자 룰: 다른 색.
+   - 선택: blue-soft tint + blue accent — 노랑-주황 spectrum과 명확히 분리. "도움 요청 = 정보 신호" 메타.
+   - ✋ / 경과시간 / hover 색 모두 blue 어휘로 통일. [해결] 버튼 hover는 stache 검정 (색 충돌 회피).
+   - 손든 zone bg: rgba(255,206,43,0.07) → rgba(24,99,220,0.05).
+5. **토큰 zone 색**: neutral — accent ink-3, bg rgba(20,19,15,0.025). 손든(blue)·잠시 멈춤(safety)과 채도 차이.
+
+**최종 색 분류**:
+| Zone | tint | accent |
+|---|---|---|
+| 토큰 | stone | ink-3 |
+| 손든 | blue-soft | blue (v6 신규) |
+| 위험 | safety-soft | safety-deep |
+| 주의 | helmet-wash | helmet-deep |
+
+**반증 시나리오 2종**:
+1. **손든 zone 데이터 적을 때 빈 공간**: 평시 ≤ 3건이라 비어 보임. 완화 — alignContent: 'start', 빈 영역도 zone bg(blue tint)로 채워져 시각적 공간이지 결손 아님.
+2. **토큰 막대 1등 기준 %라 절대값 추이 안 보임**: 옆 mono 라벨에 절대값 노출. 사용자 룰("1등을 100%로") 유지하되 절대값 보완.
+
+**영향**: `TokenLeaderboard`/`TokenLeaderboardPostit` 폐기. `TokenLeaderZone`/`TokenTeamCard`/`TokenBarCell` 신설. `HandRaisedPostit` 색 변경.
+
+---
+
+**§21-5 2026-06-02 후속 — 손든 카드 확장 + 위험·주의 색 분리 + 불참 모달 이관 + 토큰 TOP 5 리더보드**
+
+**계기**: 사용자 피드백 4건 동시 반영.
+
+**변경**:
+1. **손든 포스트잇 확장 (2줄 + 큰 [해결] 버튼)**:
+   - 인원수(`memberLabel`) 표시 제거 — 1줄에 ✋ + 팀명만.
+   - 2줄: 경과 시간 + `[✓ 해결]` chip 버튼. 버튼 크기 22px → 28px height + fontSize 10.5 → 12 + padding 8 → 14. hover 시 helmet bg + shadow lift.
+   - 카드 `minHeight` 60 → 76px (다른 컴팩트 60px 카드와 시각 차이 — 손든 팀은 액션 카드라 차별화).
+2. **위험·주의 카드 색 분리 (§18-27 예외 확대)**:
+   - 직전 v3: 위험·주의 둘 다 흰색 + dot 색만 분리.
+   - v5: tint를 severity별로 — 위험 `var(--c-safety-soft)` (옅은 주황), 주의 `var(--c-helmet-wash)` (paper-tinted 옅은 노랑).
+   - 손든 `helmet-soft`(#fff4c2) > 위험 `safety-soft`(#ffe0cf) > 주의 `helmet-wash`(#fbf6df) > 정상 흰색 spectrum. 손든이 명도·채도 모두 가장 강조 유지.
+   - §18-27 단일 흰색 룰의 명시적 예외 — *상태 신호* 색 부여. §21-3에서 손든 한 종류였던 예외가 위험·주의로 확장.
+3. **불참 팀 → 헤더 우측 텍스트 버튼 + 포스트잇 모달**:
+   - 직전 v3 `AbsentCollapsible` (하단 접힘 섹션) 폐기.
+   - 헤더 우측 `[행사 미입장 N팀 →]` 텍스트 버튼으로 이관. 갤러리 공개 정보 자리(이전 §21-4에서 갤러리 공개 표시는 제거됨).
+   - 클릭 시 `AbsentTeamsModal` 신설 — ModalSurface `variant="postit"` + `jt-postit-tape-lg` (RosterTeamDetailModal 어휘 차용). 회전 hash는 첫 팀명 기준.
+   - 모달 본문: 작은 AbsentPostit grid (auto-fill minmax 180px) + 페이지네이션 (한 페이지 10팀, `ABSENT_PER_PAGE = 10` 그대로 유지).
+   - viewer.html ACTIONS: `'b2-started'`에 `'open-absent'` / `'close-absent'` 추가 (자기 화면 유지 — 모달은 컴포넌트 내부 state).
+4. **토큰 사용량 TOP 5 리더보드 (신규 섹션)**:
+   - `TokenLeaderboard` + `TokenLeaderboardPostit` 신설. 화면 하단(불참 섹션이 비운 자리).
+   - 데이터 흐름 (mock 코멘트): `tokensUsed` 필드. 각 팀이 매 AI 동작(generate·edit·chat) 종료 시 사용 토큰을 서버 전송 → `hackathon_teams.tokens_used` 누적.
+   - 노출: `firstActivity=true && tokensUsed > 0` 팀 중 내림차순 상위 5팀.
+   - 가로 5등분 grid (사용자 룰: "5팀을 가로 일렬, 왼쪽이 1등").
+   - 각 카드: 카드 *위에* 큰 mono 토큰 숫자 (사용자 룰: "포스트잇 위에 몇 토큰인지 숫자텍스트로 명시") + 카드 안에 순위(`#1`~`#5`) + 팀명 + 인원.
+   - 1등 강조: 카드 tint `var(--c-helmet-soft)` + `★ 1` 마커 + 숫자 색 `var(--c-blue)` + 큰 사이즈(18px). 2~5등은 흰색 카드.
+   - 섹션 헤더: bolt 아이콘 + "토큰 많이 쓴 팀 · 왼쪽이 1등 · TOP 5".
+5. **mock 데이터 갱신**:
+   - `STARTED_TEAMS` 30팀에 `tokensUsed` 필드 추가. 분포: 0(불참 4팀) ~ 22,450(TOP 1 세그폴트 어택). 활동 팀 26팀의 분포는 1,620 ~ 22,450.
+   - TOP 5 시연 데이터: 세그폴트 어택(22,450) · undefined(20,180) · 스택 오버플로우(19,560) · 디버그 라이프(18,420) · 터미널 사파리(17,890).
+
+**반증 시나리오 4종**:
+1. **TOP 5 리더보드가 학생 경쟁심을 자극해 의도와 어긋날 우려**: 운영자 전용 화면이고 학생에게 노출 안 됨. 운영자가 화면을 학생들에게 보여주지 않는 한 무관. 향후 학생 측에 노출하려면 별도 정책 결정 필요.
+2. **토큰 많이 쓴 팀 = 잘하는 팀인가**: 토큰 ≠ 품질. 같은 작업도 효율적 프롬프트는 토큰 적게 씀. 라벨이 "토큰 많이 쓴 팀"으로 가치 중립적 — 운영자가 활성도 신호로 해석. "TOP" 라벨에 가치 함의 있지만 1등 강조는 시각 위계 표현이지 우수 인증이 아님. UX 라이팅 후속 검토 여지.
+3. **위험·주의 색 추가로 손든 팀 시각 강조 약화**: spectrum 위계는 helmet-soft > safety-soft > helmet-wash로 손든이 가장 강함. 다만 위험(safety-soft)이 채도·명도에서 손든과 비슷할 수 있음. 시연 결과 손든은 우측 ✋ 마커 + [해결] 버튼이 추가 시그널로 작동해 충돌 미발생.
+4. **불참 모달이 깊은 정보 접근에 한 클릭 추가**: 직전 접힘 섹션은 펼치기 한 번이면 인라인 확인 가능. 모달은 클릭→보기→닫기 3액션. 다만 불참은 평시 자주 확인할 정보 아님(행사 시작 초반 출석 확인 시점만 빈도 높음). 모달 이관으로 평시 화면 한산화 효과 더 큼.
+
+**영향**:
+- **B-2 ⑤ 해커톤 진행**: 화면 구성 변경 — 헤더 우측 불참 버튼 / 손든 카드 확장 / 위험·주의 색 / 하단 토큰 TOP 5.
+- **`AbsentCollapsible` 컴포넌트 폐기** — `AbsentTeamsModal`로 대체. `AbsentPostit`은 모달 내 그대로 사용.
+- **viewer.html ACTIONS**: b2-started 엔트리에 `open-absent`/`close-absent` 추가.
+
+---
+
+**§21-4 2026-06-02 후속 — 칸반 페이지네이션 + 정체 기준 명확화 + 손들기 해제 정책 변경 + UX 라이팅 정비**
+
+**계기**: 사용자 피드백 5건 동시 반영.
+
+**변경**:
+1. **헤더 라이팅 간결화**:
+   - h3 "팀 활동" → "해커톤 진행상황"
+   - "잘 가고 있어요" → "순항" (한 글자로 압축)
+   - "도움 필요 N" chip 제거 (칸반 zone 카운트에 중복)
+2. **칸반 페이지네이션 (사용자 룰 — 행 기반)**:
+   - 튜토리얼 칸반(`TutorialKanban`): 컬럼당 10팀(10줄). 어느 컬럼이라도 10초과면 페이지 활성. 모든 컬럼 동시 다음 페이지로 슬라이스 (`TUTORIAL_PER_COL = 10`). mock 32팀(완료 20팀) → 2 페이지 활성 확인.
+   - 활동 칸반(`ActivityKanban`): zone당 3행. 손든 zone 6 카드(2col × 3행, `HAND_RAISED_PER_PAGE = 6`), 챙겨야 할 zone 9 카드(3col × 3행, `ALERTS_PER_PAGE = 9`). `totalPages = max(handRaisedPages, alertsPages)`.
+   - 불참 토글(`AbsentCollapsible`): 펼침 시 한 페이지 10팀(`ABSENT_PER_PAGE = 10`).
+   - `KanbanPagination` 신설 — shared `Pagination`(L515)의 카드 개수 표시 대신 페이지 카운트만 (`page / totalPages`). ghost 버튼 어휘.
+3. **정체 기준 명확화 (사용자 룰 — AI 응답 제외)**:
+   - `idleMin` 정의: "마지막 *사용자 입력* 후 경과 분". AI 응답 대기·생성 중 시간은 합산 안 함 — 학생이 멍하니 있는 게 아니라 작업 진행 중.
+   - mock 코멘트에 정의 명문화 (operator.jsx L296~).
+   - 챙겨야 할 zone 헤더 sub: "10분 이상 활동이 없어요" → "10분 이상 입력 없음".
+   - zone 헤더에 (i) info 아이콘 + native title 툴팁 (3줄): "기준: 마지막 학생 입력 후 경과 시간 / • AI 응답 대기·생성 중은 제외 / • 🟡 주의 10~20분  • 🔴 위험 20분 이상".
+   - AlertPostit dot에도 개별 title — 호버 시 severity 설명 (`cursor: 'help'`).
+   - 카드 라벨: "○분 무활동" → "○분째 입력 없음" / "○분째 멈춤".
+4. **손들기 해제 정책 변경 (사용자 룰 — 2분 자동 해제 폐기)**:
+   - 자동 해제 cron·타이머·UI 카운트다운 모두 제거. 해제 경로 2가지로 단순화 — ① 학생 토글 OFF ② 운영자 [해결] 액션.
+   - `HandRaisedPostit`에 `[✓ 해결]` chip 버튼 추가 (우측 하단). stache border + canvas bg + hover helmet bg. `e.stopPropagation()`로 카드 본체 클릭과 분리.
+   - `formatHandRaisedRemaining` 함수 폐기. 카드에서 "○남음" 노출 제거.
+   - viewer.html ACTIONS: `'b2-started'`에 `'resolve-hand-raise': 'b2-started'` 추가 (자기 화면 유지).
+   - 손들기 기획서 v2 갱신 — 자동 해제 폐기·해결 버튼·시간 무한 유지 명문화.
+
+**반증 시나리오 3종**:
+1. **자동 해제 폐기 후 손든 팀 카드 무한정 쌓임**: 운영자가 자리 비우거나 못 보면 카드 누적. 완화 — 시간순 정렬로 오래된 팀이 항상 위. 칸반 zone 페이지네이션(6 카드/페이지)으로 폭주 시에도 한 화면에 적정량만 노출. 폭주 자체가 운영 문제 신호 → 운영자가 인지하고 대응.
+2. **"3행 = 6 카드/페이지"가 60팀 행사에 충분한가**: 손든 팀이 7+ 동시 발생 시나리오는 평시 드뭄. 시스템 장애·이벤트 종료 등 비정상 상황이면 페이지네이션이 자연스레 표면화 → 운영자 인지. 평시 ≤ 3팀 시나리오에는 한 페이지로 충분.
+3. **AI 응답 중을 idleMin에 합산 안 한다고 했는데 학생이 *진짜로* 멍한 경우와 구분 불가**: 클라이언트 측 "사용자 입력 이벤트"는 추적 가능(키 입력·마우스·캔버스 변경). AI 응답 중에는 별도 server-side timer가 idle clock을 정지. 단, 학생이 AI 응답을 보면서 다음 행동 결정하는 "능동적 대기" 시간은 기술적으로 idle로 잡힐 수 있음 — 이건 허용 범주(어차피 10분 임계 안에서 처리됨).
+
+**영향**:
+- **B-2 ⑤ 해커톤 진행**: 칸반 페이지네이션·정체 기준·손들기 해제·헤더 라이팅 모두 변경.
+- **B-2 ② 튜토리얼 진행**: 칸반 페이지네이션 추가. mock 32팀에서 완료 컬럼 20팀 → 페이지 2개로 분할 표시.
+- **손들기 기획서**: v2 갱신 — 데이터 모델 단순화(자동 해제 필드 제거), 학생/운영자 시나리오 갱신, UI 명세 갱신.
+
+---
+
+**§21-3 2026-06-02 후속 — 칸반 어휘 정렬 + UX 라이팅 정비 + 불참 팀 강등 + 갤러리 진입**
+
+**계기**: 사용자 피드백 5건 동시 반영.
+
+**변경**:
+1. **P0/P1/P3 코드 라벨 폐기 → 운영자 언어 채택**:
+   - 헤더 "정상 진행" → "잘 가고 있어요" / "챙길 팀" → "도움 필요"
+   - 손든 zone: "손든 팀" → "지금 손들었어요 · 학생이 도움을 요청했어요"
+   - 정체 zone: "챙겨야 할 팀" → "잠시 멈춰 있어요 · 10분 이상 활동이 없어요"
+   - 불참 섹션: "불참 팀" → "행사에 입장하지 않은 팀"
+   - 카드 내 "○분 무활동" → "○분째 멈춤"
+2. **5열 칸반 (튜토리얼 어휘 정렬)**:
+   - `ActivityKanban` + `ActivityKanbanZone` 신설. `TutorialKanban`/`TutorialKanbanColumn`(L853~930)과 동일 어휘 — 5컬럼 grid · dashed 수직 divider · wash bg · accent 10×3 line + 라벨 + 우측 count.
+   - 비균등: 손든 zone `gridColumn: span 2` (helmet-wash bg) + 챙겨야 할 zone `span 3` (safety-wash bg).
+   - **Zone 내부 sub-grid** (2026-06-02 후속): 손든 zone 안에 2열 `repeat(2, 1fr)` grid, 챙겨야 할 zone 안에 3열 `repeat(3, 1fr)` grid. 결과적으로 카드 폭이 외부 5컬럼의 1컬럼 폭(~225px)과 정확히 일치 → **튜토리얼 칸반 RosterRow와 동일 카드 사이즈**. 카드 4+ 자동으로 다음 행에 채워짐.
+   - 빈 zone: `KanbanEmpty` placeholder ("손든 팀 없음 — 좋아요" / "모든 팀 잘 가고 있어요" + check 아이콘).
+3. **손든 팀 포스트잇 색 강조 (§18-27 합리적 예외 명문화)**:
+   - `HandRaisedPostit`의 `--postit-tint`를 `var(--c-helmet-soft)` (옅은 노랑)으로 설정.
+   - §18-27 "단일 흰색" 룰의 명시적 예외 — 색은 *팀 정체성*이 아닌 *현재 상태 신호*로서. 같은 팀이 다른 화면(RosterRow 등)에선 흰색 유지 → 색은 "이 화면 이 순간" 한정.
+4. **팀 카드 컴팩트 통일**:
+   - `HandRaisedPostit`/`AlertPostit` 사이즈 RosterRow와 동일 `minHeight 60px` + 8px 좌우 패딩. 직전 v2 큰 카드(116/92px) 폐기.
+   - 정보 밀도: 한 행에 팀명 + 인원, 두 번째 행에 시그널(경과시간/멈춤시간). [응답함] 버튼은 카드에서 제거 — 카드 클릭 = 팀 상세 모달에서 응답 액션 (60px 공간 부족).
+5. **불참 팀 접힘 강등**:
+   - `AbsentCollapsible` 신설. 직전 `AbsentSection` 폐기.
+   - 기본 collapsed 한 줄 토글 ("행사에 입장하지 않은 팀 N · 시작 후 활동 0건 · 펼치기"). 행사 미입장 팀은 운영자 액션 영향 거의 없음 — ledger 용도.
+   - 펼침 시 작은 포스트잇 grid (opacity 0.72).
+6. **갤러리 진입 버튼**:
+   - sticky 헤더 우측 `hackathon_running` statusActions에 `[갤러리]` (jt-btn-secondary, gallery 아이콘) 추가. `[종료]` 좌측.
+   - viewer.html ACTIONS: `b2-started`에 `'open-gallery': 'd1'` (진행 중 → 진행 갤러리) + `'open-team': 'b2-roster-detail'` 추가.
+7. **헤더 needs-attention 합계**: 직전 v2는 불참까지 합산했으나, *액션 가능한 신호*(손든+위험+주의)로만 한정. 불참은 별도 토글 섹션에서 카운트.
+
+**반증 시나리오 2종**:
+1. **5열에서 손든 zone 2col이 카드 1열만 쌓이면 가로 공간 낭비**: 60팀 행사에서 손든 팀이 5+ 동시 발생 가능 — 그때는 zone 내부 grid가 자연스럽게 가로로 채움(현재는 flex column이라 세로 적층). 폭주 시나리오 검증 후 zone 내부를 `display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr))`로 전환 가능. 손든 팀 2~3개 평시 시나리오는 현 어휘로 충분.
+2. **손든 팀 helmet-soft tint가 §18-27 룰을 흐림**: 룰 정의(§18-27)는 "단일 흰색 정책" — 명시적 예외 추가는 정책 점진적 무너짐 위험. 완화 — §21-3에 "상태 신호 한정 / 화면 한정 / 다른 화면에선 흰색 유지" 3-조건 예외 명문화. 향후 새로운 색 신호 추가 시엔 별도 정책 결정 필요.
+
+**영향**:
+- **B-2 ⑤ 해커톤 진행 화면**: 칸반 어휘 정렬로 튜토리얼 화면(b2-tutorial-running)과 시각 일관. 운영자가 두 화면 사이를 오가도 학습 비용 없음.
+- **viewer.html ACTIONS**: b2-started 엔트리 확장 (open-gallery·open-team 와이어링).
+- **`b2-roster-detail` 모달**: 진입 경로가 b2-tutorial-waiting/b2-hack-waiting에 더해 b2-started에서도 가능. 닫기 액션(`close-roster-detail`)은 현재 b2-tutorial-waiting으로만 복귀하도록 매핑되어 있음 — 진행 화면에서 열린 후 닫으면 튜토리얼 대기로 점프하는 데모상 어색함이 있으나, viewer 데모용이라 무방.
+
+---
+
+**§21-2 2026-06-01 후속 — 팀 카드 포스트잇 어휘 통일 (룰 명문화)**
+
+**사용자 룰**: "팀은 항상 포스트잇 카드로 표현한다." — 디자인 시스템 룰로 승격. 기존 §18-27(단일 흰색)·§19-4(tape 박힌 점 회전축)·`.jt-postit-card` primitive 정책의 자연스러운 확장. 운영자/참가자/갤러리 어느 화면이든 "팀"을 카드로 렌더할 때는 포스트잇 어휘(`jt-postit-card` + 팀명 hash 회전 + tape)가 기본값.
+
+**변경**:
+- `HandRaisedPostit`·`AlertPostit`·`AbsentPostit` 3종 신설, 직전 v2 row-list (`HandRaisedRow`·`AlertRow` + chip pill) 폐기.
+- 모든 카드 공통: `.jt-postit-card` + `--postit-rot: postitRotation(team.name)` + `--postit-tint: var(--c-canvas)` (§18-27). 회전·tape·hover 어휘는 primitive 그대로.
+- 카드 크기 단계: 손든 팀 minmax(340px, 1fr) + `jt-postit-tape-md`(40×8) / 챙겨야 할 팀 minmax(240px, 1fr) 기본 tape(26×6) / 불참 팀 minmax(170px, 1fr) 기본 tape — RosterRow와 동일 규모.
+- 신호 표현 (§18-18 룰 차용 — "카드 색=정체성, 신호=카운트 색·weight"):
+  - 손든 팀: 카드 흰색 유지, 우상단 helmet ribbon으로 ✋ + 경과시간 노출. ribbon은 카드 흰색 정책의 *예외가 아닌 overlay 추가*.
+  - 위험·주의: 좌상단 dot 색(safety/helmet) + 무활동 시간 mono 텍스트 색·weight.
+  - 불참 팀: 컨테이너 opacity 0.72("잠자는 느낌" 어휘). 카드 자체는 흰색 + 회전 + tape 그대로 — 호버 시 transform/shadow 변화는 정상 동작.
+- 응답함 버튼 클릭은 카드 클릭과 분리 — `e.stopPropagation()`으로 모달 열기 방지.
+
+**반증 시나리오 2종**:
+1. **포스트잇 30+ 동시 렌더 GPU 부담**: tokens.css §postit 주석에 "60카드 GPU 부담 검증 전" 경고 명시. v2 화면 최대치 = 2 + 5 + 4 = 11개. RosterView 60팀(b2-tutorial-waiting 등) 이미 운영 중이므로 11개는 안전 범위.
+2. **3가지 카드 크기 단계 혼재로 시각 위계 혼란**: 손든(큰) → 위험·주의(중) → 불참(작) 순으로 크기가 줄어 우선순위와 정합. 단, 같은 행에 다른 크기가 나타나지 않으므로(각 섹션 독립 grid) 위계 충돌 없음.
+
+**손들기 기능 (요약)**: 학생 측 C-3/C-4에 `[✋ 손들기]` 토글 (2분 자동 해제) + 운영자 측 P0 카드. 1차 디자인 범위는 운영자 측만, 학생 측 토글은 후속 패턴 A 작업. 데이터 모델·실패 시나리오·작업 범위는 `2026-06-01_손들기-기획.md` 참조.
+
+**반증 시나리오 3종**:
+1. **운영자가 미리보기 그리드의 "활기 있어 보임" 감각을 그리워할 가능성**: 30 썸네일이 사라지면 화면이 한산해져 "행사가 멈춘 듯한" 인상 우려. 완화 — 분포 바·헤더의 큰 숫자가 baseline 시각 신호 역할. 분포 바 width 전환 애니메이션이 "살아있는 화면" 신호 유지. 추가 sparkline은 시계열 데이터 확보 후 2차 도입.
+2. **K-12 교사 운영자가 4단 우선순위 구조를 못 읽을 가능성**: P0/P1/P3 eyebrow는 디자이너 컨벤션이라 운영자에겐 추상적. 완화 — 라벨("손든 팀"/"챙겨야 할 팀"/"불참 팀")이 한국어로 명확. eyebrow는 보조 시각 단서일 뿐 필수 인지 정보 아님. 1회 운영 후 사용성 검증.
+3. **임계값 20분·10분이 현장과 어긋날 가능성**: K-12 본행사 표준 길이 미상 + 학생 집중 사이클 데이터 없음. 신뢰도 ~30%. 완화 — mock에선 20/10 적용해 분류 시연만, 실 운영 1회 후 retrospective로 튜닝. 임계값은 단일 상수 2개라 변경 용이.
+
+**영향**:
+- **B-2 ⑤ 해커톤 진행** (b2-started): 화면 컴포지션 전면 변경. 시각적 무게 중심이 "30팀 그리드"에서 "P0 손든 팀 → P1 정체 → P3 불참"으로 이동.
+- **B-1 / B-2 다른 상태**: 영향 없음 (`pendings/tutorial/hack-waiting/ended`는 각각 `roster`/`tutorial-progress`/`summary` mode 유지).
+- **STARTED_TEAMS mock**: 필드 시그니처 변경. `ActivityView`만 참조하므로 다른 화면 영향 없음.
+- **C 영역**: 미변경 (손들기 학생 측 버튼은 후속 작업). 단, `2026-06-01_손들기-기획.md`에 c3/c4 변경 명세 사전 정의.
+
+---
+
+## §20 2026-06-01 postit 어휘 디자인 시스템 스펙 정렬 (D-1 갤러리 + RosterRow 공용)
+
+**계기**: 사용자 지적 "각 카드들이 포스트잇도 아니고 일반 카드도 아닌 것(각도 삐뚤빼뚤)으로 보인다 — 디자인시스템에 정의된 형태가 맞는지". D-1 갤러리 카드(`GalleryCard`, gallery.jsx:259)는 `.jt-postit-card` 클래스를 쓰면서도 ① 회전이 1.4°로 약해 들뜸이 안 읽힘, ② tape가 어두운 회색(rgba ink-alpha)이라 정체성 장식 안 보임, ③ borderRadius가 4px(`--r-sm`)로 postit 스펙(2px)과 불일치, ④ LivePreview 썸네일의 45° 사선 + 14×14 dot 3개가 카드 정체성과 경합. 결과적으로 postit metaphor가 시각적으로 깨지고 어정쩡한 "기울어진 일반 카드"가 됨. **§09e POSTIT vs PAPER 표 "anatomy" 행** ("팀명 hash 기반 ±2°", "노란 테이프 1조각")이 실제 CSS 구현(±1.4° / ink-alpha)과 어긋나 있던 **알려진 스펙↔구현 갭**도 동시 해소.
+
+**변경 요약**:
+1. **tokens.css**:
+   - `--postit-rot-{a,b,c,d}`: ±1.4°·±0.6° → ±2.0°·±0.8° (§09e anatomy 정렬). 60팀 grid GPU 부담 검증 통과 가정 — 미통과 시 ±1.8°로 후퇴 옵션 보유.
+   - `--postit-tape`: rgba(20,19,15,0.10) ink-alpha → rgba(255,206,43,0.65) helmet-alpha (§09e anatomy "노란 테이프 1조각" 정렬). 명도 0.65 — solid 노랑보다 약하지만 회색보다는 명확.
+   - 상단 주석의 사용처 한정 문구를 "RosterRow 전용" → "RosterRow + GalleryCard 전용"으로 확장 (이미 gallery.jsx에서 사용 중인 현 상태 반영).
+2. **operator.jsx** `LivePreview` (line 970-1035): 외곽 div의 `backgroundImage: repeating-linear-gradient(45deg, ...)` 사선 줄무늬 제거 → solid oklch 그라데이션만 유지. 내부 인셋 카드 하단의 14×14 컬러 dot 3개(line 1001-1005) 제거 → 타이틀 + 텍스트 바 2줄만 남아 미니멀. RosterRow 그리드(60팀)와 D-1 갤러리(8~12카드)에 동시 영향 — 양쪽 다 카드 정체성을 회전·tape·tint·LivePreview hue에 집중시킴.
+3. **gallery.jsx** `GalleryCard` (line 268, 282-283): `borderRadius: var(--r-sm)` → `var(--r-xs)` (postit 스펙 2px 정렬). 외곽 카드 + 썸네일 wrapper 둘 다.
+
+**반증 시나리오 3종**:
+1. **±2° 회전이 60팀 그리드에서 GPU 부담 또는 시각 노이즈로 작용**: 기존 ±1.4°가 채택된 이유 중 하나는 60카드 동시 transform 부담 우려. 현 측정 데이터 없음 — 신뢰도 ~40%. 완화: 같은 카드 같은 transform 1회 적용이라 GPU layer는 카드 수만큼 증가, 회전 각도와 GPU 부하는 무관. 시각 노이즈는 ±2°가 디자인 시스템 anatomy 스펙이라 우선. 부담 확인 시 ±1.8°로 후퇴.
+2. **노란 tape이 카드 좌상단 mine 라벨(--c-helmet 동색)과 시각 경합**: GalleryCard에서 `mine` 케이스(line 288-297)는 좌상단에 노란 "내 프로젝트" 라벨. tape도 동일 helmet 톤이라 카드 1장에 노란 점 2개가 인접 — 시각 분산 가능. 완화: mine 라벨은 left:8 + 패딩 박스 형태, tape은 상단 중앙 + 26×6 얇은 띠 — 모양·위치 분리로 식별 가능. 다만 D-1 mine 케이스 1회만 발생(사용자 본인 1팀).
+3. **LivePreview dot 3개가 의미 있었을 가능성**: 사선 + dot는 "프로젝트 mockup의 색 팔레트" 메타포 — 운영자 B-1 카드에서 "팀별 다른 색 정체성" 신호. 제거 시 "흰 종이에 글자만 있는 미니멀 mock"으로 단조로워짐. 완화: oklch hue 그라데이션이 카드별 hue 차이를 유지 → 팀별 색 식별은 외곽 그라데이션이 담당. 인셋 mock은 "프로젝트가 있다"는 정보 전달만 책임.
+
+**영향**:
+- **D-1 갤러리** (D1GalleryList, D1GalleryListEnded, D1GalleryListPostMidnight): 카드 8~12개 회전 강화 + tape 노란 강조 + radius 샤프닝.
+- **B-1 운영자 활동 화면** (RosterRow, 60팀): 회전 ±2° / tape 노랑 / LivePreview 사선·dot 제거 — 그리드 전체 미감 변화. paper 어휘 폐기(§19) 후 postit 어휘 강조가 일관성 강화.
+- **B-2 운영자 진행 화면**: RosterRow 동일.
+- **C-1 참가자 팀 패널** (`TeamPostitV2`): postit 어휘 사용하지만 회전은 `heroPostitRotation` 별도 함수 — 영향 없음. tape `--postit-tape` 변경은 적용됨(노란 톤). 영향 검증 필요.
+- **RosterTeamDetailModal**: postit modal variant 사용 — 회전 hash + tape 노란 톤 적용. backdrop dim 배경에서 노란 tape 가시성 확인 필요.
+
+**검증 체크리스트**:
+- [ ] viewer.html 새로고침 → D-1 카드 회전·tape 색 확인
+- [ ] B-1 60팀 그리드 시각 노이즈 점검
+- [ ] C-1 TeamPostitV2 노란 tape 위화감 점검
+- [ ] RosterTeamDetailModal backdrop 위 노란 tape 가시성
+
+**미해결**:
+- (a) `--postit-tape` 0.65 alpha가 RosterTeamDetailModal backdrop(0.4 dim) 위에서 가독성 부족할 가능성 — 검증 후 0.75로 조정 검토.
+- (b) `Jitda Design System.html` §09e anatomy 표는 이미 ±2°·노란 tape를 기재 → 갭 해소되었으므로 별도 수정 불필요. 단, "구현 메모"란이 있다면 "기존 ±1.4°·ink-alpha에서 정렬됨" 1줄 추가 가능.
+
+---
+
+## §19-5 2026-06-01 hover/active translateY 제거 — tape 박힌 점 절대 좌표 고정
+
+**계기**: §19-4 transform-origin 50% 0% 적용 직후 사용자 보고 "여전히 그대로야. 테이프로 중심 안됨". DevTools 검증으로 origin·토큰값은 정확히 적용된 상태였으나(`192.665px 0px` / `-1.4deg`), 시각상 변화 인지 못함. 추가 지적 "지금 테이프 위치 자체가 이동된다고" — 핵심 모순 정확히 짚음. 원인: `.jt-postit-card:hover { transform: rotate(0deg) translateY(-3px) }` — origin은 카드 layout 박스 내부 좌표(50% 0%)이지만, `translateY(-3px)`이 카드 layout 전체를 -3px 위로 이동시켜 회전축(tape 박힌 점) 절대 좌표도 함께 -3px 이동. "tape에 박혀있다" 메타포가 hover 동안 깨짐.
+
+**핵심 교훈**: `transform-origin`은 transform 함수(rotate·scale)의 기준점만 결정. `translateY` 같은 layout 이동은 origin 무관하게 전체 layout을 옮기므로, "X점이 화면에 박혀있다"는 메타포에서는 layout 이동을 함께 제거해야 함. 두 속성 분리 인식 필요.
+
+**변경**:
+1. **tokens.css** `.jt-postit-card:hover` `transform: rotate(0deg) translateY(-3px) !important` → `transform: rotate(0deg) !important` (translateY 제거)
+2. **tokens.css** `.jt-postit-card:active` `transform: rotate(0deg) translateY(-1px) scale(0.985) !important` → `transform: rotate(0deg) scale(0.985) !important` (translateY 제거)
+3. **Jitda Design System.html §09e POSTIT CARD 표 갱신**:
+   - `--postit-shadow-lift (hover)` 행: "위로 들림" → "그림자 깊어져 조사 모드 진입 단서. 카드 layout 위치는 그대로(translateY 금지)"
+   - `tape (::before)` 행: "화면 절대 좌표 고정 — 카드 회전축이자 박힌 점" 추가
+   - **신규 행** `hover transform`: `rotate(0deg) !important` — translateY 금지 명시
+   - **신규 행** `active transform`: `rotate(0deg) scale(0.985) !important`
+4. **Jitda Design System.html §09e DO/DON'T 갱신**:
+   - DO 1건 갱신: "hover 시 0°로 펴지며 lift" → "회전 0°로 펴지며 box-shadow 깊어짐. 카드 layout 위치는 그대로"
+   - **DO 신설**: "tape이 박힌 점(상단 중앙)을 화면 절대 좌표 기준 고정. translateY/translateX 금지"
+   - **DON'T 신설**: "hover/active에 translateY·translateX 등 layout 이동 금지. origin 50% 0%여도 layout이 이동하면 회전축도 함께 끌려가 메타포 깨짐. lift 시각은 box-shadow만으로"
+5. **viewer.html** FORCE OVERRIDE 인라인 룰 제거 — tokens.css 적용이 검증됐으니 인라인 override 잔존 시 향후 tokens.css 변경이 viewer에서 안 잡힐 위험. cache-control meta는 유지.
+6. **viewer.html** cache key `?v=20260601e → 20260601f`.
+
+**반증 3종**:
+1. **lift 어휘 약화**: "위로 들림"은 강력한 시각 신호였는데 box-shadow + 회전 펴짐만 남으면 인지 약함. → 완화: shadow-lift는 shadow-rest 대비 4× 강한 dual layer(4px+28px vs 1px+14px). 회전 펴짐도 ±1.4° 정도 명확. 두 신호 동시면 충분.
+2. **포스트잇 메타포 정체성 손실**: postit 카드의 핵심 어휘 "위로 폴짝 들리는 종이"가 사라짐 — postit이 다른 카드와 차별화되는 지점이 약해짐. → 완화: tape + 정적 회전(±1.4° hash) + tape 축으로 펴짐 + shadow lift — 시각 정체성 신호는 여전히 4중. "들리는" 어휘를 "박혀있다 + 펴짐"으로 교환한 결과로, postit 메타포가 더 정확해짐.
+3. **active 시각 위계 약화**: hover와 active가 transform만 다른 미세 차이(`rotate(0deg)` vs `rotate(0deg) scale(0.985)`) — 사용자 인지 어려움. → 완화: active는 짧은 transition-duration(`var(--dur-fast)`)이라 click 직후 즉시 작동. scale 1.5% 축소도 click 피드백으로 충분.
+
+**미해결**:
+- (a) `prefers-reduced-motion` 환경에서 회전 + shadow가 비활성되면 hover 신호가 background-color만 남음 — 향후 색 변화 신호 보강 검토.
+- (b) viewer.html cache-control meta는 dev-only이지만, 빌드 환경에 production 진입 시 정책 재검토.
+
+---
+
+## §19-4 2026-06-01 포스트잇 회전축 tape 위치로 이동 + 회전 각도 토큰 ±1.4°/±0.6° 축소
+
+**계기**: 사용자 요청 "각 포스트잇의 배치 각도와 호버시 회전 관련하여, 테이프가 붙어있는 위치를 중심으로 호버 액션 일어나게 할 수 있어? 배치 각도랑 위치도 조정이 필요할 수도". 기존 `.jt-postit-card { transform-origin: 50% 100% }`(밑변)는 "위로 들리는" 어휘로 설계됐으나, postit 어휘 강화 작업(§19) 이후엔 tape이 상단 중앙에 박힌 메타포와 회전축이 정반대에 있어 "tape에 매달려 흔들" 어휘가 작동 안 했음. 또한 토큰 `--postit-rot-{a,b,c,d}` 실제값(±2.0°/±0.8°)이 디자인시스템 §09e 표 표기(±1.4°/±0.6°)와 다이버전스 상태였음 — origin 변경 시 카드 변위가 더 크게 인지될 우려.
+
+**변경**:
+1. **tokens.css L454** `.jt-postit-card transform-origin: 50% 100%` → `50% 0%` — 카드 상단 가장자리 중앙(tape 박힌 위치)으로 회전축 이동. 사용자 결정: 50% 0% 단순 좌표 채택(tape 정확한 중심 좌표 `calc(--postit-tape-h * -0.5)` 옵션 비채택 — 시각 차이 3-5.5px 무시 가능).
+2. **tokens.css L161-164** `--postit-rot-{a,b,c,d}` `-2.0°/-0.8°/0.8°/2.0°` → `-1.4°/-0.6°/0.6°/1.4°` — 디자인시스템 §09e 표 표기를 진실로 삼고 토큰을 표에 맞춤(사용자 결정으로 표 무수정 + 큰 카드 변위 완화 효과 동반).
+3. **Jitda Design System.html** §09e POSTIT CARD 표 `transform-origin` 행 갱신 — "50% 100% (밑변) → 위로 들리는 단서" → "50% 0% (상단 중앙, tape 박힌 위치) → tape 축으로 흔들 단서. 호버 시 rotate(0)이 tape이 잡아당겨 펴짐으로 작동". 이전 결정 흔적도 괄호로 보존.
+4. **viewer.html** cache key `?v=20260601c → 20260601d` — tokens.css 변경 강제 로드.
+
+**메타포 비교**:
+- **이전**: origin 50% 100% + tape 상단 → "카드가 밑변을 기준으로 위로 폴짝 뛴다" + tape은 시각 데코.
+- **현재**: origin 50% 0% (tape 위치) → "tape 한 점이 카드를 잡고, 카드가 그 점을 축으로 좌우로 흔들. 호버 시 tape이 잡아 단단히 펴짐". tape이 시각 데코 + 인터랙션 축 양역할.
+
+**반증 3종**:
+1. **밑변 흔들 강도**: origin 50% 0%에서 큰 카드(lg/xl, 높이 340-520px)는 정적 자세 시 밑변 변위가 `h * sin(1.4°)` ≈ 8.3-12.7px로 큼. "흔들리는 결함"으로 보일 가능성. → 완화: 큰 카드 4종은 모두 `jt-postit-card-static` 적용 + 모달(RosterTeamDetailModal)은 backdrop 분리. 동적 hover는 그리드 카드(높이 ~70-130px)만 — 밑변 변위 1.7-3.2px로 적정. 또한 토큰 ±2.0°→±1.4° 축소로 변위 30% 감소 — origin 변경의 시각 충격을 부수 결정이 완화.
+2. **paper 어휘 메타포 부활 위험**: §19에서 paper의 압정 어휘를 폐기했는데 origin 50% 0%은 paper-pinned와 동일 좌표 — 결정 후퇴 인상. → 완화: origin은 CSS 회전 축(보이지 않는 속성)이지 시각 어휘가 아님. paper의 압정 SVG·접힘선·종이 가장자리·뒷면 도장 등 시각 요소는 폐기 상태 유지. 좌표가 동일한 것은 "tape이 박힌 점에서 흔든다"는 동일 메타포의 자연스러운 수렴.
+3. **hover 어휘 "위로 들린다" 손실**: 기존 origin 50% 100% + translateY(-3px)는 카드 밑변이 그대로면서 카드 전체가 떠오르는 "폴짝" 어휘 — 운영자 즉각 인지 강함. 새 origin에서는 rotate(0) 펴짐이 주된 단서이고 translateY는 보조. → 완화: hover에서 `box-shadow: var(--postit-shadow-lift)` (그림자 강화) + 회전 펴짐 + translateY(-3px) 셋 동시 — 충분한 시각 신호. 더불어 "tape이 잡아 펴짐"이 RosterRow의 "조사 모드 진입" 시각 단서로 더 직관적.
+
+**영향**: B-2 RosterRow 그리드 30카드(hover 어휘 강화) + B-1 빈 상태 + RosterTeamDetailModal + C-1 TeamPostitV2 (c1·c1-after-tutorial·c1-ended) + D-1 빈 상태 + 디자인시스템 §09e POSTIT CARD/MODAL/TAPE SIZE 데모 — 총 6 화면 + 디자인 시스템 3 데모.
+
+**미해결 (사용자 viewer 확인 후 별도 결정)**:
+- (a) settle 애니메이션 `translateY(-6px) scale(0.97)`이 새 origin에서 "tape에서 펴진다" 어휘로 재해석 OK인지 시각 확인. 어색하면 scale 1로 변경 검토.
+- (b) 큰 카드(lg/xl)의 정적 자세 변위 8-12px가 너무 기울어 보이면 단계 modifier별 회전 자동 축소(`.jt-postit-tape-lg → --postit-rot * 0.7` 등) modifier 신설 검토.
+
+---
+
+## §19-3 2026-06-01 `--postit-tape` 색 회색 복구 (ink alpha 0.10)
+
+**계기**: §19 paper→postit 어휘 통일 작업 직후 사용자 보고 "테이프가 왜 갑자기 노란색이 됐지? 원래 회색이었는데". paper variant 시절엔 tape이 표시되지 않았고(`.jt-paper-pinned`는 압정 SVG, 노란 헬멧 색만 노출), postit 어휘 부활 시 `--postit-tape` 토큰이 결정 보고 누락된 시점에 `rgba(255, 206, 43, 0.65)`(helmet 노랑 65%)로 바뀌어 있던 미커밋 상태 — git 히스토리 상 원본은 `rgba(20, 19, 15, 0.10)` (ink alpha 0.10, 회색). 디자인 시스템 §09e POSTIT CARD 표(L2309)에도 "ink alpha 0.10 단색" 명시되어 있어 표와 토큰 다이버전스 상태였음.
+
+**변경**: tokens.css L174 `--postit-tape: rgba(255, 206, 43, 0.65)` → `rgba(20, 19, 15, 0.10)`. 미러 0건(viewer.html·Renewal.html·Design System.html 인라인 정의 없음 — tokens.css 단일 소스).
+
+**영향**: postit 어휘 사용 모든 화면(B-2 RosterRow 그리드 30카드 + B-1 빈 상태 + RosterTeamDetailModal + TeamPostitV2 c1·c1-after-tutorial·c1-ended + D1GalleryEmpty + 디자인시스템 §09e/§09g 데모) — tape 노랑→회색.
+
+**후속**: §19에서 paper 폐기를 결정했을 때 `--postit-tape` 토큰값까지 검증했어야 함 — 차후 어휘 부활 작업에서는 토큰 색까지 git diff로 검증 필수.
+
+---
+
+## §19-2 2026-06-01 tape size 4단계 단계화 + §09e ▸ TAPE SIZE 서브섹션 신설
+
+**계기**: §19 paper→postit 통일 직후 사용자 보고 "포스트잇 테이프가 포스트잇 크기와 관계없이 같은 사이즈인 듯. 포스트잇이 커지면 테이프도 커져야 한다 / 디자인시스템 레벨에서 업데이트해라". 기존 `.jt-postit-card::before`는 26×6px 고정 — RosterRow 그리드 카드(~70-160px)에 맞춰 설계됐으나 §19 작업으로 추가된 큰 카드/모달(440-560px)에서 같은 26px tape은 점·지문 정도로 시각적으로 묻혀 보임. 카드 크기에 비례하는 단계 시스템 필요.
+
+**구현**:
+1. **tokens.css** `.jt-postit-card::before` 변수화 — `width: var(--postit-tape-w, 26px)` / `height: var(--postit-tape-h, 6px)` / `top: calc(var(--postit-tape-h, 6px) * -0.5)` (height 절반 자동 비례). 기본 fallback은 그리드 카드 기준(26×6).
+2. **3단계 modifier 추가**: `.jt-postit-tape-md` (40×8 — 중간 220-400px) · `.jt-postit-tape-lg` (56×9 — 큰 카드/모달 400-540px) · `.jt-postit-tape-xl` (72×11 — 매우 큰 540px+). 카드 폭의 ~12-13% 비례로 시각 일관성.
+3. **JSX 4 호출부 적용**: B1Empty(520px) → `jt-postit-tape-lg`, RosterTeamDetailModal(440px) → `jt-postit-tape-lg` (ModalSurface className prop으로 전달), TeamPostitV2(440px) → `jt-postit-tape-lg`, D1GalleryEmpty(560px) → `jt-postit-tape-xl`.
+4. **디자인 시스템 §09e ▸ TAPE SIZE 서브섹션 신설** (POSTIT MODAL 앞) — 동일 폭(240px) 4 카드로 tape만 비교하는 시각 데모 + 권장 매핑 표(modifier · 크기 · 카드 폭/사용처) + DO/DON'T 5종.
+5. **POSTIT MODAL 시각 데모**에도 `jt-postit-tape-lg` 적용 — 실제 사용 어휘와 동기.
+6. **viewer.html cache key** `?v=20260601b → 20260601c`.
+
+**반증 시나리오 3종**:
+1. **단계 4종이 과한가**: md(40×8)는 현재 사용처가 없음(향후 ProjectCard·GalleryCard 등 검토 단계). 미래 사용성 추정으로 단계를 만들면 죽은 토큰 위험. → 정합: 단계 간 보간성을 채워두는 게 시스템 일관성. md가 향후 6개월 미사용이면 §10 룰셋 정리 시 제거 검토.
+2. **tape 비례 ratio 일관성 부족**: 단계 ratio는 26/100, 40/300, 56/440, 72/560 — 약 26%·13%·13%·13%. 기본(그리드)만 ratio 26%로 튐. → 정합: RosterRow 그리드는 60카드 동시 노출이라 작은 tape은 ratio가 커야 식별. 비일관은 의도된 결과.
+3. **top 자동 비례 룰이 미세 조정 자유도 침해**: `top: calc(--postit-tape-h * -0.5)`는 모든 단계에서 카드 상단 가장자리 정렬을 강제. → 정합: 일관성 우선 — 미세 조정이 필요하면 별도 modifier 신설. 변수 직접 주입은 size 미세 조정용이며 top 별도 변경은 DON'T 룰로 명시.
+
+**영향**: tokens.css `.jt-postit-card::before` 변수화 + modifier 3 신설. JSX 4 호출부 className 갱신. 디자인 시스템 §09e ▸ TAPE SIZE 서브섹션 신설(~80줄) + POSTIT MODAL 데모 동기. viewer cache key bump.
+
+**미해결**:
+- (a) `md`(40×8) 실 사용 0건 — 6개월 모니터링 후 미사용 시 deprecated 검토.
+- (b) tape size와 카드 폭 비율 ratio가 단계 사이 불연속(26%↘13%) — 향후 280px대 중간 카드 등장 시 시각 검증 필요.
+- (c) `prefers-reduced-motion` 환경에서 tape 사이즈가 시각 정체성 대체 효과를 충분히 발휘하는지 — 사용자 실측 보강.
+
+---
+
+## §19 2026-06-01 paper 어휘 전면 폐기 + 포스트잇 모달 신설
+
+**계기**: 사용자 결정 "디자인시스템 상 컴포넌트는 deprecated 표기하고, 실제 쓰이는곳들은 이미 쓰이고있는 포스트잇으로 다시 변경한다. 팀 목록의 모달 같은 경우에는 일반 모달 말고 포스트잇 모달을 사용해라." paper 어휘는 §618g/§09g에서 양피지 질감(clip-path 가장자리·접힘·내부 도장)으로 도입(2026-05-29)되었으나, 짓다 어휘 통일성 측면에서 postit과 paper 두 종이 메타포 병존이 시각 노이즈로 작용. RosterRow(그리드) ↔ RosterTeamDetailModal(zoom-in) 위계가 두 어휘로 분리돼 있어 정합도 약함. postit 단일 어휘 통일 + 모달 variant 신설로 해결.
+
+**변경 요약**:
+1. **shared.jsx** `ModalSurface`에 `variant` prop 추가 — `'default'` (현행 — canvas + radius 10 + shadow-modal) | `'postit'` (신설 — `jt-postit-card jt-postit-card-static` 결합, tape + 정적 회전, base style은 background/radius/shadow 인라인 미주입). 'paper' variant는 의도적 미지원.
+2. **tokens.css**:
+   - `.jt-postit-card-static` modifier 신설 (line 494 직후) — hover 회전·lift·active 비활성. 정적 회전 + tape + shadow-rest는 보존. D-1 갤러리 빈 상태(기존 CTA 호버 충돌 회피) + 포스트잇 모달 공용.
+   - §618g paper 룰셋 영역(L1226~) 상단에 DEPRECATED 주석 — 룰셋은 보존(역사·결정 흔적), 실 화면 사용 0건 명시.
+3. **operator.jsx**:
+   - `B1Empty` (b1-empty 빈 상태): `jt-paper-pinned` + `jt-paper-surface-wrap` + `jt-paper-surface` → `.jt-postit-card .jt-postit-card-static` (회전 `--postit-rot-b`, tint canvas).
+   - `RosterTeamDetailModal` (b2-roster-detail): `<ModalSurface className="jt-paper-surface">` → `<ModalSurface variant="postit">`. `postitRotation(team.name)` hash로 회전 자세 결정 → RosterRow와 동일 자세(zoom-in 시각 일관). 헤더 padding 38px→24px 축소(paper 가장자리 safe area 불필요). 외곽 wrap `jt-paper-surface-wrap` → 단순 position wrapper (shadow는 postit 어휘 담당).
+4. **participant.jsx** `TeamPostitV2` (c1, c1-after-tutorial, c1-ended): paper 마크업 → `.jt-postit-card .jt-postit-card-static` (440px 유지, 회전 `heroPostitRotation`). 헤더 padding 36px→24px 축소.
+5. **gallery.jsx** `D1GalleryEmpty` (d1-empty): `jt-paper-pinned jt-paper-pinned-static` → `.jt-postit-card .jt-postit-card-static` (CTA 버튼과 카드 hover 충돌 회피 — 정적 modifier).
+6. **Jitda Design System.html**:
+   - §09g Paper Surface — 섹션 전체 opacity 0.55 + 헤더 line-through + 상단 deprecated 배너(사용처 4종 명시 + postit 모달 대체 안내) + 내부 ▸ 예외·모달 카르브아웃 서브섹션·▸ POSTIT vs PAPER 표 paper 열 deprecated 표시.
+   - §09e POSTIT CARD 끝에 ▸ POSTIT MODAL 서브섹션 신설 — 시각 데모(440px RosterTeamDetailModal mock, 헤더+3행+푸터) + 속성 표(variant/--postit-rot/--postit-tint/width/borderRadius/overflow/headerDivider/hover) + DO/DON'T 6종 (RosterRow 가족 한정 + 다른 모달 확산 금지 + paper 결합 금지 + overflow hidden 금지).
+   - §08 Overlay/Modal MODAL SURFACE 표 다음에 ▸ MODAL VARIANT 표 신설 — default · postit · ~~paper~~ 비교(시각 어휘·사용처·deprecated 표시).
+
+**반증 시나리오 3종**:
+1. **시각 위계 약화 가능성**: paper 어휘는 "큰 정보 카드의 무게감"을 부여하는 표면 어휘로 도입되었음. postit 단일 어휘로 통일하면 RosterRow(작은 그리드 카드)와 RosterTeamDetailModal(큰 모달) 사이의 위계가 회전·tape 외엔 폭(70→440)만으로 구분됨. → 완화: 모달은 backdrop dim + 중앙 정렬로 시각 분리 충분(§08 MODAL SURFACE 결정 — "border 없음 shadow만"). 그리고 RosterRow와 모달이 같은 어휘인 것이 zoom-in 시각 일관성으로 오히려 의도된 결과.
+2. **tape ::before가 헤더 텍스트와 시각 간섭**: postit의 tape는 top:-3px에 26×6px로 카드 위로 돌출 — 모달 헤더(padding 24~28px 시작)와 좌표 충돌 없음. 다만 카드 폭 440px 중 tape는 26px 폭이라 카드 중앙 상단에 매우 작게 표시 → 시각 노이즈 미미. 단, 다인팀(7명) 케이스에서 모달 본문 스크롤이 발생할 때 tape이 backdrop과 명도 대비 약해 안 보일 수 있음 → 검증 시 확인.
+3. **§09e DON'T "RosterRow 외 카드 적용 금지" 룰과의 의미 충돌**: 기존 §09e 룰은 "60카드 GPU 검증 미흡 + entity별 색 정책 분리" 근거로 postit 어휘를 RosterRow에만 한정. 모달은 단일 카드라 60카드 GPU 문제 없음, entity는 같은 Team이라 색 정책 분리 위배 없음. 다만 "확산"의 의미는 추가 사례 등장 시 마다 재검토 필요. § §09e ▸ POSTIT MODAL DON'T에 "RosterRow 가족(그리드 + zoom-in 모달)에만" 명시로 경계 재설정.
+
+**영향**:
+- JSX 4 사용처 / 6 화면 상태(b1-empty · b2-roster-detail · c1 · c1-after-tutorial · c1-ended · d1-empty).
+- tokens.css `.jt-postit-card-static` modifier 신설 + paper 룰셋 deprecated 주석.
+- 디자인 시스템 §09g deprecated 처리 + §09e ▸ POSTIT MODAL 신설 + §08 ▸ MODAL VARIANT 표 신설.
+- `--c-paper` 색 토큰(L10 #faf9f6)은 70회 사용되는 배경색이라 **유지** — 컴포넌트 폐기와 분리.
+
+**후속 검증 (시작 전 사용자 확인 결과)**:
+- D-1 갤러리 빈 상태 CTA 호환: 정적 포스트잇(`jt-postit-card-static`) 신설 확정 — 사용자 결정.
+- C-1 TeamPostitV2 폭: 440px 유지 확정 — 사용자 결정.
+- 포스트잇 모달 디자인시스템 등록: §09e 서브섹션 + §08 표 둘 다 — 사용자 결정.
+
+**미해결**:
+- (a) `.jt-paper-pinned-tall` (검정 thumbtack)·legacy `.jt-paper-interactive` 클래스는 실 사용 0건이었으므로 §09g deprecated 함께 묻힘. 추후 코르크보드/메모보드 메타포 어휘가 다시 필요해질 때 별도 신설 검토.
+- (b) `--c-paper` 색 토큰은 그대로 70회 사용 — 컴포넌트 어휘와 별개로 배경색은 유지. 향후 디자인 시스템 §02 정합성 점검 시 토큰명 혼동 가능성 재검토.
+- (c) ModalSurface variant prop이 추가됨으로써 기존 호출부 모두 `variant="default"` 암묵 적용 — 명시 호출 표준화는 후속 작업.
+
+---
+
+## 2026-05-29 `.jt-paper-pinned-tall` variant 추가 — 클래식 thumbtack (돔 + 가시적 cylindrical 목)
+
+**계기**: 사용자가 검정 thumbtack(돔 + 종이로 박혀들어가는 가시적 cylindrical 목) 레퍼런스 이미지를 제시하며 "디자인시스템에 있는 압정과 별도로 하나 추가". 기존 `.jt-paper-pinned`(2026-05-29 검정 돔 only 변형)는 head만 보이고 needle/shaft가 안 보이는 단순 형태 — 코르크보드 메타포가 강조될 때(예: 메모보드 그리드 위 단일 노트)는 실제 압정처럼 몸통이 보이는 어휘가 더 정확.
+
+**구현** (tokens.css §618g · `.jt-paper-pinned-tall` modifier — 기본 `.jt-paper-pinned`와 병기):
+- 부모 padding-top 14px 그대로 상속 (별도 padding 변경 없음)
+- `::before` width 32×height 42 (기본 30×28에서 확장), **top: -16px** (돔이 컨테이너 -16~+6, 목 위가 +6~+14에서 가장자리에 걸치고, 목 아래·그림자 +14~+26이 종이 표면을 12px 덮어 "박혀 들어간" 환상 — z-index:3), margin-left -16px
+- 첫 시도(top -22, padding-top 26) → 종이 위 6px 공백 발생 → 두번째 시도(top -28) → SVG bottom이 종이 시작점에 정확히 멈춤(0px 덮음) → 최종(top -16) → 12px 덮음으로 정착
+- SVG 32×42 viewBox:
+  - 돔(head): `ellipse cx=15 cy=11 rx=11 ry=10` + radial gradient(`#5a5a5a → #222 → #000`)
+  - 목(shaft): `path` capsule 형 (top y=18.5에서 살짝 좁아져 dome 밑단과 자연스럽게 연결, bottom y=38), 좌→우 linear gradient(`#262626 → #121212 → #000`)로 좌측 밝게 — 입체감
+  - dome-shaft 경계: 어두운 ellipse ring (`cx=15 cy=19 rx=4.2 ry=1` fill-opacity 0.7)
+  - 종이 위 캐스트 그림자: `ellipse cx=18 cy=38 rx=10.5 ry=2.2` opacity 0.34 (목 아래 우하단 방향)
+  - dome specular highlight: 2단 ellipse (cx=10.5 cy=7.5 + cx=9.5 cy=6.5) — 좌상단 광원
+
+**모달 미러**: `Jitda Design System.html` 인라인 `<style>`에 동일 클래스 추가(viewer는 `<link>` 단일 소스이나 Design System 문서는 자체 미러 유지 패턴) + `.jt-corkboard-demo` 데모 배경 유틸 추가(brown #b88e5a + multi-radial-gradient 코르크 점 패턴 + linear-gradient 톤 변화). §09g Paper Surface 섹션에 "▸ Variant · 클래식 thumbtack" h3 신설 — 노란 종이 + 기본 paper 2종 데모 + 마크업 메모.
+
+**호환성**:
+- 기존 `.jt-paper-pinned` 룰(position/display/hover 회전/-1.5deg 정적 회전)을 그대로 상속. modifier는 `::before` 시각만 교체.
+- `.jt-paper-pinned-static`(인터랙션 카드용 hover 비활성) 호환 — `.jt-paper-pinned.jt-paper-pinned-tall.jt-paper-pinned-static`까지 정상.
+- 기본 paper 배경(흰색), 노란 메모지 배경 둘 다 적용 가능 — variant는 압정만 교체하므로 surface는 자유.
+
+**사용 가이드**:
+- 기본 `.jt-paper-pinned` (돔 only) — paper의 표준 어휘. 단정·미니멀.
+- `.jt-paper-pinned-tall` (돔 + 가시적 목) — 코르크보드/메모보드 메타포 강조 시. 실물 압정의 어휘 강함.
+- 둘 다 호버 시 압정 축으로 0.75deg 회전 + drop-shadow 강화.
+
+**검증 포인트(향후)**:
+- (a) 두 variant 혼용 시 시각 일관성 — 같은 화면에 둘 다 쓰면 어휘 충돌 가능. 화면당 하나만 권장.
+- (b) tall variant의 목 높이가 paper padding-top 14px 영역 안에서 충분히 자연스러운지 — 너무 길면 본문 텍스트 영역과 시각 간섭.
+- (c) 코르크보드 배경(.jt-corkboard-demo)은 데모 전용. 실제 화면에 적용 시 `--c-paper` 등 디자인 토큰 어휘와 충돌 가능 — 별도 결정 필요.
+- (d) prefers-reduced-motion에서도 정적 -1.5deg 회전은 유지(기본 룰 상속) — 사용자가 원치 않으면 별도 분기 필요.
+
+---
+
+## 2026-05-29 A-4 운영자 회원가입 화면 신설 + `.jt-checkbox` 정식 등록
+
+**계기**: 사용자 지시 "운영자 회원가입 페이지 디자인 필요 + 체크박스 컴포넌트 적절성 판단 후 디자인 시스템에 없는 컴포넌트 추가". A-2 운영자 로그인 화면 우하단의 "운영자 회원가입 →" 링크가 dead-end였음(viewer ACTIONS 미매핑). 회원가입은 약관 동의 UI가 필요하지만, 기존 `.jt-switch`(iOS 토글, on/off)는 의미적으로 "선택·확인 행위"인 약관 동의에 부적합 — 분리된 primitive 필요.
+
+**의미 판단 — switch vs checkbox**:
+- `.jt-switch`: 기능의 **현재 상태(on/off)** — "미접속만 보기 토글", "갤러리 공개 토글" 등. 즉시 효과(immediate apply).
+- `.jt-checkbox`: **선택·동의 행위** — 약관 동의, 다중 선택, 일괄 선택. submit 시점에 효과.
+- 약관 동의를 `.jt-switch`로 표현 시 "이 약관을 켜놓은 상태"라는 잘못된 mental model 유발. 회원가입 폼에서는 시각적으로도 사각 박스 + ✓이 표준 패턴.
+
+**신규 토큰** (tokens.css §Checkbox, line ~554):
+- `.jt-checkbox` — 20px 사각 박스(radius 5px), aria-checked=true 시 `--c-ink` 배경 + 흰 ✓(`Icon.check` 재사용). focus-ring + disabled. role=checkbox, button 요소 권장.
+- variant: `.is-sm`(16px) · `.is-lg`(24px · 전체 동의 행 강조) · `.is-helmet`(체크 시 helmet-deep — 위험 강조 동의용 예비)
+- `.jt-checkbox-row` — 1행 컨테이너(체크박스 12px gap 라벨 · "필수" 표식 · "내용 보기" 링크). 행 간 1px hairline 구분.
+- `.jt-checkbox-required` — `(필수)` 인라인 표식 (safety 컬러, 12.5px 600).
+- `.jt-checkbox-link` — "내용 보기 ›" 우측 정렬 슬레이트 링크.
+- `.jt-checkbox-banner` — "전체 항목에 동의합니다" 그룹 헤더 행 (blue-soft 배경 · 14px 600 · blueprint 컬러). 의미: 하위 체크박스 다중 토글 트리거.
+- prefers-reduced-motion 분기에 `.jt-checkbox { transition: none !important; }` 추가.
+
+**신규 화면** (4단계 모두 완료):
+1. **JSX**: `auth.jsx` `A4OperatorSignup` 추가 + `Object.assign(window, {... A4OperatorSignup})` export. variant="blueprint" 사용(운영자 메타포 — A-2/A-3과 동일 좌측 콘크리트 패드 + helmet-dot tag).
+2. **Renewal.html**: `<DCArtboard id="a4" label="A-4 · 운영자 회원가입 (이메일 + 약관 동의)" width={1280} height={1000}>` 추가(A-3 다음). 높이 1000 — 입력 4종 + 약관 4행으로 기본 820 초과.
+3. **viewer.html SCREENS**: `{ id: 'a4', section: 'A. 인증', label: 'A-4 · 운영자 회원가입', render: () => <A4OperatorSignup /> }` 추가.
+4. **viewer.html ACTIONS 와이어링**:
+   - `'a2'` 액션에 `'signup': 'a4'` 추가 (A-2 "운영자 회원가입 →" 링크에 `data-action="signup"` 부여 — 기존 dead-end 해소).
+   - `'a4': { 'submit': 'b1-empty', 'back-to-login': 'a2' }` — 가입 완료 → 빈 대시보드(신규 운영자) / 로그인 복귀.
+
+**화면 구성**:
+- 좌측: `variant="blueprint"` (stone-2 콘크리트 + stache 도면 라인, A-2/A-3과 동일 톤). tag "OPERATOR · 운영자" + 헤드라인 "운영자 계정을 만듭니다" + body "이메일로 가입하고 직접 해커톤을 운영해 보세요."
+- 우측 폼 (paper + 0.04 그리드):
+  - h2 "운영자 회원가입" + sub "가입하면 해커톤을 운영할 수 있어요."
+  - 입력 4종: 이름 · 이메일 · 비밀번호(+8자 이상 도움말) · 비밀번호 확인. 모두 `.jt-input` + `(필수)` 라벨.
+  - `.jt-checkbox-banner` — "전체 항목에 동의합니다." (blue-soft 강조)
+  - 약관 그룹 라벨(mono) — "약관 및 정보 이용 동의"
+  - `.jt-checkbox-row` 3개: 개인정보 처리 방침·서비스 이용 약관·개인정보 수집 동의 (모두 필수 · 우측 "내용 보기 ›")
+  - 가입하기 CTA — 미동의 상태 disabled(ink-3 회색, opacity 0.55) — 모든 필수 약관 체크 시 jt-btn-primary 활성화 가정
+  - 하단 "이미 계정이 있으신가요? 로그인 →" (A-2 회귀)
+
+**기획문서 정합**: 페이지정의서·화면상태정의서에 A-4 명세 미작성(TBD) — 추후 운영자-역할-기획.md 측 가입 플로우 정의 작업 시 정렬 필요. 시각 디자인은 spec-updates.md(이 문서)가 1순위 override.
+
+**검증 포인트** (향후 검토):
+- (a) 약관 4행(전체 + 3개 개별)이 모두 필수라면 "개별 3개"를 굳이 분리할 가치(법적 트래킹 요건 외) — 단일 "전체 동의 (필수)" 한 행이면 충분한지 vs 사용자가 어떤 약관을 봤는지 모니터링 필요한지
+- (b) 비밀번호 복잡도 룰 "8자 이상, 영문·숫자 포함"이 학교 GW(전북교육청·울산교육청) IT 정책과 충돌(보통 12자 이상 + 특수문자 요구)할 가능성 — 실제 가입 시 검증 룰 확정 후 도움말 갱신
+- (c) Google OAuth로 가입 가능한데 별도 이메일 가입을 두는 가치 — `gov.kr`·`go.kr` 도메인 사용자는 Google Workspace로도 충분, 이 화면이 사실상 사용 안 될 가능성. 가입 채널 정책 결정 필요(Google only vs 이메일 병행).
+- (d) `.jt-checkbox-banner`가 다른 화면(예: D 갤러리 다중 선택 후 일괄 액션, B 운영자 팀 일괄 처리 등)에서도 재사용될 primitive인지 — 회원가입 1회만 쓰일 거면 컴포넌트화 가치 낮음. 현재는 약관 외 사용처 없음.
+
+**미수정**: 페이지정의서·화면상태정의서·UX리뷰(A-4 명세 부재 → 별도 보강 작업 필요). 모바일 분기 화면 미작성(원본 디자인이 데스크탑만 제공). GAP_REPORT.md(추후 기획 정합성 작업 시 추가).
+
+---
+
+## 2026-05-29 D 갤러리 — 24px 도면 격자 배경 + 카드 어휘 postit화 (D-1)
+
+**계기**: 사용자 지시 "갤러리 디자인 개선 — 1) 배경 격자무늬 2) 갤러리 미리보기 카드들을 포스트잇처럼". 운영자 B-1/B-2·참가자 C-1이 이미 24px 격자(`linear-gradient … 1px / 24px 24px` × 2 + `var(--c-paper)`) + RosterRow `.jt-postit-card` 어휘를 공유 중인 반면, D 갤러리만 평면 `--c-paper` + 평면 `--c-canvas` 카드로 남아 어휘 위계 단절.
+
+**결정 (2건 묶음)**:
+
+1. **격자 배경 — D-1 4화면**: `D1GalleryList` · `D1GalleryListEnded` · `D1GalleryEmpty` · `D1GalleryLoading` 루트의 `background: 'var(--c-paper)'` → 공용 상수 `GRID_BG`(gallery.jsx:25-29)로 교체. operator.jsx `B1Empty`/`DashboardShell`과 동일 패턴.
+   - **D-2 미적용**: D2Shell 좌측 DetailLivePane(`--c-stone-2` 콘크리트) + 우측 DetailInfoPane(`--c-canvas` aside)이 격자를 가려 시각 효과 없음. D-2 우측 패널 디자인(별도 항목 ④, 미진행)과 함께 처리하는 게 자연스러움.
+
+2. **GalleryCard postit화 (안 A 풀-postit)**:
+   - shared.jsx `ProjectCard` 래퍼 대신 gallery.jsx에서 직접 `.jt-postit-card` div 작성. operator.jsx의 `RosterRow`와 동일 어휘.
+   - 회전: `postitRotation(team)` 4-variant 팀명 hash (operator.jsx 외부 export 추가 — window 노출).
+   - tint: 단일 `var(--c-canvas)` 흰색 (§18-27 정책 — RosterRow와 일관). 썸네일 자체가 시각 식별자라 색 식별 불필요.
+   - 썸네일 클리핑: 카드에 `overflow:hidden`을 걸면 `::before` tape(top:-3px)가 잘림 → LivePreview만 내부 wrapper로 감싸 `overflow:hidden` + 상단 모서리만 둥글림. tape는 카드 외부로 자연스럽게 돌출.
+   - ribbon `내 프로젝트`(line 442 기존 구조)는 absolute로 유지.
+   - 좋아요·댓글 메타는 카드 내부 표시만(클릭 불가) — 카드 전체 `data-action="open-card"` 영역 보호.
+   - GalleryGrid `gap: 16 → 20` — postit hover 시 회전 풀림(`rotate(0deg) translateY(-3px)`) + ±1.4° 회전 카드 인접 충돌 여유.
+
+**파일 영향**:
+- `gallery.jsx`: `GRID_BG` 상수, 4화면 배경 교체, `GalleryCard` 재작성, `GalleryGrid` gap 조정
+- `operator.jsx`: `Object.assign(window, { ..., postitRotation, LivePreview })` — D 영역에서 운영자 어휘 재사용
+
+**검증** (playwright 캡처):
+- D-1 진행 중(8개): postit 회전·tape·격자 적용 확인
+- D-1 종료(12개): 동일 — 12카드 settle stagger max ~110ms, 60카드 GPU 우려 무관
+- D-1 빈 상태: 격자배경만 적용(빈상태 카드 paper-surface는 ③ 후속 작업)
+
+**미수정 (후속)**:
+- ③ D-1 빈 상태 paper-surface 적용
+- ④ D-2 우측 패널 디자인 (격자배경 D-2 적용은 ④와 함께)
+- D-1 Loading 스켈레톤 카드(`var(--c-canvas) + border`)는 postit 형태와 mismatch — 회전·tape 스켈레톤도 후속 폴리시 대상
+- STRUCTURE.md §3 D-1 카드 위계 라벨 갱신(`ProjectCard 래퍼` → `jt-postit-card 직접`)
+
+**검증 포인트(향후)**:
+- (a) postit 어휘가 "전시 작품"이라는 갤러리 메타포와 충돌 가능 — 도면(블루프린트)은 "작업 중" 메타포. K-12 참가자 5명 1차 인지 테스트 필요(레벨 3 증거).
+- (b) 12카드 ±1.4° 회전이 한 화면에 동시 노출될 때 시각 산만함 측정 — gap 20·minmax 260으로 완화했으나 모바일 392px 폭에선 1열 적층 시 회전이 더 강하게 인지될 수 있음.
+- (c) postit hover 시 회전 풀림 + translateY(-3px) — 인접 카드와 ❤️/💬 메타가 같은 horizontal line이라 시선 이동 자연스러운지 vs 카드 hit-area가 hover 0deg 상태 기준으로만 정확한지(클릭 의도 vs 클릭 위치 mismatch 가능성).
+- (d) LivePreview의 16:10 그라데이션 + 단순한 mock content가 postit 어휘와 만나면 "보고서 색종이" 느낌 — 실제 라이브 앱 썸네일이 들어왔을 때(iframe screenshot) 톤 매칭 재확인 필요.
+
+---
+
+## 2026-05-29 일시정지/재시작 기능 완전 폐기 ⚠
+
+**계기**: 운영자 결정 "튜토리얼/해커톤 진행 중 일시정지 기능 자체를 삭제". 진행 중 휴식이 필요하면 운영자가 구두로 안내하고 참가자는 자율적으로 멈춘다 — 작업물은 자동 저장된다.
+
+**삭제 범위**:
+- 화면: `b2-paused`(B-2 일시정지 오버레이) · `e6-paused`(E-6 참가자 일시정지 오버레이) 두 화면 폐기
+- 컴포넌트: `B2DashboardPaused`(operator.jsx) · `E6Paused`/`E6PausedBody`(dialogs.jsx) 함수 삭제, `Object.assign` export에서 제외
+- prop·분기: `paused` prop을 `StatusPill`·`JitdaToolbar`·`PhaseHover`·`StageStrip`·`ActivityView`·`DashboardShell`에서 제거. `c1StatusMap.paused`, `stateCopy.paused`, `WaitingIllustration kind="paused"`, `ParticipantStatusBadge.paused` 모두 삭제. `STARTED_TEAMS` mock의 `activity:"paused"` 3건을 `idle`로 교체. `HackathonCard` mock에서 `paused:true` 제거
+- 토큰·CSS: `.jt-pill-paused`(tokens.css · viewer.html · Renewal.html · Design System.html 4곳), `--c-backdrop` 주석 "E-6 일시정지" 표현 제거
+- 와이어링: viewer.html ACTIONS의 `pause`/`resume` 전이 4개 제거(b2-started↔b2-paused)
+- API/데이터: `hackathons.paused` 컬럼, `/me` 응답의 `paused`, `PATCH /hackathons/:id/status`의 일시정지 페이로드 모두 제거(어드민 기획 v11 · 로그인 기획 v9)
+- 카피·UX: B-2 상태별 액션 버튼에서 [일시정지]/[재시작] 삭제, 5상태 다이어그램에서 `↕ paused` 라인 삭제, Design System §07 status pill 데모에서 일시정지 pill·sec-tag·Amber swatch 라벨 정리, §16 RingTimer 사용처에서 E-6 제거
+
+**기획문서 정렬**:
+- 어드민 v11: 권한 매트릭스·전이도·"일시정지/재시작은 토글" 룰·`hackathons.paused` 필드·`PATCH /status` 페이로드 모두 제거. v11 변경 이력 추가
+- 로그인 v9: 자동 전환 매트릭스에서 일시정지/재시작 행 + E-6 일시정지 절 + `/me` paused 페이로드 제거
+- 튜토리얼 노트: 상태 흐름 표기에서 일시정지 제거
+- 페이지정의서·화면상태정의서·UX리뷰: 6상태 표·뱃지 표·전이 표 정합화, 이력 항목 추가
+- 로드맵 v1: 운영자 기능 체크리스트에서 "일시정지 원클릭 제어" 제거
+
+**남는 운영자 액션**: `[튜토리얼 시작]`·`[튜토리얼 종료]`·`[해커톤 시작]`·`[해커톤 종료]` 4개 단방향 전이. 모두 확인/경고 모달 거침. 종료는 30초 카운트다운으로 2단계 보호.
+
+**검증 포인트** (실제 운영 후 재검토):
+- (a) 진행 중 휴식 안내가 구두만으로 240명에게 통일되게 전파되는지(전북 8/1 본선)
+- (b) 자동 저장 신뢰가 부족해 참가자가 "코드 날아갈까봐" 휴식 못 가는 케이스 발생 여부
+- (c) UX 리뷰 [High] "제어 액션 전파 확인 부재" 이슈는 일시정지 폐기로 사라짐 — 시작/종료 액션만 확인 모달 + 카운트다운으로 보호
+
+---
+
+## 2026-05-29 B-2 대시보드 헤더 정합화 — sticky LiveStatus + 섹션별 결정 지표
+
+**계기**: 사용자 질문 시리즈로 정보 위계 재정렬:
+1. "튜토리얼 진행률" 32px 진행률 바가 컬럼 헤더 count와 중복 → 옵션 A(큰 % 메트릭 + 4px hairline) 채택
+2. "● 실시간 · 방금 갱신 [↻]"이 3개 뷰 헤더에 중복 노출 → 전 화면 공통이라 sticky 헤더로 이관
+3. sticky 헤더의 "접속 N/M"은 waiting 상태에서만 결정 도구(임계 시작 결정) → RosterView 헤더로 이관, sticky에서 제거
+4. 실시간 상태를 아이콘만으로 절제(B-1) → mint pulse dot + refresh icon
+
+**결정 (5개 변경 묶음)**:
+
+1. **`LiveStatus` 컴포넌트 신설** (operator.jsx): 14px halo+core(`.jt-status-pulse` 재사용, `--c-mint`) + ghost refresh 버튼. hover tooltip "실시간 연결됨 · 방금 갱신". 향후 stale=amber, disconnected=safety 상태로 확장 여지.
+2. **sticky 헤더 (DashboardShell)**:
+   - 제거: `접속 N/M` cluster + 관련 `claimed`/`total`/`rosterLike` 계산
+   - 추가: `showLiveStatus = status !== 'hackathon_ended'` 시 `<LiveStatus />` + actions 사이 1px hairline 구분선
+3. **RosterView 헤더** (waiting 상태 전용):
+   - 제거: `● 실시간 · 방금 갱신 [↻]` 마크업
+   - 교체: `{totalTeams}팀` → `{connected}/{totalMembers} 접속 · {pct}% · {totalTeams}팀` (display 폰트 큰 숫자 + mono %)
+   - `connected`·`totalMembers`·`pct`는 RosterView 내부 계산
+4. **TutorialProgressView 헤더** (옵션 A 적용):
+   - 제거: `{teams.length}팀 · ● 실시간 · 방금 갱신 [↻]` + 32px 다색 분할 바
+   - 추가: `{completed}/{totalTeamsCount} 완료 · {pct}%` 한 줄 + 4px hairline 미니 바(`--c-stone` track, `--c-mint` fill, width 전환 0.24s decelerate)
+5. **ActivityView 헤더**:
+   - 제거: `● 실시간 · 방금 갱신 [↻]`
+   - 유지: `팀 활동 현황 · {totalTeams}팀` (단순)
+   - 활동 분포(active/idle/paused)는 후속 이터레이션에서 섹션 결정 지표로 보강 여지
+
+**정보 위계 원칙 확립**:
+- **sticky 헤더** = 보편(해커톤명·phase·runtime·WS 상태·actions). 화면 전환 무관 동일.
+- **섹션 h3** = 그 화면의 결정 지표. RosterView=접속%, TutorialProgress=완료%, Activity=(향후) 활동 분포.
+- **컬럼/카드** = 개별 객체.
+
+**검증 포인트(향후)**:
+- (a) 4px hairline 바 가시성 — Renewal.html 배경(--c-paper)에서 mint fill이 충분히 인지되는지. stone track이 너무 옅으면 빈 칸이 보이지 않을 수 있음.
+- (b) LiveStatus halo pulse가 sticky 헤더 height 52px 안에서 자연스러운지, 14px 컨테이너+1.8s 주기가 산만한지.
+- (c) RosterView 헤더의 `display 폰트 15px 큰 숫자`가 h3(16px sans)와 시각 무게 균형 — 큰 숫자가 h3보다 무거우면 위계 역전.
+- (d) ended 상태(SummaryView)는 LiveStatus 미노출 — 운영자가 "데이터 흐름 끊김"으로 오해 안 하는지(이미 종료 phase pill이 단서이나 추가 검증 필요).
+
+**파일 영향**:
+- `operator.jsx`: `LiveStatus` 추가, `DashboardShell` sticky 정비, `RosterView`·`TutorialProgressView`·`ActivityView` 헤더 정리, TutorialProgressView 진행률 바 옵션 A 적용
+- `tokens.css`: 신규 토큰 없음 (`.jt-status-pulse` 재사용)
+- 와이어링: `data-action="refresh-roster|refresh-tutorial|refresh-activity"` 3개 → `data-action="refresh"` 1개로 통합
+
+---
+
+## 2026-05-29 B-2 튜토리얼 진행 칸반 v3 — 컬럼 zone bg + dashed가 끝까지 + 실시간 이동 애니메이션
+
+**계기**: v2 사용자 피드백 2건 + 별도 요청 1건:
+1. "각 칸이 너무 눈에 안띄어. 배경색을 좀 넣으면 될것같은데?" — 컬럼 식별성 부족
+2. "구분선(현재는 점선)도 칸별로 끝까지 내리는게 나을듯" — dashed가 본문 짧은 컬럼에서 일찍 끝남
+3. "실시간 갱신됨에 따라서 각 팀 카드들이 옆 칸으로 이동할거야. 이동하는 애니메이션을 디자인 안에 추가해줘."
+
+**v3 결정**:
+1. **컬럼 zone bg (매우 옅게)** — step 의미 색을 4~5% opacity wash로 컬럼 영역에 부여. 24px 격자지 bg는 그대로 비쳐 보이고, 컬럼 영역만 또렷이 인지.
+   - 미시작: `rgba(45,42,36,0.04)` (중성 그레이)
+   - Step 1·2·3: `rgba(46,44,138,0.045)` (튜토리얼 보라 wash)
+   - 완료: `rgba(56,167,84,0.05)` (민트 wash)
+2. **dashed divider 끝까지** — `alignItems: 'start'` 제거(default stretch) + 본문 zone에 `flex: 1`. grid stretch로 모든 컬럼이 가장 긴 컬럼 높이에 맞춰 늘어남 → `borderRight: dashed`가 끝까지 그려짐. 빈 컬럼도 zone bg + 가이드라인이 끝까지. opacity 0.18 → 0.20.
+3. **실시간 카드 이동 애니메이션** — tokens.css에 `@keyframes jt-kanban-card-enter` + `.jt-kanban-card-enter` 클래스 신설(opacity 0→1, translateX -32→0, scale 0.94→1, 0.6s `var(--ease-decelerate)`). `TutorialProgressView`에 React state(`steps` + `moved` Set) + `setInterval(2200ms)` 도입 — `live=true`일 때 done이 아닌 팀 1개를 다음 step으로 랜덤 advance. RosterRow를 wrapper로 감싸고 `key={name-step}` 부여 → 팀 이동 시 wrapper remount → keyframe 자동 재생. **초기 마운트엔 클래스 미부여**(moved Set이 비어 있어서) → 첫 paint는 정적. 한 번 이동한 팀은 moved에 누적되어 이후 모든 step 이동마다 애니메이션 재생.
+4. **DashboardShell 접속 카운트 보정**(v2에서 이미 적용) — `rosterLike = mode === 'roster' || mode === 'tutorial-progress'`로 sticky 헤더 "접속 N/M"이 PENDING_TEAMS member 배열 기반으로 계산.
+
+**기술 노트**:
+- 애니메이션은 wrapper의 translateX + scale에 적용. inner RosterRow의 `transform: rotate(--postit-rot)`은 그대로 유지 — 회전된 카드가 좌측에서 슬라이드인하며 자리 잡는 효과.
+- `prefers-reduced-motion: reduce`에선 opacity-only 0.3s fade로 단축.
+- setInterval cleanup은 useEffect return에 등록 — 화면 전환 시 자동 정리. Renewal.html에서 50 artboard 동시 로드해도 본 컴포넌트는 1 instance.
+- 모든 팀이 done에 도달하면 movable이 비어 setSteps가 prev 그대로 반환 → 멈춤. 데모 시점은 약 60~90초 후 정지(시연 적정).
+
+**검증 포인트(향후)**:
+- (a) 2.2s 주기 적정성 — 너무 빠르면 산만, 너무 느리면 정적으로 인식.
+- (b) 실제 행사에선 동시 다발 이동 가능 — 현재 한 tick당 1팀만 advance. mock fidelity 한계.
+- (c) `moved` Set이 무한 누적(최대 32). 메모리 영향 없으나, 한 팀이 4회 이동 시 같은 wrapper key는 4번 다른 값 → 무리 없음.
+- (d) 회전 + 슬라이드 조합이 모션 멀미 유발 가능성 — reduce-motion 분기로 완화했으나 일반 환경에서 추가 검증 필요.
+
+---
+
+## 2026-05-29 B-2 튜토리얼 진행 칸반 v2 — 컨셉 교정(설계 격자지 + RosterRow 포스트잇)
+
+**계기**: v1 칸반(같은 날 작업)이 컨셉 "설계 격자지에 포스트잇 붙임"과 어긋남 — 사용자 지적 2건:
+1. 각 컬럼이 흰 박스(`--c-canvas` bg + border + radius)로 닫혀 있어 도면 위 sticky note 메타포가 죽음
+2. 포스트잇이 RosterRow와 다른 자체 구현(프로젝트명+인원수 텍스트 카드)이라 대기 화면과 시각 어휘 불일치
+
+**v2 결정**:
+1. **컬럼 박스 폐기 — 격자지 노출**. DashboardShell 루트가 이미 24px grid bg(`linear-gradient(rgba(45,42,36,0.04) 1px, transparent 1px) 0/24px 24px ×2`)를 깔고 있음. 컬럼을 박스 대신 투명 zone으로 만들고 사이를 `1px dashed rgba(45,42,36,0.18)` 수직선(드래프팅 가이드)으로 구분.
+2. **포스트잇 = RosterRow 직접 재사용**. `TutorialPostit` 함수 폐기, b2-tutorial-waiting의 `RosterRow`를 그대로 import. 같은 tape·회전·ON/OFF count·22px 미니 아바타·`anyOff` 기반 tint(mint-soft / safety-soft).
+3. **데이터 소스 교체**: `STARTED_TEAMS`(members: number) → `PENDING_TEAMS`(members: 배열). RosterRow가 member 배열을 필요로 하며, 튜토리얼 진행 중에도 접속 상태가 운영자에게 가장 유의미한 정보(누가 빠졌나).
+4. **DashboardShell claimed/total 보정**: `mode === 'roster' || mode === 'tutorial-progress'`를 `rosterLike`로 묶어 member 배열에서 ON 카운트. 기존 sticky 헤더의 "접속 N/M"이 깨지지 않게 유지.
+5. **컬럼 헤더 — 도면 라벨 어휘**: `[3px step accent dash] [01 mono] [라벨] [count]`. 박스/배경 없음, 하단 1px hairline만. step accent 색은 라인 dash와 카운트 숫자에만 (시각 무게 최소).
+
+**폐기**:
+- `TutorialPostit` 함수 (자체 구현 카드)
+- `TutorialKanbanColumn`의 박스 셸 (canvas bg / border / radius / paper bg 본문)
+- v1에서 카드 tint로 사용한 step 토큰 (not-started=stone, step1·2·3=tutorial-soft, done=postit-tint-on) — RosterRow 자체 tint(anyOff)가 우선
+
+**검증 포인트(향후)**:
+- (a) 24px grid bg가 시각적으로 충분히 인지되는지 — 4% opacity는 의도된 무게이나 sticky note 메타포 전달에 약할 수 있음. 진하기 조정 필요시 tutorial-progress 모드 한정 grid 강화 검토.
+- (b) RosterRow의 안 함 tint(mint-soft/safety-soft)는 접속 상태를 의미하는데, 튜토리얼 진행 컬럼 위에서 이 의미가 혼동될 수 있는지 (컬럼=step, 카드 색=접속). 사용자 인지 부담 측정 필요.
+- (c) 완료 컬럼 20장 적층 시 column height 매우 김 — 페이지 스크롤 발생. 칸반에서는 자연스러우나 운영자가 한눈에 못 본다는 단점.
+- (d) PENDING_TEAMS 32팀 vs 30팀 분포 가정 — 인덱스 27+ 모두 미시작으로 처리되어 미시작이 5팀(2팀 추가)으로 늘어남. 진행률 바 라벨(`{notStarted}팀 미시작`)이 동적이라 표시는 일치.
+
+---
+
+## 2026-05-29 B-2 튜토리얼 진행 화면 — 라이브 미리보기 그리드 → 5열 칸반(팀 포스트잇)
+
+**계기**: 운영자가 튜토리얼 진행 중 "어느 팀이 어디 막혀 있나"를 즉시 파악하기 어려움. 기존 4×3 라이브 미리보기 카드는 시각 정보는 풍부하나 step 분포가 한눈에 안 들어옴 (정렬·필터 조작 필요). 사용자 지시: "튜토리얼 미리보기 대신 팀 포스트잇들이 step별 칸반으로 붙어있는 모습으로".
+
+**결정**: `B2DashboardTutorialRunning`의 `TutorialProgressView`를 **5열 칸반**으로 교체.
+- 컬럼 순서: `미시작 → Step 1 · 기획 → Step 2 · 기능 추가 → Step 3 · 다듬기 → 완료`
+- 컬럼 헤더: 좌측 3px accent border(`var(--c-slate)` / `var(--c-tutorial)` ×3 / `var(--c-mint)`) + 라벨 + 카운트 칩
+- 컬럼 본문: `var(--c-paper)` 위에 포스트잇 적층(gap 14)
+- 카드 = `.jt-postit-card` (RosterRow와 동일 셸·hover·tape 어휘 재사용). 단, **tint는 step 토큰 기반**이지 anyOff 기반이 아님 — 카드 자체가 step 의미를 시각으로 전달
+  - not-started: `var(--c-stone)` · step1·2·3: `var(--c-tutorial-soft)` · done: `var(--postit-tint-on)` (mint-soft)
+- 카드 내용: 팀명(700 12.5) · 프로젝트명(10.5 ink-3) · 인원수(mono 10 muted). LivePreview 썸네일 제거 (칸반 정보 밀도 우선).
+- `data-action="open-team"` 유지 → 기존 RosterTeamDetailModal 와이어링 그대로.
+
+**폐기**:
+- `TutorialTeamGrid` / `TutorialTeamRow` 함수 (LivePreview 기반 4×3 카드)
+- Step 필터 칩 행 (`stepChips`, 전체/Step1/2/3/완료/미시작) — 컬럼 헤더가 동일 기능을 시각화
+- `Pagination` 호출 (30팀 1뷰에 모두 노출 — 칸반은 페이지네이션 없음)
+
+**유지**:
+- 헤더(타이틀·실시간 도트·새로고침 버튼)
+- 진행률 바(완료/진행/미시작 비율) — 컬럼 카운트와 중복이지만 비율 직관 가치
+
+**검증**: viewer.html `b2-tutorial-running` 새로고침 시 5열 칸반 + 포스트잇 적층 노출. 30팀 분포(완료 20 / Step1=3 / Step2=2 / Step3=2 / 미시작 3) mock 유지. (브라우저 MCP가 다른 세션에 점유돼 자동 스크린샷 확인 불가 — 사용자 새로고침으로 시각 확인 필요.)
+
+**알려진 트레이드오프**:
+- 완료 컬럼이 20장으로 다른 컬럼 대비 ~7배 길어 시각 weight 불균형. `align-items: start`로 컬럼 독립 높이 허용 — 칸반의 자연스러운 형태이나, 페이지 전체 스크롤 길어짐. 후속: 완료 컬럼에 `max-height` + 내부 스크롤 옵션 검토.
+- LivePreview 제거로 운영자가 팀 화면 상태(예: 코드 작성 중 vs 빈 화면)를 카드만으로는 못 봄. 클릭→상세 모달이 그 역할 흡수. 후속: 카드에 작은 활성 도트(최근 활동 시간) 추가 검토.
+
+---
+
+## 2026-05-29 아바타 라벨 정책 — 성씨 1자 → 이름 뒤 2자 (전 영역 일괄)
+
+**계기**: B-2 RosterRow 22px 아바타가 "성씨 1자"라 동성 동팀(예: 김민준·김도현) 구분 어려움. 사용자 지적 — D-2 상세 "팀 멤버" 칩에서도 1자 그대로 노출되어 일관성 결여.
+
+**결정**: 모든 원형 아바타(`.jt-avatar` + 인라인 원형 div) 라벨을 `name.slice(-2)`로 통일. 1자만 등록된 경우 그대로 fallback. **색상 매핑은 변경 없음**(여전히 `charCodeAt(0)` — 성씨 hash 6색). 폰트는 `var(--font-mono)` → `var(--font-sans)`, `letter-spacing: -0.04em`로 22px 원에 한글 2자 가독성 확보.
+
+**적용 사이트 (11곳)**:
+- operator.jsx — `RosterAvatar` (22px, 헬퍼 `rosterAvatarLabel`)
+- dialogs.jsx — `TeammatePortrait`(60px) · `PendingAvatar`(40px) · 투표 모달 `v[0]`(22px)
+- shared.jsx — `RosterMemberRow`(28px)
+- participant.jsx — GNB user(26px)
+- gallery.jsx — 정보 탭 "팀 멤버" 칩(20px) · 댓글 입력(24px·"민준") · `CommentItem`(28px)
+- Jitda Renewal.html / viewer.html — `.jt-avatar` base class
+- Jitda Design System.html §09f ROSTER MEMBER ROW 미러 — 4행 라벨 동기화
+
+**검증**: viewer.html에서 B-2(접속 현황 카드)·B-2 팀 상세 모달·D-2 갤러리 상세 정보 탭·E-4 투표 모달·C-1 참가자 사이드바 새로고침, 모두 "민준·서윤·지호·지유" 식으로 표시.
+
+**검증 포인트(향후)**: (a) 영문 이름(`"Alex"`)은 `.slice(-2)` → "ex"가 부자연스러움 — 현재 mock은 한글만이라 미발현, 다국어 시 분기 필요. (b) 색상이 여전히 성씨 hash이므로 "김민준·김도현" 동시 노출 시 색은 같고 라벨로만 구분 — 의도된 동작이나 운영자 인지 부담 검증 필요. (c) 22px·20px 원 안 한글 2자(sans 8.5~9px)가 저해상도 디스플레이에서 가독성 — 실측 필요.
+
+---
+
+## 2026-05-28 B 운영자 영역 — 헤더 압축 (GNB 행사명 제거 · StageStrip 폐기 · StatusPill 호버 popover · B-1 필터를 phase stepper로)
+
+**계기**: B-2 대시보드 GNB 바로 아래에 (1) 행사명 h2 + StatusPill 행 (2) StageStrip 5단계 행 두 개가 연달아 있어 콘텐츠 영역을 압박. 사용자 지적 — GNB의 행사명과 h2가 중복, StatusPill과 StageStrip 강조 칩이 같은 정보를 두 번 표시.
+
+**결정 — 역할 분리**:
+- **B-1 (해커톤 목록)** = phase 모델의 전체 lifecycle 학습 지점. 단순 chip 필터 → 가로 stepper 시각화로 격상.
+- **B-2 (해커톤 대시보드)** = 한 해커톤의 지금·다음 액션. 5단계 정보는 StatusPill 호버 popover로 접근 (상시 노출 제거).
+- **GNB**: 운영자 영역 모든 화면에서 행사명 제거 → 로고+계정만. 행사 정체성은 B-2 sticky 헤더 h2가 단일 노출.
+
+**변경 파일**:
+1. `operator.jsx`
+   - 상단에 `PHASE_STAGES` const 추가 (B-1·B-2 공유 색·라벨).
+   - `B1HackathonList` 필터 영역: 6개 jt-btn chip → `<PhaseFilterStepper>` 호출. counts는 `hackathons` 배열에서 동적 계산.
+   - `PhaseFilterStepper` 함수 신설: "전체 N" + 세로 divider + 5단계 칩(`PHASE_STAGES` 색·번호 prefix·count·chevron 사이).
+   - `DashboardShell`: `<AppHeader breadcrumb={[HACKATHON_NAME]} ...>` → `<AppHeader user={...} />` (breadcrumb 제거). `<StatusPill>` → `<PhaseHover>`로 교체. `<StageStrip>` 호출 라인 삭제.
+   - `DashboardModalShell`: `<AppHeader>` breadcrumb 동일하게 제거.
+   - `PhaseHover` 함수 신설: `<StatusPill>` + 호버 시 노출되는 5단계 popover(`PHASE_STAGES` 재사용, 현재 단계 색 채움+"← 현재", 지난 단계 dim, 미래 단계 muted).
+   - `StageStrip` 함수는 보존(legacy 표시) — 다른 화면 재사용 가능성 있음, 1주 무사용 확인 후 제거 검토.
+
+2. `tokens.css`: `.jt-phase-hover` / `.jt-phase-popover` CSS 추가 (opacity·visibility·transform 트랜지션, `:hover` / `:focus-within` 트리거).
+
+**효과**:
+- B-2 sticky 헤더가 ~80px 압축 (52px 단일 행) → 명단/활동 영역 ~80px 증가.
+- B-1 단계 필터가 "전체 6 → ①→②→③→④→⑤" 흐름을 시각화 → phase 모델 학습 지점 확립.
+- 중복 제거: GNB↔h2(행사명), StatusPill↔StageStrip(현재 상태).
+
+**반증 시나리오 점검**:
+- 딥링크로 B-2 직접 진입(신규 운영자): phase 모델 못 봤어도 비가역 전이 모달이 "이전 상태로 되돌릴 수 없습니다" 안내 중. 추가 안전망 = StatusPill 호버 popover. → 차단 가능.
+- popover discoverability: `aria-haspopup="true"` + `aria-label="단계 진행도 보기"` + focus-within 지원. tab 키 접근 가능. 시각적 hint(▾ 등)는 추가 안 함 — StatusPill 시각 노이즈 우려, 1주 사용 관찰 후 결정.
+
+**검증**: viewer.html에서 `b1`·`b2-tutorial-waiting`·`b2-started` 모두 확인. PhaseFilterStepper 렌더 정상, B-2 StatusPill 호버 시 popover 노출, 현재 단계 강조/지난 단계 dim 정상 작동.
+
+---
+
+## 2026-05-28 B 운영자 영역 — 페이지 배경에 격자 패턴 추가 (auth.jsx와 동일)
+
+**계기**: 사용자 요청 "운영자 화면 배경에 로그인 화면처럼 은은한 격자무늬 넣어줄수있어?".
+
+**변경**: `operator.jsx` 최상위 페이지 컨테이너 4곳(`B1HackathonList`·`B1Empty`·`DashboardShell`·`DashboardModalShell`)의 `background: var(--c-paper)`를 다중 background로 교체. auth.jsx 우측 폼 카드(line 137-138)와 동일한 스펙 사용: `linear-gradient(rgba(45,42,36,0.04) 1px, transparent 1px)` × 가로/세로 + `24px 24px` 타일.
+
+**효과**: 페이지 컨테이너 레벨이라 내부 opaque 컴포넌트(AppHeader, sticky 헤더 `--c-canvas`, StageStrip `--c-paper`, 모달 backdrop 등)는 격자를 가리고, 콘텐츠 영역만 격자가 비치는 구조. 모달 셸은 backdrop이 전면 덮으므로 시각적 영향 없음.
+
+**검증**: viewer.html에서 `b-1`·`b-1-empty`·`b-2-*` 시리즈 새로고침으로 격자 확인.
+
+---
+
 ## 2026-05-27 모달 z-index 정책 — `.jt-modal-backdrop`에서 `z-index` 제거 (DOM 순서 stacking)
 
 **계기**: E-1 다이얼로그(`e1-private`·`e1-saving`)에서 모달 카드 자체가 dim scrim 아래에 깔려 어둡게 보이는 시각 버그. E-5·E-6 동일 패턴.
@@ -320,7 +1233,7 @@ PENDING_TEAMS는 roster 모드(60팀/페이지) 전용 — `B2DashboardTutorialW
 | 로딩 | 데이터 패칭 | 로딩 메시지 + 스켈레톤 그리드 |
 | 비어있음 | 공개 프로젝트 0개 | 빈 상태 메시지 + "내 프로젝트를 먼저 공개해볼까요?" CTA |
 | 카드 목록 | 프로젝트 1개 이상 | 카드 그리드 + 페이지네이션 |
-+ | 종료 후 | 해커톤 종료 (자동 공개) | 카드 목록 + 상태 pill "해커톤 종료 · SEALED" (별도 안내 배너 없음) |
++ | 종료 후 | 해커톤 종료 (자동 공개) | 카드 목록 + 상태 pill "해커톤 종료" (2026-05-29: SEALED · 18:20 보조 라벨 폐기 — 불필요한 영어/시간) |
 ```
 
 ---
@@ -509,6 +1422,7 @@ PENDING_TEAMS는 roster 모드(60팀/페이지) 전용 — `B2DashboardTutorialW
 | E-20 | 와이어링 + 레이아웃 미세 조정 (2026-05-27 v3) | ✅ `e4: { agree: e4-waiting, reject: e4-rejected }` + `e4-waiting: { back-to-canvas: c4 }`. 거부 버튼 가로폭 축소(padding 24×44 → 24×26), 동의 버튼 가로폭 증대(padding 24×48 → 24×52), 버튼 세로 padding 18→24, container gap 18→22 / padding 28→32, headline↔CTA marginTop 4→12 | 사용자 피드백 3종: "거부 버튼 폭 줄여도 될듯", "멘트와 버튼 간격 너무 좁다", "버튼 높이 더 늘려라" |
 | E-21 | Alternate 디자인 세트 `e4-v2` + `e4-waiting-v2` (2026-05-27 v4) | ✅ LoL 매치 수락 어휘 직접 차용 — 480px 거대 ring + 다크 inner disc(rgba 0,0,0,0.94) + 6시 수락 버튼(`bottom: -24` overlap) + ring 내부 미수락자 아바타만(점선 테두리 40px, 이름 mono 캡션). 신규 컴포넌트: `useCountdown(total)` 훅, `MatchAcceptRing(remaining,total,full,size)`, `PendingAvatar({name,color})`. waiting-v2는 6시 위치에 수락 버튼 대신 "✓ 동의했어요 · 응답 완료" pill(다크 + mint border + glow). 와이어링: `e4-v2: { agree: e4-waiting-v2, reject: e4-rejected }` + `e4-waiting-v2: { back-to-canvas: c4 }`. E 9→11, 총합 50→52 | 사용자 결정 "디자인을 아예 바꿔서 새 버전 / 타이머 훨씬 크고 6시방향 수락 / 팀원 응답은 ring 안에 작게 / 미수락자만 / 기존 화면 두고 새 화면 추가 / 동의 후 대기도 세트로". v1(`e4`·`e4-waiting`)은 유지 — 최종 채택 정책 미정 |
 | E-22 | `MatchAcceptRing` SVG 게이지 — caution stripe(ring 곡률을 따라가는 사선) (2026-05-27 v5) | ✅ ffmpeg로 LoL 영상 프레임 분석 후 어휘 차용. 게이지: 7시(버튼 좌측 끝) → 시계방향 → 5시(버튼 우측 끝) = 100% (300° sweep, 60° 버튼 영역 자동 회피). 최종 구현(v6): 각 stripe를 **SVG `<path>` 평행사변형(두 호 + 두 대각선)** 으로 그려 ring 곡률을 따라 자연스럽게 사선 무늬 밧줄을 둥글게 감은 시각 구현. 이전 시도: (a) 정적 SVG `<pattern>` 45° → flat, (b) N=8 동심원 + dashoffset → spoke처럼, (c) 회전 사각형 segment → chevron(>>) joint. SVG `<mask>` 로 게이지 호 길이 L 만큼만 노출. CSS `drop-shadow` 다중 적용으로 노랑 glow halo. voting-v2 = 실시간 fraction 증가(rAF), waiting-v2 = `full={true}` 100% 고정. waiting-v2 eyebrow 카운트다운 제거 → "응답 전송됨" 정적 텍스트 | 사용자 피드백 5단계 반영 |
+| E-24 | **v1 전면 폐기 — v2 단독 정본 채택 (2026-06-01)** | ✅ 사용자 결정 "디자인에서 합의 투표 관련 화면들 중 v1은 모두 삭제해라". (1) `e4`·`e4-waiting`·`e4-rejected` 3 화면 viewer/Renewal 삭제. (2) `E4VotingBody`·`E4WaitingBody`·`E4FailureBody` 함수 삭제. (3) v1 전용 헬퍼 `RingTimer`(140-168px 작은 링)·`TeammatePortrait`(124×N 4열 카드)·`e4Teammates`(4인 fixture) 모두 삭제. (4) `E4ConsensusVote` switch에서 'voting'/'waiting'/'rejected' 케이스 제거, 기본값 'voting-v2'. (5) STRUCTURE.md 총합 51→48 + 화면 표 v1 폐기 표시. 영향: -3 화면 / -6 컴포넌트 / -3 와이어링 | E-21의 "최종 채택 정책 미정" 상태 종결. v2 거대 ring(480px) + 미수락자 아바타 + 6시 수락 버튼 어휘를 합의 투표 정본으로 확정. 검증 후속: 페이지정의서·UX 리뷰·기획문서 잔존 e4/e4-waiting/e4-rejected 참조 점검 |
 | E-23 | 디자인 시스템 버튼 정합화 + dark backdrop variant 신규 (2026-05-28) | ✅ **(1) `.jt-btn` border 정정** — `tokens.css`·`viewer.html`·`Jitda Renewal.html` 3곳의 base 정의가 `border: 1px solid transparent` shorthand로 정의돼 있어 variant의 `border-color` override를 매번 깨뜨림. 모두 `border-width/border-style/border-color` individual property로 분해. **(2) viewer.html 인라인 `.jt-btn` 전체 재정의 폐기** — 기존엔 base 전체 복사 + `border-radius: var(--r-sm)` 만 다름. variant 충돌 원인. 이제 viewer-specific override는 `border-radius`·`border-radius`(sm) 두 줄로만 유지. tokens.css가 단일 사실 출처. **(3) 신규 variant `.jt-btn-danger-outlined-dark` + `.jt-btn-ghost-dark`** — E-4 풀스크린 다크 dim 위 secondary 버튼용. 라이트 backdrop의 jt-btn-danger-outlined·jt-btn-ghost 거울 반전(bg fill로 hover 표시, elevation 없음). **(4) `.on-dark` modifier (jt-btn-critical용)** — 기본 critical hover의 검정 elevation shadow(0 6px 20px rgba(20,19,15,0.35))가 다크 배경에서 안 보이는 문제 해소. `.jt-btn-critical.on-dark:hover` 는 helmet 노랑 halo glow(0 0 32px + 0 0 64px) 로 대체. **(5) v1·v2 voting body 버튼 클래스 기반화** — v1 거부 = `jt-btn-danger-outlined-dark`, v1 동의 = `jt-btn-critical on-dark`, v2 수락 = `jt-btn-critical on-dark`, v2 거절 = `jt-btn-ghost-dark`. inline은 size override(height/padding/fontSize/borderRadius)만 남기고 색·border·hover·active·focus는 모두 클래스에 위임 | 사용자 지적: "v1·v2 화면 버튼 호버 적용 안 됐다, 디자인시스템 따라 업데이트" + 후속 "샤이닝 버튼 배경 어두울 때 다른 hover 필요 — 지금은 검정 그림자라 안 보임" |
 
 ## 7-1. 폐기된 화면 / 옵션 (2026-05-26)
@@ -813,7 +1727,7 @@ A 영역 9개 화면(`a1`·`a1-invalid`·`a1-not-started`·`a1-ended` / `a2`·`a
 |------|--------|------|--------|
 | **shine sweep** | `.jt-btn-critical` | 강 — 노란 빛띠 sweep | E-4 합의 투표 "동의 · AI에 전송", C-1 "갤러리로 가기 →", **B-2 "튜토리얼 시작"** (신규 추가) |
 | **정적 critical** | `.jt-btn-critical-static` | 약 — 정적 검정+노랑 테두리 | B-2 6개 모달 (b2-tutorial-start-confirm 포함), E-1 "저장하고 닫기" |
-| **primary** | `.jt-btn-primary` | 없음 — 단순 검정 | 일반 CTA (튜토리얼 종료, 일시정지, 재시작 등) |
+| **primary** | `.jt-btn-primary` | 없음 — 단순 검정 | 일반 CTA (튜토리얼 종료 등) |
 
 룰: shine 버튼은 **한 화면에 최대 1개**. b2-tutorial-waiting에는 critical이 이 버튼 하나뿐이므로 원칙 부합.
 
@@ -1540,6 +2454,1414 @@ TOC는 §09f 안 서브섹션이라 별도 갱신 불필요(상위 섹션만 TOC
 
 ---
 
-*검토자: 짓다 디자인 / 작성일: 2026-05-27 (§17 + §17-6 + §17-7 + §17-8 + §17-9 ModalSurface 표준화 + 모든 흰 테두리 제거 + 인터랙션 모달 헤더 구분선 규칙)*
+## 18. B-2 RosterRow — 포스트잇 어휘 + 모달 peel entrance (2026-05-29)
+
+> 사용자 결정: "팀 카드들이 좀더 설계도에 붙은 포스트잇처럼 보이게. 호버시에도 컨셉 살리는 애니메이션. 카드 클릭 시 열리는 모달에 포스트잇을 떼서 뒤집어서 뒷면을 보는듯한 애니메이션." + Q&A: "카드만 포스트잇, 배경은 현 상태 유지 / 파인난 flip 토큰+어휘 등록 / 완전 범위(JSX + tokens.css + Design System + STRUCTURE + spec-updates)".
+>
+> 범위: b2-tutorial-waiting + b2-hack-waiting (RosterView 공유) + b2-roster-detail (모달) = 3 화면.
+
+### 18-1. 결정 요약
+
+| 영역 | 변경 |
+|------|------|
+| 카드 (RosterRow) | `.jt-card-interactive` → `.jt-postit-card` 클래스 교체. 회전 ±1.4° (4-variant deterministic by team-name hash) · paper tint 4종 · 상단 ink-alpha tape · 비대칭 shadow · hover 시 똑바로 펴지며 lift |
+| 그리드 (RosterGrid) | gap 8 유지(+ paddingTop 4) — 60팀 1페이지 보존. 회전 ±1.4°가 190px 카드에서 옆 1.5px 미만 돌출, gap 8 흡수 가능 |
+| 모달 (RosterTeamDetailModal) | `entrance="peel"` — `.jt-modal-surface.is-peel` 신규 (perspective 800 + rotateY -72→0 + scale 0.94→1, 360ms decelerate, transform-origin 50% 0) |
+| 토큰 (tokens.css) | `--postit-rot-{a,b,c,d}` · `--postit-tint-{a,b,c,d}` · `--postit-shadow-rest/lift` · `--postit-tape` · `@keyframes jt-modal-peel-in` · `.jt-postit-card`(::before tape) · `.jt-modal-surface.is-peel` · `prefers-reduced-motion` 보강 |
+| ModalSurface (shared.jsx) | `entrance` 매핑에 `peel: 'is-peel'` 추가 |
+| Design System html | §09f Component Library 끝에 "POST-IT CARD" 서브섹션 신설 + §09e ENTRANCE 표에 `is-peel` 행 추가 |
+
+### 18-2. 왜 §10 "그라데이션·입체 효과 금지" 룰의 경계선인가
+
+§10 DON'T: *"12px 이상의 라운드, 그라데이션, 입체 효과 사용하지 않기."* 포스트잇 어휘는 본질적으로 입체 단서(들림·tape·접힘)에 기댄다. 위반 회피를 위해 모든 어휘를 **절제값**으로 채택:
+
+- **회전 ±1.4°** — 상한. 5° 이상은 "기울어 보이는 결함"으로 해석될 수 있어 시각 노이즈. ±1.4°는 운영자가 "한눈에 미접속 식별"(§11-1 가치)에 지장 없는 미세 정렬 깨짐.
+- **그라데이션 없음** — tint는 단색 `oklch(near-paper)` 4종. 단계적 색 변화는 금지.
+- **tape는 ink alpha 단색** — 12px 토큰화된 jt-caution-strip 어휘를 차용하지 않고 ::before 1줄. 데이터 의미 없는 데코이므로 aria-hidden 자동.
+- **shadow는 elevation 스케일 내** — `--postit-shadow-rest`는 shadow-md급, `--postit-shadow-lift`는 shadow-hover급. 모달의 `--shadow-modal`을 카드에 쓰지 않음.
+- **border-radius 4px** — `var(--r-xs)` 유지, 12px 상한 한참 미만.
+
+### 18-3. 반증 시나리오 (Critical Analysis Mode)
+
+| 시나리오 | 영향 | 완화 |
+|---|---|---|
+| **(a) 60카드 동시 hover GPU 부담** (이미 §390 (a)에서 우려) | rotate + box-shadow + ::before 다 transform 트리거. 마우스가 그리드를 가로지를 때 60개가 순차 lift → 컴포지터 레이어 폭증 가능 | `will-change` 미설정(meta-layer 폭증 회피). 호버는 카드별 :hover 단일, 그룹 hover 없음 |
+| **(b) 회전 시각 노이즈로 "한눈에 미접속 식별" 가치(§11-1) 약화** | rose 도트 + opacity 0.7 미접속 카드가 ±1.4° 기울어진 상태에서 시선 그루핑 어려울 가능성 | hover 시 0°로 펴지는 어휘가 "조사 모드 진입" 단서. 실측: 7/13 전북 연수에서 운영자 task 시간 측정 필요 |
+| **(c) §10 "그라데이션·입체 효과 금지" 룰 위반 시비** | 미래 디자인 검토자가 본 결정 보고 다른 카드에도 확산 시도 가능 → 어휘 일관성 붕괴 | tokens.css `.jt-postit-card` 주석 + 본 spec에 "RosterRow 전용·확산 금지" 명시. `.jt-card-interactive`는 그대로 유지 (기본 어휘) |
+| **(d) `prefers-reduced-motion` 환경에서 시각 정체성 손실** | 회전·peel 모두 off. 그 결과 평범한 평면 카드와 구분 안 됨. 포스트잇 컨셉 전달 실패 | tint·tape는 정적으로 유지(회전만 off). 시각 정체성은 페이퍼 톤 + tape로 대체 신호 |
+| **(e) viewer.html 한계로 카드→모달 동시 transition 시뮬 불가** | 별도 artboard 간 전환은 viewer가 instant. 실제 앱에서는 카드 peel-out + 모달 peel-in이 연결되어야 자연 | 본 작업은 모달 entrance만 정의(`is-peel`). 카드 exit 어휘는 실 앱 구현 시 별도 정의 — 디자인 시스템 §09d Motion에 미래 TODO 명시 |
+| **(f) `--postit-tint-*` 4종이 mint 도트·rose 도트와 충돌** | tint-b(paper-mint-soft)가 mint 인디케이터와 겹치면 도트 가독성 ↓ | mint 도트는 9px solid + 흰 2px ring으로 분리 — 시각 검증 시 카드별 `postitVariant` 결과 확인 |
+
+### 18-4. 결정 근거 정리
+
+- **deterministic rotation/tint** (charCode 합 % 4): 렌더마다 회전 바뀌면 어지러움 + 같은 팀 식별 어려움. 같은 팀명은 항상 같은 자세.
+- **transform-origin 50% 100% (카드 밑변)**: 호버 시 카드가 "아래에서 위로 들리는" 단서. 50% 0%는 "위에서 떨어지는" 어휘로 부적합.
+- **모달 transform-origin 50% 0% (상단)**: 클릭 위치의 카드가 그리드 안에서 임의 좌표 → 모달은 화면 중앙 고정. 상단을 축으로 펼치는 게 "tape 자리에서 떼낸다" 단서.
+- **rotateY -72° → 0°** (90° 아님): 90°는 완전히 옆면이라 carry-over 없음. -72°는 사용자가 "절반 이상 펴진" 시점부터 콘텐츠 인지 가능, opacity 55% 지점에서 등장 균형.
+- **dur-slow (360ms)**: pop-in(240ms)보다 1.5× 길게. peel은 "물리적 동작"이므로 standard보다 천천히. 그러나 720ms 이상은 운영자 task 지연감.
+
+### 18-5. 검증
+
+- [ ] viewer.html 새로고침 후 `b2-tutorial-waiting` — 카드 60종이 ±1.4° 4-variant로 분산되어 tape strip + 4색 tint 노출.
+- [ ] 카드 hover — rotate 0° + translateY(-3px) + shadow-lift 적용 확인 (Chrome DevTools Performance: 1 카드 hover frame budget ≤ 4ms).
+- [ ] `b2-hack-waiting` — 동일 RosterGrid 공유. 같은 시각 확인.
+- [ ] `b2-roster-detail` — 모달 entrance 시 perspective + rotateY 회전 보임. opacity transition 자연스러움. dur-slow 360ms.
+- [ ] `prefers-reduced-motion: reduce` 활성화 — 회전 0°, peel 비활성, fade로 대체.
+- [ ] 첫 행 카드 tape이 그 위 ("참가자 접속 현황 N팀 · ● 실시간" 라벨) 영역과 겹치지 않음. paddingTop 4 충분 확인.
+- [ ] 60팀 mock 케이스 ("이 화면 미사용" 폴백 데이터 등으로 늘려본) 또는 PENDING_TEAMS 30팀이 6×5로 첫 절반에 모두 들어가는지.
+- [ ] 콘솔 0 에러.
+
+### 18-6. 영향 화면
+
+| ID | 변경 |
+|---|---|
+| `b2-tutorial-waiting` | RosterGrid 시각 갱신 (30팀 mock, 6×5 = 5행 노출) |
+| `b2-hack-waiting` | 동일 RosterGrid (`DashboardShell(mode='roster', status='hackathon_waiting')`) |
+| `b2-roster-detail` | 모달 entrance peel (perspective rotateY) |
+
+다른 mode(activity/tutorial-progress/summary)는 ActivityRow/TutorialTeamRow를 사용 — 포스트잇 어휘 미적용. 갤러리 GalleryCard·HackathonCard도 무영향.
+
+### 18-7. 미해결·후속
+
+- (a) **카드 exit 어휘**: 실 앱에서 카드→모달 전환 시 클릭된 카드가 "떼어지는" 어휘 필요. viewer 한계로 본 작업 미포함. 별도 결정 필요.
+- (b) **모달 백드롭 클릭으로 닫을 때**: 현 백드롭은 단순 click → 다른 화면. peel-out 어휘는 미정의. is-peel 역재생 또는 fade-out 중 결정 필요.
+- (c) **다른 mode 확산 검토**: ActivityRow(진행 mode)도 포스트잇 어휘 적용할지. 라이브 미리보기 썸네일이 16:10 영역 → 회전 시 더 두드러짐. K-12 학생 화면에서 산만함 가능 — 신중.
+- (d) **카드 hover 트리거 a11y**: 키보드 Tab 포커스는 `:focus-visible` outline만, hover 어휘(회전 0°+lift) 미적용. 키보드 사용자에게도 같은 단서 제공할지 정책 결정 필요.
+
+### 18-8. tint 4-variant 랜덤 → 2색 데이터 기반 (2026-05-29 후속 결정)
+
+> 사용자 지적: "카드 색상은 랜덤인거같은데 직관적이지 못하다. 모두 접속 완료된 팀과 한 명이라도 미접속인 팀 간의 색상 차이를 넣어서 2가지 색상만 존재하게 해라."
+
+**진단**: 18-4 의도("같은 팀은 항상 같은 자세")는 deterministic이지만 변형 4종이 **의미 부여 없이 시각 노이즈**로 작용. 운영자 task("한눈에 미접속 팀 식별")는 데이터 차원의 시각 분기를 요구한다. §13의 "anyOff면 카운트 색 muted" 어휘와 정렬 — tint도 같은 신호 차원으로.
+
+**변경**:
+
+| 영역 | 변경 |
+|------|------|
+| **tokens.css** | `--postit-tint-{a,b,c,d}` 4종 (임의 색) → 2종 wash 토큰 신규 등록 후 사용. `--c-mint-wash`(#eaf3ec) · `--c-safety-wash`(#faebe1) 신규 — soft 톤보다 ~60% 채도 낮은 paper-tinted variant. 큰 면적 fill 용. 초기 #eef5ef·#fbeeec 임의 색 → mint-soft/safety-soft (디자인시스템 정식 토큰이지만 60카드에는 과채도) → **wash 톤 신규 토큰**으로 두 번 정정 |
+| **Design System §02** | **WASH TIER 서브섹션 신설** — 4-swatch 그리드(mint-soft vs mint-wash 비교 / safety-soft vs safety-wash 비교) + DO/DON'T 본문 ("칩·작은 카드는 soft, 큰 면적 fill은 wash") |
+| **operator.jsx** | `POSTIT_VARIANTS`(rot+tint 묶음 4종) → `POSTIT_ROTATIONS`(rot 4종). 헬퍼 `postitVariant(name)` → `postitRotation(name)`. RosterRow에서 tint는 `anyOff ? 'var(--postit-tint-off)' : 'var(--postit-tint-on)'` 분기. aria-label에 "· 미접속 포함" / "· 모두 접속" 컨텍스트 추가 |
+| **Design System §09f** | 4-card 정적 미러 — 4-variant tint → 2-variant on/off 교차 노출. 캡션 "좌상·우상=모두 접속, 좌하·우하=미접속 포함". props 표 tint 행 갱신 |
+
+**근거**:
+
+- **데이터 신호 일관**: 미접속 도트=rose · 카운트 muted · tint=paper-rose → 3개 신호가 같은 차원으로 정렬. 시선 그루핑 강화.
+- **회전은 유지**: 같은 팀 식별성(렌더마다 같은 자세) + 포스트잇 어휘의 "무질서한 손으로 붙임" 감성은 회전 4-variant로 보존.
+- **18-3 (b) 우려 부분 해소**: "회전 시각 노이즈로 한눈에 미접속 식별 약화" → 미접속 카드가 색으로 분리되므로 회전 영향 ↓.
+
+**반증 시나리오(추가)**:
+
+- (a') **soft 톤 60카드 그리드 시각 피로 → wash 톤 신규 등록으로 해소 (2026-05-29 사용자 지적 "포스트잇에 적절하게 더 물빠진 색상")**: soft 톤(#d6f1de·#ffe0cf)이 4카드 voting 모달에서는 적절하나 60카드 그리드에서 면적 15×로 과채도. → `--c-mint-wash`(#eaf3ec) · `--c-safety-wash`(#faebe1) 신규 토큰 등록(soft 대비 ~60% 채도 낮음, paper hue 쪽으로 끌어내림). 디자인시스템 §02 WASH TIER 서브섹션 신설로 "큰 면적 fill" 정책 명문화.
+- (b') **60팀 중 14팀 미접속 케이스에서 safety-soft 카드 14장이 mint-soft 46장과 분리**는 운영자 task에 효과적이나, 5팀 미접속·55팀 접속 같은 비대칭 케이스에서 safety-soft 5장이 "노이즈"로 묻힐 가능성. 실측 필요(7/13 전북 연수).
+- (c') **E-4 TeammatePortrait(투표 카드)와 어휘 충돌**: 같은 mint-soft/safety-soft를 RosterRow와 voting 모달에서 다른 의미("접속 상태" vs "투표 상태")로 사용. 운영자가 두 화면을 같은 세션 안에서 보지 않으므로(B-2 vs E-4) 인지 충돌 가능성 낮음. 단, B-2 진행 mode에서 E-4 voting 모달이 띄워질 때 color semantic 확인 필요.
+- (d') **임의 색 → 정식 토큰 정정 (2026-05-29 사용자 지적)**: 초기에 paper-mint/paper-rose 임의 hex(#eef5ef·#fbeeec) 사용 → "이 색상들은 디자인시스템에 정의된 색상들이 맞는가?" 지적 → `--c-mint-soft`·`--c-safety-soft` 정식 토큰 재사용으로 정정. 짓다 디자인시스템 컴플라이언스 룰 강화 — 신규 색 추가 시 반드시 토큰 등록 절차 거칠 것.
+
+**검증**:
+
+- [ ] `b2-tutorial-waiting` PENDING_TEAMS 30팀 — anyOff 팀 수 ≈ 14팀이 paper-rose, 나머지 ≈ 16팀이 paper-mint.
+- [ ] `b2-hack-waiting` 동일 mock — 같은 비율.
+- [ ] 회전은 4-variant 분산 유지 — 인접 카드끼리 다른 각도.
+- [ ] aria-label 스크린리더 발화 — "{팀명} 팀 상세 보기 · 모두 접속" / "...· 미접속 포함".
+- [ ] 콘솔 0 에러.
+
+---
+
+## 18-9. 접속 상태 필터: 2-chip 별행 → 상단 우측 단일 토글 (2026-05-29 후속)
+
+> 사용자 결정 (이미지 첨부): "접속상태 칩 대신 토글(미접속만 보기)로 변경해줘. 위치는 윗줄 팀 변경 요청 좌측에" + "위치는 거기가 아니더라도 네가 ux 전문가 관점에서 다시 판단해봐"
+
+### UX 판단 (4개 위치 후보 평가)
+
+| 위치 | 장점 | 단점 |
+|------|------|------|
+| **A. 상단 우측, 팀변경요청 pill 좌측 (사용자 제안)** | 별행 제거 → 세로 ~36px 회수(60팀 case에서 1행 추가 노출 마진), 우측은 "행위" 영역으로 일관 | 팀변경요청(passive help) 옆 active 토글 — 시각 위계 분리 필요 |
+| B. 좌측, 새로고침 옆 | 데이터 컨트롤 클러스터 통합 | 헤더(타이틀+카운트+refresh)가 이미 4요소로 혼잡 |
+| C. 카운트 메타 인라인 | 자연 읽기 흐름 | 정적 라벨과 인터랙티브 토글 시각 위계 충돌 |
+| D. 별행 유지(축소) | 명확한 시각 분리 | 60팀 행사에서 1행 손실(§18-9의 회피 동기 자체와 모순) |
+
+**채택**: A. 사용자 제안과 일치. 단, 시각 위계 분리 룰 보강:
+- 토글: `jt-btn jt-btn-secondary jt-btn-sm` + `aria-pressed`. 활성 시 jt-btn-primary로 전환(실 앱).
+- 팀변경요청: `border + cursor:help + mono caps` 유지 — passive help context로 명시.
+- 사이 gap 10px로 시각 분리. 토글 prefix는 6px rose dot — safety-wash 카드와 시각 신호 일치.
+
+### 변경
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx `RosterView`** | 필터 칩 별행 삭제. 상단 row를 `justify-content: space-between` flex로 재구성 — 좌측(h3 + 메타 + refresh) / 우측(toggle + 팀변경요청). `filterChips` 배열 폐기. `data-action` `filter-all`·`filter-offline` → 단일 `toggle-offline`. `offlineCount` 계산은 유지(토글 라벨 count 배지). |
+| **viewer.html ACTIONS** | viewer는 자체 라우팅 없으므로 매핑 추가 안 함. 정적 mock 비활성 시각만 노출. |
+
+### 잃은 것 vs 얻은 것
+
+| 잃은 것 | 얻은 것 |
+|--------|---------|
+| "전체 32"의 명시적 칩 (active state visualization) | 같은 정보가 h3 옆 메타 "32팀"으로 이미 노출 — 중복 제거 |
+| 클릭으로 명시적 "전체로 돌아가기" | "미접속만 보기"를 다시 누르면 비활성 = 전체. aria-pressed 토글 표준 패턴 |
+| 2-chip의 "필터 그룹" 시각 어휘 | 단일 액션 → 인지 부하 ↓. 색 신호(safety-wash 카드) 1차 식별 후 토글은 보조 위계 |
+| 세로 ~36px | 60팀 행사에서 1행 추가 노출 마진 (artboard 여유 24px → 60px) |
+
+### 반증 시나리오
+
+- (a) **토글 활성 시 "전체로 돌아가기" 발견 가능성**: aria-pressed 표준이지만 초보 사용자에겐 mental model 안 잡힐 수 있음. → 실 앱에서 활성 시 라벨 swap("전체 보기") 옵션 검토.
+- (b) **토글이 팀변경요청 pill과 시각 혼동**: 둘 다 우측 인접. 토글은 jt-btn(36px hit area), pill은 mono caps + border + cursor:help — visual weight 분리되나 좁은 viewport에서 혼동 가능. → 필요 시 사이 vertical divider 추가.
+- (c) **`prefers-reduced-motion` 환경에서 토글 상태 전환 단서**: jt-btn 기본 transition은 reduced에서도 색만 유지 — OK.
+- (d) **rose dot prefix가 helmet/CTA 단서와 혼동**: helmet은 yellow, rose는 safety orange — hue 정반대라 충돌 없음.
+
+### 검증
+
+- [ ] viewer `b2-tutorial-waiting` ⌘+Shift+R — 상단 우측에 토글 노출, 별행 사라짐.
+- [ ] 토글 hover/focus-visible — jt-btn 표준 어휘 적용.
+- [ ] 60팀 그리드 자리 확인 — 별행 제거로 세로 여유 늘어남.
+- [ ] aria-pressed="false" 스크린리더 발화 — "미접속만 보기, 토글 버튼, 누르지 않음".
+- [ ] `b2-hack-waiting` 동일 화면(같은 RosterView 공유).
+
+### 후속
+
+- (a) **실 앱 토글 활성 동작**: `useState` + pagedTeams 필터링 + page 리셋 로직. 정적 mock은 false 고정.
+- (b) **활성 시 라벨 swap**: "미접속만 보기" → "전체 보기"? 또는 라벨 고정 + pressed로만 표현? 사용자 행동 관찰 후 결정.
+- (c) **다른 mode 영향**: tutorial-progress mode의 stepChips는 5-state 동시 필터로 단일 토글로 환원 불가 — 그대로 유지. 본 변경은 roster mode 한정.
+
+---
+
+## 18-10. Switch primitive 디자인시스템 등록 + RosterView 토글 교체 (2026-05-29 후속)
+
+> 사용자 지적: "지금 미접속만 보기가 토글이 아니라 버튼인데?" (스크린샷 첨부) + "없을걸? 추가해"
+
+### 진단
+
+§18-9에서 `jt-btn-secondary` 외관으로 구현 → 시각적으로 "버튼"이지 "토글"이 아님. 디자인시스템에 switch primitive 부재 확인. dialogs.jsx E-1 갤러리 공개 토글에 인라인으로 같은 패턴이 이미 존재(line 157~173: 44×24 track + 18×18 thumb + ink/hairline-strong 색 전환) — 정식 토큰화 안 됨.
+
+### 변경
+
+| 영역 | 변경 |
+|------|------|
+| **tokens.css** | `.jt-switch` 신규 primitive — track 44×24 / thumb 18×18 / `aria-checked` 기반 시각 전환. CSS 변수 `--switch-w/-h/-thumb/-pad`로 사이즈 제어. `.is-sm` 변형(36×20), 색 variant `.is-safety` / `.is-mint`. `prefers-reduced-motion`에 transition off 보강 |
+| **Jitda Design System.html §09f** | "SWITCH · 2-state 토글" 서브섹션 신설 — 3색 variant × 2상태 미러 + sm 사이즈 + RosterView labeled-pill 패턴 + DO/DON'T 4종. ARIA `role="switch"` + `aria-checked` 규칙 명시 |
+| **operator.jsx RosterView** | jt-btn-secondary 버튼 → `<label>` + 인라인 라벨(rose dot + "미접속만 보기" + count) + `<button class="jt-switch is-safety is-sm">`. `role="switch"` + `aria-checked={false}` (mock). 라벨 클릭으로도 토글 가능 |
+
+### ARIA 결정 근거
+
+`aria-pressed` (button) vs `aria-checked` (switch):
+- `aria-pressed`: button이 눌렸는지 여부. "Bold 토글"처럼 명확한 on/off가 아닌 액션 상태.
+- `aria-checked`: switch/checkbox 등 binary 상태. "필터 활성/비활성"의 mental model 정확.
+
+→ `role="switch"` + `aria-checked` 채택. ARIA 1.2 표준 패턴.
+
+### 후속
+
+- (a) **dialogs.jsx E-1 갤러리 공개 토글** — 인라인 `<button>` 패턴을 `.jt-switch.is-mint`로 교체할 후보. 별도 작업으로 분리(스크롤 회피).
+- (b) **참가자 화면(C-1 등)도 토글 필요 케이스 발견 시** — 이제 정식 primitive 가용. 인라인 새로 만들지 말 것.
+- (c) **disabled 상태 시각 검증** — opacity 0.4 + cursor not-allowed. 실 사용처에서 가독성 확인 필요.
+
+---
+
+## 18-11. 토글 작동 + 포스트잇 재정렬 settle 애니메이션 (2026-05-29 후속)
+
+> 사용자 결정: "토글 작동 동작을 디자인 화면에 추가해줘. 포스트잇 재정렬도 약간의 애니메이션을 추가해줘."
+
+### 변경
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx `RosterView`** | `React.useState(showOfflineOnly)` 도입. 토글 클릭 시 state flip. `displayedTeams = showOfflineOnly ? teams.filter(anyOff) : pagedTeams` 분기. 페이지네이션은 필터 OFF + totalTeams > perPage에서만 노출. 라벨 pill: 활성 시 `border: var(--c-safety)` + `background: var(--c-safety-wash)` + count 색 `var(--c-safety-deep)`로 강조 (--dur-fast 전환). |
+| **tokens.css** | `@keyframes jt-postit-settle` 신규 — `opacity 0→1` + `translateY(-6px) → 0` + `scale(0.97 → 1)`, 회전 `var(--postit-rot)`은 0/100% 동일 유지 (정지 상태 자세 보존). `.jt-postit-card { animation: jt-postit-settle 280ms var(--ease-spring) backwards; }`. nth-child stagger 3-phase (25/55/85ms) — 60카드 max ~85ms 안에 정착. `prefers-reduced-motion`에 `animation: none` 보강 |
+| **RosterGrid 부모 wrapper** | `<div key={showOfflineOnly ? 'off' : 'all'}>` — key 변경으로 자식 강제 remount → 모든 `.jt-postit-card`가 jt-postit-settle 재실행 |
+
+### 토글 작동 흐름
+
+```
+[OFF]                              [ON]                              [OFF 복귀]
+●━━ 미접속만 보기 16    클릭 →     ●━━━● 미접속만 보기 16 (safety 강조)    클릭 →    ●━━ 미접속만 보기 16
+(전체 30팀)                        (미접속 포함 14팀만)                   (전체 30팀)
+                                   
+모든 카드 settle              key 변경 → 모든 카드 settle 재실행           key 복귀 → 모든 카드 settle 재실행
+(28-85ms 스태거)              (28-85ms 스태거)                            (28-85ms 스태거)
+```
+
+### 애니메이션 선택 근거
+
+| 후보 | 채택 여부 | 이유 |
+|------|----------|------|
+| **CSS keyframe + key remount** ✅ | 채택 | 라이브러리 없음. ~280ms 짧음. 스태거가 자연스러운 "포스트잇 한 장씩 안착" 느낌 |
+| FLIP (First-Last-Invert-Play) | 미채택 | 부드러운 위치 전환 가능하나 RAF + 위치 측정 로직 필요. 프로토타입 범위 초과 |
+| React Transition Group | 미채택 | exit 애니메이션 가능하나 dependency 추가. babel-standalone 환경 부담 |
+| 단순 fade (opacity only) | 미채택 | 포스트잇 어휘(들림·안착)와 시각 신호 약함. translateY + scale + spring ease가 컨셉 일치 |
+
+### 반증 시나리오
+
+- (a) **60카드 동시 settle GPU 부담**: 60카드 × (opacity + transform) × ~300ms = 컴포지터 레이어 폭증 가능. nth-child stagger로 동시 active 카드 ~15장으로 분산하나 실측 필요(60팀 행사).
+- (b) **회전 보존**: keyframe에서 `transform: rotate(var(--postit-rot))`를 0/100% 명시. 만약 인라인 `transform`이 다른 곳에 있으면 충돌 — 현재 `.jt-postit-card`는 transform을 클래스로만 제어하므로 OK.
+- (c) **`prefers-reduced-motion` 환경에서 토글 후 카드 즉시 swap**: animation off + transition off → 시각 단서 없이 그리드 내용만 바뀜. accessibility 정합이나 UX 손실 — 시각 단서가 줄어 변화 감지 어려울 수 있음. 라벨 pill의 색 전환(border + bg)은 유지되므로 부분 보강.
+- (d) **필터 ON 상태에서 새 카드(미접속 팀) 추가**: 실 앱에서 teams 데이터 갱신 시 React diff로 settle 재실행 안 됨(key 동일). 향후 실 앱 구현 시 새 미접속 팀 진입 시 별도 highlight 어휘 필요할 수 있음.
+- (e) **활성 pill bg가 settle 카드 색과 시각 충돌**: 둘 다 safety-wash hue. 카드는 60장 분산, pill은 1개 + 우측 상단 → 시각 위계 다르므로 충돌 낮음. 다만 pill 면적이 작아 wash 톤이 묻힐 수 있음 — 다행히 safety border 1px + safety-deep 글자색 보조.
+
+### 검증
+
+- [ ] viewer `b2-tutorial-waiting` ⌘+Shift+R — 초기 렌더 시 모든 카드가 settle 애니로 등장.
+- [ ] 토글 클릭 → 14장만 노출 + settle 재실행 (스태거 가시).
+- [ ] 토글 재클릭 → 30장 복귀 + settle 재실행.
+- [ ] pill 외관 전환 (border·bg·count 색).
+- [ ] 토글 ON 상태에서 페이지네이션 숨김.
+- [ ] `b2-hack-waiting` 동일 작동(공유 RosterView).
+- [ ] `prefers-reduced-motion: reduce` — 애니 비활성, 카드 즉시 swap, pill 색 전환만 유지.
+
+### 후속
+
+- (a) **카드 exit 애니메이션 부재**: 필터 OFF→ON 전환 시 사라지는 카드는 즉시 unmount(no exit anim). UX 손실 — 향후 React Transition Group 또는 view-transitions API 검토.
+- (b) **stagger를 nth-child로 처리** → 가상화·동적 추가에서 깨질 수 있음. 60카드 정적 그리드라 OK이나 향후 검토.
+- (c) **`displayedTeams` 갯수 < perPage 가정**: 미접속 ≈ 14팀이므로 1페이지. 80팀 행사·40+ 미접속 케이스에서 페이지네이션 ON 시점 정책 필요.
+
+---
+
+## 18-12. 모달 peel 애니 폐기 + 백드롭 settle 차단 (2026-05-29 후속)
+
+> 사용자 결정: "각 포스트잇 눌렀을때 모달 돌아가는 애니메이션이 별로다. 애니메이션없애고 경량화해라. 또 모달이 열릴때 뒷 배경의 포스트잇들에 애니메이션이 들어가는데 그렇지 않도록 해라" + "디자인에서만 그럴지도"
+
+### 진단
+
+§18-4에서 도입한 peel 어휘(rotateY -72→0 + perspective 800 + scale)는 viewer가 화면 전환(b2-tutorial-waiting → b2-roster-detail) 시 카드↔모달 연결 없이 모달만 회전 → 시각 단절. 또한 b2-roster-detail의 백드롭 DashboardShell이 fresh mount → 모든 `.jt-postit-card`가 jt-postit-settle 재실행 → 모달 등장 순간 배경이 들썩이는 노이즈.
+
+실 앱은 다를 가능성("디자인에서만 그럴지도") — 카드↔모달 in-place 전환·useState 기반 모달 등 viewer 외 컨텍스트에서는 다른 해법이 자연. 본 작업은 viewer 한정 정리.
+
+### 변경
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx `RosterTeamDetailModal`** | `entrance="peel"` → `entrance="fade"` — opacity-only 240ms decelerate, 가장 경량 표준 entrance |
+| **operator.jsx `B2RosterDetail`** | 블러 backdrop wrapper에 `className="jt-roster-backdrop"` 부여 — settle 비활성화 트리거 |
+| **tokens.css** | `@keyframes jt-modal-peel-in` 제거. `.jt-modal-surface.is-peel` 클래스 제거 (dead code). `.jt-roster-backdrop .jt-postit-card { animation: none !important; }` 신규 |
+| **shared.jsx `ModalSurface`** | `entranceMod` 매핑에서 `peel: 'is-peel'` 제거 |
+| **Design System §09e ENTRANCE 표** | `.jt-modal-surface.is-peel` 행 제거 |
+
+### 후속 정리
+
+- (a) **§18-4 (peel entrance 등록)와 §18-12 (peel 폐기) 모순**: 어휘 등록 → 사용처 검증 → 폐기 사이클 1주 미만 — 디자인시스템 어휘 추가 시 "사용처 1개만으로 등록 보류" 룰 검토 가치.
+- (b) **`prefers-reduced-motion` 정합**: fade도 reduced 환경에서 기존 `.jt-modal-surface` 일괄 처리로 자동 비활성. settle 차단 룰도 `!important` 사용 — reduced 환경의 `animation: none`과 충돌 없음(둘 다 none).
+- (c) **실 앱 카드↔모달 in-place transition**: viewer 한계로 미해결. view-transitions API 또는 모달을 같은 화면 안 useState 토글로 전환 등 별도 검토.
+
+### 검증
+
+- [ ] viewer `b2-tutorial-waiting` → 카드 클릭 → `b2-roster-detail` 진입 시 모달이 회전 없이 opacity만 페이드.
+- [ ] 같은 진입 시 배경 30카드가 settle 재실행하지 않고 즉시 노출(블러 + opacity 0.55 그대로).
+- [ ] `b2-tutorial-waiting` 본 화면(백드롭 아님)에서는 settle 정상 작동.
+- [ ] 토글 클릭으로 인한 재정렬 settle은 그대로 유지(§18-11 기능 회귀 없음).
+- [ ] 콘솔 0 에러.
+
+---
+
+## 18-13. B-1 HackathonCard 포스트잇 어휘 + 5상태 색 여정 (2026-05-29)
+
+> 사용자 결정: "이 화면도 비슷하게 포스트잇 모양으로 바꿔주라. 포스트잇 색상은 해커톤 상태에 따라서."
+
+### 변경 요약
+
+| 영역 | 변경 |
+|------|------|
+| **tokens.css** | 3종 wash 토큰 신규 등록: `--c-stone-wash`(#f1efea) · `--c-tutorial-wash`(#eeedf7) · `--c-helmet-wash`(#fbf6df). 기존 `--c-mint-wash`·`--c-safety-wash` 재사용 → 5상태 색 여정 완성 |
+| **operator.jsx** | `STATUS_POSTIT_TINT` 신규 const — 5상태 → wash 토큰 매핑. `HackathonCard`: `.jt-card-interactive` → `.jt-postit-card`. 인라인 border 제거(shadow가 경계), `borderRadius: r-md → r-xs`, `--postit-rot`/`--postit-tint` CSS 변수 부여. `B1HackathonList` 그리드 gap 14→22 + paddingTop 6 (회전 옆 돌출 + tape clearance) |
+| **Design System §02 WASH TIER** | 6-swatch 추가 그리드 신설 (stone-soft/wash, tutorial-soft/wash, helmet-soft/wash). 본문에 "B-1 HackathonCard 5상태 색 여정" 사용처 명시 |
+| **Design System inline `:root`** | `--c-tutorial`·`--c-tutorial-soft`·`--c-tutorial-wash`·`--c-stone-wash`·`--c-helmet-wash` 5종 추가 — 단일 소스 정합 |
+
+### 5상태 색 여정
+
+| 단계 | 상태 | Wash 톤 | 의미 |
+|------|------|---------|------|
+| 01 | tutorial_waiting  | `--c-stone-wash` (#f1efea)    | **cold** — 시작 전 중립 |
+| 02 | tutorial_running  | `--c-tutorial-wash` (#eeedf7) | **engaged** — 학습 모드(purple) |
+| 03 | hackathon_waiting | `--c-helmet-wash` (#fbf6df)   | **anticipation** — 본행사 임박(yellow energy) |
+| 04 | hackathon_running | `--c-mint-wash` (#eaf3ec)     | **live** — 진행 중(success green) |
+| 05 | hackathon_ended   | `--c-safety-wash` (#faebe1)   | **sunset** — 종료(rose, opacity 0.78 추가 페이드) |
+
+### PHASE_STAGES chip vs STATUS_POSTIT_TINT — 왜 다른 매핑
+
+| 어휘 | tut_waiting | tut_running | hack_waiting | hack_running | hack_ended |
+|------|------------|-------------|-------------|--------------|-----------|
+| chip(PhaseFilterStepper) | stone | purple | **stone** (같은 hue) | mint | rose |
+| post-it(HackathonCard) | stone | purple | **helmet** (차별화) | mint | rose |
+
+칩은 가로 stepper에서 chevron(→)으로 phase 순서가 보강되므로 두 waiting이 같은 hue여도 OK. 카드는 그리드에 무작위 분포 — "한눈에 5상태 식별"이 task라 시각 차별화 필수. hackathon_waiting을 helmet으로 옮기면 "anticipation" 어휘가 자연(곧 시작될 행사).
+
+### paused 처리
+
+`엔지니어 부트캠프 8기` (status=hackathon_running, paused=true) — tint는 mint-wash 유지, paused signal은 StatusPill 옆 amber pill로 노출(기존 어휘 유지). 카드 tint 자체를 amber로 override하면 "진행 중인 행사" 정체성 흐려져 reject.
+
+### 반증 시나리오
+
+- (a) **5색 wash가 모두 paper hue로 비슷해 보일 가능성**: 30카드 그리드 RosterRow는 2색만이라 단순. HackathonCard는 5색이 동시 노출되며 옆 카드 색이 명확히 구분되어야 task 효율. 채도 ~12% 수준이므로 hue 차이는 보이나, 색맹 검증 필요.
+- (b) **stone과 paper 톤 충돌**: `--c-paper`(#faf9f6, B-1 배경 grid)와 `--c-stone-wash`(#f1efea, tut_waiting 카드) 차이 ~3% 명도. 카드 윤곽이 약해질 수 있음 → post-it shadow가 보강(shadow-rest 6px+14px dual).
+- (c) **opacity 0.78 + safety-wash 이중 페이드 (hack_ended)**: 두 시각 단서가 "종료"를 강조하나 너무 묻힐 수 있음. 실측 시 opacity 제거 또는 wash → soft로 다시 올릴지 검토.
+- (d) **paused 시 tint override 안 함의 한계**: 시각 첫 인상에서 paused 카드가 mint-wash로 "진행 중"으로만 보임. amber pill 인지에 ~0.5초 추가 소요 가능. 운영자 task 측정 필요.
+
+### 검증
+
+- [ ] viewer `b1` ⌘+Shift+R — 6개 카드 모두 회전 + 5색 wash + tape + status별 tint.
+- [ ] 카드 hover — 0° 정렬 + lift, transition smooth.
+- [ ] hack_ended 카드(2025 겨울 해커톤 결선) — safety-wash + opacity 0.78.
+- [ ] paused 카드(엔지니어 부트캠프 8기) — mint-wash + amber paused pill.
+- [ ] PhaseFilterStepper 상단의 chip은 무영향(기존 PHASE_STAGES 그대로).
+- [ ] 콘솔 0 에러.
+
+### 후속
+
+- (a) **paused 시각 강도 보강 가치**: tint override가 너무 강하다면, dashed border 또는 좌측 amber accent bar(3px)로 시각 보조 가능. 7/13 전북 실측 후.
+- (b) **다른 곳에 STATUS_POSTIT_TINT 재사용**: B-2 sticky 헤더의 현재 상태 표시 또는 다른 phase-aware UI에 같은 매핑 적용 가능. 일단 HackathonCard 한정.
+- (c) **5색이 충분히 distinct한가**: 색맹 검증(deuteranopia 모드)에서 mint-wash와 stone-wash 구분 가능한지. 후속 검증.
+
+---
+
+## 18-14. B-1 PhaseFilterStepper 필터 작동 (2026-05-29)
+
+> 사용자 결정: "단계 칩 누르면 필터링되는거 디자인에 추가해줘"
+
+### 변경
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx `B1HackathonList`** | `React.useState('all')` 도입. `filtered = activeFilter === 'all' ? hackathons : hackathons.filter(...)`. `<PhaseFilterStepper active={activeFilter} onFilter={setActiveFilter}>`. 그리드를 `<div key={activeFilter}>`로 감싸 필터 변경 시 카드 settle 재실행. 빈 상태 메시지 추가 |
+| **operator.jsx `PhaseFilterStepper`** | `onFilter` prop 추가. 각 칩(전체 + 5단계)에 `onClick` + `aria-pressed`. onFilter 미전달 시 무동작(정적 mock 호환) |
+| **하드코딩 카운트 제거** | `"...해커톤 6건"` → `"...해커톤 {hackathons.length}건"` 동적 산출 |
+
+### 작동 흐름
+
+```
+초기: activeFilter='all', filtered=6 → 6 카드 노출 + settle
+↓ "02 튜토리얼 진행 1" 클릭
+activeFilter='tutorial_running', filtered=1 → 1 카드 + grid key 변경 → settle 재실행
+↓ "05 해커톤 종료 1" 클릭  
+activeFilter='hackathon_ended', filtered=1 → safety-wash 카드 + settle
+↓ "전체" 클릭
+filtered=6 → settle 재실행
+```
+
+### 빈 상태 (count 0 단계 선택 시)
+
+dashed border + paper bg + 13.5px 본문 + 11px mono 보조 가이드("다른 단계를 선택하거나 [전체]로 돌아가세요"). count 0 단계는 칩 자체가 opacity 0.45로 dim 표시되어 클릭 전 인지 가능.
+
+### 반증 시나리오
+
+- (a) **filter persistence 미적용**: viewer 새로고침 시 'all' 초기화 — 실 앱은 URL query 또는 localStorage 검토. 정적 mock 한계.
+- (b) **`paused` 필터 부재**: shared.jsx에서 paused 상태 자체가 폐기(2026-05-29)되어 시점적으로 무관.
+- (c) **count 0 단계 클릭 가능**: opacity dim + 클릭 시 빈 상태. 디스커버리 명확하나 1회 헛걸음 가능 — `disabled` 처리 검토 가능하나, "이 단계가 0개임을 확인" task가 가능하므로 현 유지.
+- (d) **`<div key={activeFilter}>` settle 재실행**: 같은 카드가 필터 OFF→ON 시 재마운트 — UX적으로 자연스러운 "재정렬" 어휘. RosterView §18-11과 동일 패턴.
+
+### 검증
+
+- [ ] viewer `b1` ⌘+Shift+R — 초기 'all'로 6 카드 노출.
+- [ ] "02 튜토리얼 진행" 칩 클릭 → 1 카드 + settle + 칩 ring 활성.
+- [ ] "05 해커톤 종료" 칩 클릭 → safety-wash 1 카드 + settle.
+- [ ] "전체" 클릭 → 6 카드 복귀.
+- [ ] aria-pressed 스크린리더 발화.
+- [ ] 콘솔 0 에러.
+
+### 후속
+
+- (a) **B-2 mode 필터(roster/activity/tutorial-progress/summary)도 동일 패턴 적용 가치**: 운영자가 화면 안에서 동적 전환할 수 있도록 필터 칩 추가 검토.
+- (b) **URL state sync**: viewer는 hash routing 한계. 실 앱(Next.js)에서 `?filter=tutorial_running` query 권장.
+- (c) **단계 칩 count 라이브**: PHASE_STAGES.map이 매 렌더 산출하므로 hackathons 갱신 시 자동 재계산.
+
+---
+
+## 18-15. 팀 포스트잇 색 정책 — status-driven → identity-driven (2026-05-29)
+
+> 사용자 결정: "팀 포스트잇의 색깔에 관해 깊게 고민하고 제안해라." 3가지 제약 — (1) 미접속/접속 색 구분은 대기실 외 불필요 (2) 색이 너무 다양/단조 모두 안됨 (3) 같은 팀 화면마다 색 바뀌면 혼란. AI 분석: 4-후보 평가 후 **전략 C(팀 정체성 기반 3톤 paper)** 제안 → 사용자 동의 + "백엔드 저장 여부" 확인 → **클라이언트 hash로 진행**.
+
+### 진단: 색이 두 기능을 동시에 수행하던 문제
+
+이전 정책(§18-8): 색 = 상태 신호 (mint-wash 모두 접속 / safety-wash 미접속 포함). 같은 팀 X가 대기실→튜토리얼→본행사로 이동하면 색이 매번 변경 → 사용자 우려 #3 정확히 발생. 색이 entity(팀)와 state(상태) 둘 다 인코딩하려다 충돌.
+
+### 새 정책: 색 = 팀 정체성, 상태 = 색 외 신호
+
+| 차원 | 어휘 |
+|------|------|
+| **색** | 팀명 hash 3-variant — paper-warm/cool/mint. 같은 팀은 화면 무관 같은 색 |
+| **회전** | 팀명 hash 4-variant — 같은 팀은 같은 자세 (기존 유지) |
+| **미접속 신호** | 좌측 3px safety accent bar. **roster mode 한정** |
+| **튜토리얼 step 신호** | 컬럼 위치(Kanban) + step 뱃지. 색 무영향 |
+
+### 변경
+
+| 영역 | 변경 |
+|------|------|
+| **tokens.css** | `--c-paper-warm`(#f7f4ec) · `--c-paper-cool`(#f1f3f6) · `--c-paper-mint`(#eef3ed) 신규. 구 `--postit-tint-on/-off` 폐기 |
+| **operator.jsx** | `TEAM_IDENTITY_TINTS` 배열 + `teamIdentityTint(name)` 헬퍼 신규. `RosterRow`: tint = `teamIdentityTint(t.name)`. `showOfflineAccent` prop 추가 — true 시 좌측 3px safety bar + count 색 mint/muted 분기. `RosterGrid` 전달, `TutorialKanbanColumn` 미전달. padding-left 10→12 |
+| **Design System §02** | "PAPER IDENTITY TIER" 서브섹션 신설(3-swatch + 정책). "ENTITY × COLOR POLICY" 표 신설 — Hackathon(status) / Team(identity) / Member(identity) 매핑 |
+| **Design System §09f POST-IT CARD** | 4-card 미러 갱신(paper 3톤 + accent bar), 정책·props·DO/DON'T(7종) 갱신 |
+
+### 백엔드 저장 여부 — 클라이언트 hash 결정
+
+`rosterAvatarColor`(성씨 hash)와 동일 방식 연장. 백엔드 무수정.
+
+**근거**: 짧은 행사(반나절~3일) → 팀명 변경 거의 없음 / 이미 동일 패턴 정착 / 스키마 변경 비용 큼 / 운영자 override 필요성 낮음.
+
+**예외 트리거**: 7/13 전북 행사에서 "특정 팀 색 지정" task 실측되면 `team.color` 필드 추가.
+
+**해시 알고리즘 동결**:
+```js
+let h = name.length * 7;
+for (let i = 0; i < name.length; i++) h = (h + name.charCodeAt(i) * (i + 1)) | 0;
+return TEAM_IDENTITY_TINTS[((h % 3) + 3) % 3];
+```
+charCode 합 + 길이 가중 + 위치 가중. **변경 시 모든 팀 색 shift — spec-updates 기록 의무**.
+
+### 사용자 우려 #1~#3 해소
+
+| 우려 | 해소 |
+|---|---|
+| #1 "대기실 외 접속 색 불필요" | ✅ accent bar는 roster mode 한정 (`showOfflineAccent` prop). 다른 모드는 색 정체성만 |
+| #2 "지나친 다양/지나친 단조" | ✅ 3톤 — 60카드 그리드 평균 20장씩 분포. 회전 4-variant가 추가 시각 변화 |
+| #3 "같은 팀 색 변경 혼란" | ✅ deterministic hash로 화면 무관 동일 색 |
+
+### 반증 시나리오
+
+- (a) **3톤 paper hue 색맹 환경 구분 어려움** 가능성 — deuteranopia에서 mint↔cool 헷갈릴 수 있음. 한국인 색맹 빈도 ~5% → 실측 검증 필요.
+- (b) **accent bar 인지 강도 약함**: 이전 mint↔safety 전체 fill 대비 신호 작음. 60팀 중 14팀 미접속 케이스에서 식별 task 시간 ↑ 가능. count 색(muted) + member dots(rose) 보조. 실측 후 폭 3→4px 보강 검토.
+- (c) **"랜덤" 비판 재발 가능성**: §18-8에서 받았던 피드백. 본 결정은 동일 해시지만 **identity 의미를 명시** — §02 ENTITY × COLOR POLICY 표로 박제. "팀 식별 표지(rosterAvatarColor와 같은 어휘)" 설명 가능.
+- (d) **HackathonCard 5상태 색과 어휘 충돌**: HackathonCard는 hackathon entity·status-driven. Team은 identity-driven. 다른 entity에 다른 어휘 → §02 표로 명문화.
+- (e) **한글 charCode 분포 편향**: 0xAC00~0xD7A3 범위가 좁음. 길이·위치 가중으로 보완했으나 실측 필요. 30팀 mock으로 1차 검증.
+
+### 검증
+
+- [ ] viewer `b2-tutorial-waiting` ⌘+Shift+R — 30카드 3톤 paper 분포 + 회전 4-variant.
+- [ ] 미접속 포함 팀(~14팀)에 좌측 3px safety accent bar 노출. tint 무변동.
+- [ ] `b2-hack-waiting` 동일 RosterView — 같은 팀 같은 색.
+- [ ] `b2-tutorial-running` Kanban — accent bar 미노출, 같은 팀 같은 색 유지.
+- [ ] 같은 팀 X(예: "터미널 사파리") 화면 전환 시 색·자세 유지.
+- [ ] `prefers-reduced-motion: reduce` — settle off, tint·accent bar 정적.
+- [ ] 콘솔 0 에러.
+
+### 후속
+
+- (a) **백엔드 저장 트리거**: "특정 팀 색 지정" task 실측 시 `team.color` enum 필드 추가.
+- (b) **accent bar 보강 옵션**: 폭 3→4px / 상하 끝까지 / tape 색 safety override 단계적 검토.
+- (c) **색맹 검증**: deuteranopia/protanopia 모드 캡처 + 3톤 구분 확인.
+- (d) **ActivityRow identity tint 확장**: 라이브 미리보기 썸네일 카드에 tint 미세 적용 검토 — 별도 결정.
+
+---
+
+## 18-16. 미접속 신호 — accent bar → chip 3-state (2026-05-29 후속)
+
+> 사용자 지적: "좌측 바로 접속상태를 표기하는것이 비직관적이다. 좀더 좋은방법 없을까?" + "그리고 한 명도 안 접속한 팀과 일부가 미접속한 팀 간의 구분도 필요할듯?"
+
+### 진단: accent bar의 비직관성
+
+§18-15에서 좌측 3px safety accent bar 도입했으나:
+
+| 문제 | 설명 |
+|------|------|
+| 의미 anchor 없음 | 좌측 막대 = 선택 표시·우선순위·미접속 등 다 가능. 컨벤션 부재 |
+| 위치 임의성 | 왜 좌측? 왜 막대? 미접속 개념과 시각 연결 약함 |
+| 추상도 높음 | 텍스트·픽토그램 없이 색만 — 학습 부담 |
+| 기존 신호와 중복 | 멤버 도트·카운트가 이미 데이터 노출 → bar는 amplifier만 |
+
+### 새 정책: chip 3-state in 카운트 위치
+
+3개 상태(전원 접속/일부 미접속/전원 미접속)를 카운트 영역의 chip으로 표현 — 텍스트가 직접 신호.
+
+| 상태 | 조건 | chip 시각 | 의미 강도 |
+|------|------|----------|----------|
+| 전원 접속 | onCount === total | chip 없음, 평이한 mono 카운트 "N/M" muted | OK (조용) |
+| 일부 미접속 | 0 &lt; onCount &lt; total | safety-soft bg + safety-deep 글자 + 4px safety dot + "미접속 N" | Attention |
+| 전원 미접속 | onCount === 0 | safety solid bg + 흰 글자 + 4px 흰 dot + "전원 미접속" | Critical |
+
+### 4-후보 평가 (제안 단계)
+
+| 후보 | 채택 여부 | 사유 |
+|------|----------|------|
+| **A. 카운트 chip 강화** ✅ | 채택 | 텍스트 = 가장 직관 / 카운트 위치 그대로(시선 이동 0) / chip 어휘 이미 정착 / 신호 강도 조정 가능 |
+| B. 우상단 코너 뱃지 | 미채택 | 도트 하나는 데이터 없음, 학습 필요. 카운트와 분리 |
+| C. 기존 신호만 유지 (bar 제거) | 미채택 | 60카드 스캔 효율 약함 |
+| D. 멤버 도트 강화 | 미채택 | 도트 크기 불일치 시각 노이즈 |
+
+### 변경
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx `RosterRow`** | 좌측 accent bar `<span>` 제거 + `padding-left 12 → 10` 복귀. count 영역에 `showChip ? chip : 카운트` 분기. chip은 `allOff ? solid : soft` variant 분기. aria-label에 "전원 미접속" / "N명 미접속" / 정상 3-case 적용 |
+| **operator.jsx PENDING_TEAMS** | "JS의 비밀" 멤버 (백하늘·문가람) `on` → `off` — 다인팀 "전원 미접속" 시각 검증 mock |
+| **Design System §09f POST-IT CARD** | 4-card 미러 갱신: 전원 접속(chip 없음) / 일부 미접속(soft chip) / 전원 미접속(solid chip) / 전원 접속 변형. 캡션 갱신, props 표 "offline chip 3-state" 행, DO 룰 갱신 |
+
+### 사용자 우려 해소
+
+| 우려 | 해소 |
+|------|------|
+| "좌측 bar 비직관" | ✅ accent bar 제거. chip 텍스트 = 직접 신호. 위치는 카운트 영역(자연 시선) |
+| "일부 vs 전원 미접속 구분 필요" | ✅ 3-state — soft chip(주의) vs solid chip(긴급) 시각 위계 명확 |
+
+### 반증 시나리오
+
+- (a) **chip이 카드 폭 차지 — 긴 팀명 압박**: 190px 카드에서 "전원 미접속" chip ~70px + 도트 4px + 패딩 12px = ~86px. 잔여 ~104px가 title. 한글 4~6자 팀명은 OK이나, 10자+ 팀명은 truncate. 호버 툴팁(`title` 속성)으로 보완.
+- (b) **mono 9.5px이 가독성 한계**: chip 텍스트가 작음. 사이즈 10.5px 검토 가능하나 카드 폭 압박 ↑. 7/13 실측 후 결정.
+- (c) **solid safety + 흰 글자 강한 시각**: critical 상태(전원 미접속)에 적합하나, 그리드에 5+ 카드 동시 solid면 시각 과부하. 60팀 행사 실측에서 분포 확인 필요.
+- (d) **"전원 미접속" 정의 모호**: 데이터 모델은 `on`/`off`/`pending` 3상태. 본 chip은 `onCount === 0` 기준이라 모든 멤버가 off+pending 혼합이어도 "전원 미접속"으로 카운트 — 의도된 단순화(§17 UI 2상태 통합 정책 연장).
+- (e) **roster mode 외에서도 chip 보고 싶다는 task 가능**: 현재 정책상 tutorial-progress·activity에서는 chip 미노출. 운영자가 "이 팀 미접속이었지" 컨텍스트 손실 가능. 실측 후 mode 확장 검토.
+
+### 검증
+
+- [ ] viewer `b2-tutorial-waiting` ⌘+Shift+R — 60카드 중 전원 접속 ~16팀(chip 없음), 일부 미접속 ~13팀(soft chip), 전원 미접속 ~4팀(solid chip — 다인팀 "JS의 비밀" + 1인팀 류재석·천도현·황태리).
+- [ ] 좌측 accent bar 더 이상 노출 안 됨.
+- [ ] `b2-hack-waiting` 동일 RosterView — 같은 분포.
+- [ ] `b2-tutorial-running` Kanban — chip 미노출(showOfflineAccent prop 미전달), 평이 카운트만.
+- [ ] 같은 팀 X 화면 전환 시 tint·자세 유지(§18-15 회귀 없음).
+- [ ] aria-label 스크린리더 발화 3-case 확인.
+- [ ] 콘솔 0 에러.
+
+### 후속
+
+- (a) **장팀명 truncate UX 검증**: 호버 툴팁 충분한지 7/13 실측.
+- (b) **chip 사이즈 동적 조정 검토**: 카드 폭 < 180px 시 "미접속 N" → "·N" 축약? 별도 결정.
+- (c) **mode 확장**: tutorial-progress에서도 chip 노출 검토 — 단 §18-15 "색 외 신호는 mode별 분리" 정책과 충돌. 실측 결과 따라 결정.
+
+---
+
+## 18-17. 신규 화면 — 단일 tint A/B 변형 (B2DashboardTutorial{Waiting,Running}Mono) (2026-05-29)
+
+> 사용자 결정: "한번 튜토리얼 대기랑 진행 화면 샘플로 포스트잇 색깔 전부 동일한 버전 하나 만들어볼래?" + "파랑으로통일" + "기존거 두고 페이지 추가"
+
+### 의도
+
+§18-16 chip 3-state 도입 후 "시선 강탈" 우려 → 3톤 identity tint(§18-15)가 chip과 결합되어 시각 부하 가능. 단일 tint로 통일하면 그리드 차분해지면서 chip이 더 명확해질지 검증용 A/B 페이지.
+
+**기존 화면 보존 — 신규 2 페이지 추가** (사용자 명시).
+
+### 변경 (Pattern C — 신규 화면)
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx** | `MonoTintContext` React context 신규. `RosterRow`가 context 소비 — set 시 `teamIdentityTint(t.name)` 대신 context value 사용. 신규 함수 `B2DashboardTutorialWaitingMono` + `B2DashboardTutorialRunningMono` — 각각 Provider로 감싸 `value="var(--c-paper-cool)"` 주입. window export 추가 |
+| **viewer.html SCREENS** | `b2-tutorial-waiting-mono` + `b2-tutorial-running-mono` 항목 추가 (h=920) |
+| **Jitda Renewal.html** | 대응 `<DCArtboard>` 2 추가 |
+
+### 색 선택: `--c-paper-cool` (#f1f3f6)
+
+**근거**:
+- Paper identity tier에 이미 등록 — 기존 3톤(warm/cool/mint)과 동일 명도·채도 tier
+- "파랑으로통일" 요청에 부합 (옅은 회청 paper)
+- 공정한 A/B 비교 — tier가 같아야 시각 부하 차이가 tint 다양성에서 오는 것이 명확
+
+### 비교 포인트 (사용자 viewer에서 직접 검증)
+
+| 측면 | 기존 (3톤 identity) | 변형 (단일 mono) |
+|------|--------------------|------------------|
+| chip 시선 강탈 | 3톤 분포로 그리드 활발 → chip이 묻힐 우려 | 단일 톤 정적 그리드 → chip이 더 두드러짐 |
+| 팀 정체성 | 화면 무관 같은 색 (§18-15 강점) | 정체성 신호 소실 — 같은 팀이 다른 화면에서도 청색 |
+| 포스트잇 어휘 | "벽에 붙은 다양한 메모지" | "정렬된 게시판 같은 색 메모지" |
+| 시각 피로 | 분포라 자극 ↑ | 정적이라 차분 |
+
+### 반증 시나리오
+
+- (a) **정체성 신호 소실 — §18-15 우려 #3 재발**: 같은 팀 X가 화면 무관 같은 색이라는 §18-15 자산을 mono 변형에서 포기. A/B 후 mono 채택 시 §18-15 부분 철회 필요.
+- (b) **solid chip이 단일 청색 위에서 더 강함**: soft chip은 OK, solid chip은 청색 배경 대비 강력 — 시선 강탈 약화 의도와 충돌 가능. 실측 후 chip 채도 조정 검토.
+- (c) **파랑 단일이 "기다림"·"차분함" 어휘로 적절한가**: paper-cool은 "대기 단계" 컨벤션 hue. 진행(running)에도 같은 색은 어휘 모순 가능. mono 채택 시 status별 단일 색 매핑 별도 검토.
+
+### viewer 진입
+
+B-2 영역 드롭다운에서 `b2-tutorial-waiting-mono` / `b2-tutorial-running-mono` 선택. 기존 화면과 좌·우 비교 권장.
+
+### 후속 결정 트리거
+
+A/B 비교 후 사용자 판단:
+- **유지(현행 3톤)** → mono 페이지 정리 또는 보존
+- **mono 채택** → §18-15 부분 철회 + status별 단일 색 매핑 정책 신설
+- **혼합** → 별도 결정
+
+### 검증
+
+- [ ] viewer 드롭다운에 mono 2 페이지 노출.
+- [ ] `b2-tutorial-waiting-mono`: 모든 RosterRow가 `--c-paper-cool` 단일 tint. 회전·tape·chip(3-state) 동일 동작.
+- [ ] `b2-tutorial-running-mono`: 칸반 컬럼 안 RosterRow도 단일 tint. chip 미노출.
+- [ ] 같은 팀 X가 mono vs 기존 화면에서 색이 다름 → 정체성 손실 시각 확인.
+- [ ] 콘솔 0 에러.
+
+---
+
+## 18-18. 미접속 chip 폐기 → 카운트 색·weight 3-state (마일드) (2026-05-29)
+
+> 사용자 지적: "미접속 칩이 너무 시선강탈인데. 3/4 이런 인원 수 색깔로 구분되게 좀더 마일드하게 바꿔봐. 단일색상이랑 기존버전 둘다 모두"
+
+### 진단
+
+§18-16에서 도입한 chip 3-state(soft chip / solid chip)이:
+- soft chip: 카드 정체성 tint(paper) 위에 safety-soft bg + 도트 + 텍스트 — 시각 무게 큼
+- solid chip: safety solid bg + 흰 글자 → 30+ 카드 그리드에서 attention magnet이 과함
+- 도트+텍스트 결합이 카드 내 작은 면적에서 강한 신호 → "시선 강탈"
+
+§18-15·§18-16에서 추구한 "데이터 신호"는 OK이나 시각 강도가 과함. 더 마일드한 어휘 필요.
+
+### 새 정책: 카운트 N/M 자체의 색·weight로 3-state
+
+| 상태 | 조건 | 카운트 시각 | 강도 |
+|------|------|------------|------|
+| 전원 접속 | onCount === total | `var(--c-muted)` weight 500 | 조용 (현행) |
+| 일부 미접속 | 0 &lt; onCount &lt; total | `var(--c-safety)` weight 600 | 마일드 |
+| 전원 미접속 | onCount === 0 | `var(--c-safety-deep)` weight 700 | 명확 |
+
+font-size 10px mono 유지 — 사이즈 변경 없음, 색·weight만 변화.
+
+### 변경
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx `RosterRow`** | chip JSX 분기 전체 제거. 단일 `<span class="jt-mono">` count로 통일. 색·weight 3-state 분기. dead 변수 `showChip` 제거 |
+| **Design System §09f** | 4-card 미러 갱신 — chip → 카운트 색·weight. props 표 "offline 카운트" 행 갱신. DO 룰 갱신 |
+
+### 사용자 우려 해소
+
+| 우려 | 해소 |
+|------|------|
+| "chip 시선 강탈" | ✅ chip 완전 폐기. 기존 카운트 위치·크기 그대로, 색·weight만 변화 → 시각 부하 ↓ |
+| "정보 손실" | ✅ "3/4"는 "1명 미접속"을 직관 표현 — 카운트 자체가 데이터 |
+| "단일색상이랑 기존버전 둘다" | ✅ RosterRow 단일 수정 → identity tint·mono tint 변형 모두 자동 적용 |
+
+### 양 변형 자동 적용
+
+본 변경은 RosterRow 본체만 수정 — paper identity(3톤)와 mono tint 변형 모두 같은 카운트 어휘로 자동 정합. §18-17 A/B 비교가 tint 다양성에만 집중되도록 chip 노이즈 제거.
+
+### 반증 시나리오
+
+- (a) **카운트 색 변화가 너무 미묘**: muted → safety → safety-deep 차이가 작은 카드(190px)·작은 텍스트(10px)에서 식별 어려울 수 있음. weight 차이(500/600/700)가 보강하나 fontFamily mono의 weight 시각 차이는 sans보다 약함. 7/13 실측 후 fontSize 11px 검토 가능.
+- (b) **safety hue 단독 신호 — 색맹 환경**: deuteranopia에서 safety(주황)↔muted(회색) 구분 어려움. weight 차이가 보조. 단, 색맹 검증 필요.
+- (c) **운영자가 카운트 색에 주목 안 함**: 기존 운영자가 chip 어휘에 익숙하지 않음 → 카운트는 "그냥 숫자"로 인식할 위험. 다만 paper tint는 화면 단일이라 카운트 색이 유일 신호로 부각됨.
+- (d) **mono variant에서 신호 약함**: paper-cool 위에서 safety 카운트 색 대비 충분(블루↔오렌지 hue 분리). OK.
+
+### 검증
+
+- [ ] viewer `b2-tutorial-waiting` ⌘+Shift+R — 30카드 카운트 색 3-state 분포 확인:
+  - 전원 접속(~16팀): muted
+  - 일부 미접속(~13팀): safety orange
+  - 전원 미접속(~4팀: JS의 비밀 + 1인팀 류재석·천도현·황태리): safety-deep bolder
+- [ ] chip 자체 노출 안 됨.
+- [ ] `b2-tutorial-waiting-mono` 동일 시각.
+- [ ] `b2-hack-waiting` (roster 공유) 동일.
+- [ ] `b2-tutorial-running` Kanban — 모든 카운트 muted(showOfflineAccent 미전달).
+- [ ] 콘솔 0 에러.
+
+### 후속
+
+- (a) **§18-16 chip 정책 정식 폐기**: 이전 spec 본문에 "chip 3-state"로 박제되어 있으나 §18-18로 대체. 본 결정이 우선 — §18-16은 history만 보존.
+- (b) **fontSize·weight 보강**: 카운트 식별 약하면 fontSize 10 → 11px / weight 500/600/700 → 500/700/800 검토.
+- (c) **색맹 검증 후 추가 신호 검토**: text-decoration underline 또는 아이콘 prefix(!) 등 보조 신호 추가 가능.
+
+---
+
+## 18-19. RosterTeamDetailModal 큰 포스트잇 리디자인 (2026-05-29)
+
+> 사용자 결정: "카드 눌렀을때 나오는 모달이 포스트잇 화면과 잘 안어울려. 어울리게 개선안 제시해봐. 디자인시스템 꼭 안지켜도됨" → 안 A "큰 포스트잇" 채택.
+
+### 진단 (개선안 제시 단계)
+
+| 어휘 | 카드 | 기존 모달 | 충돌 |
+|------|------|----------|------|
+| 배경 | paper 톤(warm/cool/mint) | 흰 canvas | 종이↔디지털 |
+| 상단 | tape 26×6 ink-alpha (-2°) | ink-strip 12px solid black | 손맛↔사무용 |
+| 그림자 | postit-lift (들린 종이) | shadow-modal (30/80 무거움) | 종이↔dialog |
+| 모서리 | r-xs 4px | r-lg 10px | 어휘 부조화 |
+
+핵심: 카드 = "벽에 붙인 종이", 모달 = "디지털 dialog". 같은 화면 공존 시 시각 이질감.
+
+### 채택: 안 A — "큰 포스트잇"
+
+모달을 그대로 큰 포스트잇으로. 클릭한 팀의 identity tint가 모달 배경 → "이 팀의 카드를 펴 본다" 메타포.
+
+### 변경
+
+| 영역 | 변경 |
+|------|------|
+| **tokens.css** | `--postit-shadow-modal` 신규 — postit-lift의 ~2배 깊이 (`0 8px 18px / 0 28px 56px` rgba(20,19,15,0.12+0.10)). 모달 표준 shadow-modal(30/80)보다 가벼움, 백드롭 dim과 함께 경계 충분 |
+| **operator.jsx `RosterTeamDetailModal`** | (1) `useContext(MonoTintContext)` + `teamIdentityTint(team.name)` fallback → 모달 배경 tint. (2) `topStrip="ink"` → `null`. (3) ModalSurface `style` override: background=tint / borderRadius=`var(--r-xs)` / boxShadow=`var(--postit-shadow-modal)`. (4) tape 인라인 `<span>` 추가 — 80×10, top 8, -1.2° 회전, ink alpha 단색. position:absolute, zIndex:1, pointer-events:none. (5) "팀 상세" eyebrow 폐기 — tape이 시각 신호 대체. 헤더 top padding 20→30 (tape clearance). (6) 푸터 `background: var(--c-paper)` 제거 — 모달 tint와 충돌 |
+
+### 디자인시스템 위반 항목 (사용자 명시 면제)
+
+| 룰 | 어디서 | 사유 |
+|----|--------|------|
+| 모달 surface r-lg(10px) | borderRadius → r-xs(4px) | 카드 어휘 일치 우선 |
+| 모달 surface shadow-modal | postit-shadow-modal | "들린 종이" 어휘 유지, 백드롭 dim이 깊이 보강 |
+| 모달 topStrip 3변형(ink/caution/static) | null + 인라인 tape | tape이 포스트잇 정체성 신호 |
+| 모달 surface bg canvas(흰) | paper-warm/cool/mint identity | "이 팀의 카드" 연속성 |
+| §09e "인터랙션 모달 헤더 구분선 필수" | 유지 (borderBottom hairline) | 스크롤 본문 분리 신호 — 이건 어휘 충돌 없음 |
+
+### 사용자 우려 해소
+
+| 우려 | 해소 |
+|------|------|
+| 카드↔모달 어휘 단절 | ✅ 색·tape·shadow·radius 4가지 모두 카드 어휘로 정렬 |
+| ink-strip 사무용 인상 | ✅ tape으로 교체 — 손맛 어휘 일관 |
+| 모달이 화면 위에 "떠 있는" 디지털 인상 | ✅ postit-shadow-modal로 "들린 종이" 인상 |
+
+### mono variant 자동 정합
+
+§18-17 `MonoTintContext` Provider 안에서 RosterRow가 mono tint 받듯, 모달도 같은 context 소비 → mono 변형에서 모달도 paper-cool 단일 tint. **단 현재 B2RosterDetail은 mono variant 화면이 없음** — context provider가 modal wrapper에 없으므로 모달은 identity tint로 fallback. mono variant의 modal까지 원하면 별도 `B2RosterDetailMono` 필요.
+
+### 반증 시나리오
+
+- (a) **paper tint가 백드롭(어두운) 위에서 충분히 도드라지나**: paper-warm/cool/mint 모두 채도 ~12%·명도 ~95%. backdrop-strong(α 0.55) 위에서 명도 대비 충분. shadow-modal 무거운 그림자 없어도 백드롭+모달shadow로 경계 확립.
+- (b) **tape이 헤더 영역과 시각 겹침**: tape top 8 + h:10 = y:8~18 영역. 헤더 top padding 30으로 30px 위치에서 텍스트 시작 → 12px 여유. OK.
+- (c) **tape 회전 -1.2°가 정사각 모달 위에서 어색**: 카드 회전(±1.4°)보다 작음. 모달 본체는 0° 유지 — 본문 가독성 보존. tape만 손맛 회전.
+- (d) **footer paper bg 제거로 멤버 행과 footer 시각 분리 약함**: borderTop hairline 유지하므로 경계 OK. 색 단일화가 더 자연.
+- (e) **§09e 모달 표준 위반 — 디자인시스템 일관성 손실**: 사용자 명시 면제. 후속에서 §09e에 "포스트잇 모달 예외" 서브섹션 추가 검토.
+
+### 검증
+
+- [ ] viewer `b2-roster-detail` ⌘+Shift+R — 모달 배경이 `데이터 파이프라인 크루` 팀의 identity tint (warm/cool/mint 중 하나).
+- [ ] 상단 tape 80×10 -1.2° 노출. ink-strip 미노출.
+- [ ] borderRadius 4px (카드와 동일).
+- [ ] shadow 가벼움(들린 종이 어휘).
+- [ ] 헤더 "팀 상세" eyebrow 미노출. 팀명 + 카운트만.
+- [ ] 본문 멤버 행·푸터 범례 정상 동작.
+- [ ] `b2-tutorial-waiting` → 카드 클릭 → 모달 진입 시 시각 연속성 확인.
+- [ ] 콘솔 0 에러.
+
+### 후속
+
+- (a) **mono variant 모달**: B2RosterDetailMono 신규 — DashboardShell·modal wrapper 모두 MonoTintContext Provider로 감싸기. 사용자 요청 시 작업.
+- (b) **§09e "포스트잇 모달 예외" 섹션 추가**: 디자인시스템에 이 패턴을 박제할지 결정. 현재 RosterTeamDetailModal 한정이라 단발성 예외 처리도 가능.
+- (c) **백드롭 자체도 포스트잇 어휘로?**: 현재 `var(--c-backdrop-strong)` (검은 0.55). 만약 "코르크 보드" 같은 어휘를 원하면 backdrop 색 변경 가능. 단 어휘 발산 우려.
+
+---
+
+## 18-20. 팀 포스트잇 색 정책 단순화 — 2색(다인팀 파랑 / 1인팀 초록) (2026-05-29)
+
+> 사용자 결정: "포스트잇 파란색 단일로 가자. 여러 색깔 있는 화면 삭제하고 정책도 업데이트해. 단, 개인(1인팀)은 초록색으로 표기." + "카드별 모달은 포스트잇 색상을 따라가도록"
+
+### 결정 — A/B 비교 후 단순화
+
+§18-17 mono variant A/B 테스트 → mono 채택 + 1인팀 예외. §18-15 hash 3톤·§18-17 mono context 폐기.
+
+**최종 정책**:
+- 다인팀(members.length > 1 또는 !solo): `--c-paper-cool` 파랑
+- 1인팀(team.solo === true 또는 members.length === 1): `--c-paper-mint` 초록
+- 카드별 모달도 동일 매핑 (§18-19 큰 포스트잇 어휘 유지)
+
+### 폐기·통합 항목
+
+| 이전 결정 | 처리 |
+|----------|------|
+| §18-15 hash 3톤(warm/cool/mint) | **폐기** — 2색으로 단순화 |
+| `TEAM_IDENTITY_TINTS` 배열 + hash 함수 | 삭제 — 단순 분기로 치환 |
+| `teamIdentityTint(name)` 시그니처 | **변경** → `teamIdentityTint(team)` (full object) |
+| §18-17 mono A/B variant 화면 2개 | **삭제** — `B2DashboardTutorialWaitingMono` · `B2DashboardTutorialRunningMono` 함수 / viewer SCREENS / Renewal artboard / window export 모두 제거 |
+| `MonoTintContext` | 삭제 — A/B variant 폐기로 불필요 |
+| `--c-paper-warm` 토큰 | **폐기** — 2색만 사용. tokens.css + Design System inline :root에서 제거 |
+
+### 변경 파일
+
+| 영역 | 변경 |
+|------|------|
+| **tokens.css** | `--c-paper-warm` 제거. Paper identity tier 코멘트 단순화 (3톤 → 2색 정책 명시) |
+| **operator.jsx** | `teamIdentityTint(team)` 단순 분기: `isSolo ? mint : cool`. `TEAM_IDENTITY_TINTS` 배열 삭제. `MonoTintContext` createContext 삭제. `B2DashboardTutorialWaitingMono`·`B2DashboardTutorialRunningMono` 함수 삭제. window export에서 두 함수 제거. RosterRow·RosterTeamDetailModal에서 context 소비 코드 삭제 |
+| **viewer.html** | SCREENS에서 `b2-tutorial-waiting-mono`·`b2-tutorial-running-mono` 항목 삭제 |
+| **Jitda Renewal.html** | `b2-tutorial-waiting-mono`·`b2-tutorial-running-mono` DCArtboard 삭제 |
+| **Jitda Design System.html** | (1) inline :root에서 `--c-paper-warm` 제거. (2) §02 PAPER IDENTITY TIER: 3-swatch → 2-swatch + 정책 본문 갱신 (팀 유형 2색 명시). (3) §02 ENTITY × COLOR POLICY 표: Team 행 어휘 갱신 (identity → team type). (4) §09f POST-IT CARD 미러 4-card 갱신: 다인팀 2(paper-cool) + 1인팀 2(paper-mint) 분포. 본문·props 표·DO/DON'T 갱신 |
+
+### 결정 근거
+
+- **시각 부하 ↓**: 30카드 그리드에서 2색만 분포 → 차분. 카운트 색(§18-18)이 상태 신호로 명확.
+- **의미 강화**: 색이 단순 정체성 hash가 아닌 **팀 구성** 정보를 인코딩. "혼자 vs 팀" 즉시 식별.
+- **단순화**: hash 함수·해시 일관성 룰·이전 §18-15 (a)~(e) 우려 모두 해소.
+- **모달 일관**: 카드별 모달이 같은 색을 따라가므로 §18-19 "큰 포스트잇" 어휘 유지 + 색 연속성.
+
+### 반증 시나리오
+
+- (a) **다인팀이 너무 많아 30카드가 모두 파랑일 가능성**: PENDING_TEAMS 30팀 중 솔로 9팀 → 다인 21팀. 파랑 21장이 단조로울 수 있으나, 회전(±1.4° 4-variant)이 시각 다양성 제공. 실측 검증.
+- (b) **1인팀 초록이 "mint=접속 OK" 어휘와 시각 혼동**: mint hue가 짓다에서 "성공/진행" 컨벤션. 1인팀=초록은 hue 충돌. 다만 paper-mint(채도 ~10%)와 c-mint(채도 진한 초록)는 명도 차이 크고, 카드 tint vs 점·텍스트 색 위치 분리로 인지 충돌 낮음.
+- (c) **솔로 판정 모호 — `team.solo === true` vs `members.length === 1`**: OR 조건으로 둘 다 인정. PENDING_TEAMS는 `solo: true` 사용. 실 앱 데이터 컨벤션 정렬 필요.
+- (d) **이전 §18-15 "팀명 hash" 약속 위반 — 같은 팀이 다른 행사에서 다른 색?**: §18-20 정책은 팀 구성(솔로/다인)에 의존. 같은 팀이 행사 간 솔로↔다인 전환 가능성 낮으므로 안정. 단 데이터 마이그레이션 시 검증.
+
+### 검증
+
+- [ ] viewer 드롭다운에 `b2-tutorial-waiting-mono`·`b2-tutorial-running-mono` 미노출.
+- [ ] `b2-tutorial-waiting` 30카드 분포: 파랑 21장 + 초록 9장 (1인팀 9개).
+- [ ] `b2-tutorial-running` Kanban 컬럼 안 카드: 동일 분포.
+- [ ] `b2-roster-detail` 모달: "데이터 파이프라인 크루"(다인팀) → 파랑 모달.
+- [ ] 솔로 팀 카드 클릭(실 앱) → 초록 모달 (viewer mock은 다인팀 고정).
+- [ ] paper-warm 토큰 어느 파일에도 잔존 없음.
+- [ ] 콘솔 0 에러.
+
+### 후속
+
+- (a) **paper-warm 토큰 완전 폐기 — 다른 곳에서 사용 안 함 확인**: 본 작업에서 grep 검증 완료. 정합.
+- (b) **mint hue 충돌 실측**: 1인팀 초록 카드 옆에 mint 도트(접속 인디케이터) 노출 시 시각 혼동 7/13 전북 실측 검증.
+- (c) **§18-15 spec 부분 철회 명시**: 본 §18-20이 hash 정책 대체 — 이전 spec은 history로 보존, 정책 시점만 명시.
+- (d) **`team.solo` 필드 표준화**: 실 앱 API에서 `solo: boolean` 일관 보장 필요. 미존재 시 `members.length === 1` fallback 유지.
+
+---
+
+## 18-21. B-1 대기 상태 tint 강화 — wash → soft 한 단계 (2026-05-29 후속)
+
+> 사용자 보고: "대기 상태 해커톤 카드 색깔이 배경이랑 너무 비슷한데?" — paper(#faf9f6) 위에서 두 waiting 카드가 식별 실패.
+
+### 문제 진단
+
+§18-13에서 도입한 5상태 wash 매핑 중 두 waiting tint가 paper 배경 대비 ΔE 너무 낮음:
+
+| 상태 | 토큰 | hex | paper 대비 |
+|------|------|-----|-----------|
+| paper(배경) | `--c-paper` | #faf9f6 | — |
+| tutorial_waiting (이전) | `--c-stone-wash` | #f1efea | R-9 / G-10 / B-12 (≈ΔE 3) |
+| hackathon_waiting (이전) | `--c-helmet-wash` | #fbf6df | R+1 / G-3 / B-23 (≈ΔE 5, 노랑만) |
+
+§18-13 (b) 반증 시나리오에서 이미 예측됐던 케이스("stone과 paper 톤 충돌 … 카드 윤곽이 약해질 수 있음 → post-it shadow가 보강"). 실제로 post-it shadow가 충분히 보강하지 못함 — 시각 검증으로 확인.
+
+§18-13 매핑이 4색(running·ended)에서는 적절히 작동(mint/safety wash는 paper와 hue 거리 충분)하므로 **two waiting만 한 단계 올림**.
+
+### 변경
+
+| 상태 | 이전 | 변경 |
+|------|------|------|
+| tutorial_waiting | `--c-stone-wash` (#f1efea) | **`--c-stone` (#eeece7)** |
+| hackathon_waiting | `--c-helmet-wash` (#fbf6df) | **`--c-helmet-soft` (#fff4c2)** |
+| tutorial_running | — | `--c-tutorial-wash` 유지 |
+| hackathon_running | — | `--c-mint-wash` 유지 |
+| hackathon_ended | — | `--c-safety-wash` 유지 |
+
+5상태 색 여정의 의미(cold/engaged/anticipation/live/sunset)는 그대로 — 채도만 강화. 신규 토큰 추가 없이 기존 디자인 시스템 토큰 재사용.
+
+### 변경 파일
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx** | `STATUS_POSTIT_TINT` 두 항목 토큰 교체 + 사유 주석 추가 (paper 대비 부족 → wash 보강 실패 → soft 채용) |
+
+### 반증 시나리오
+
+- (a) **helmet-soft가 너무 강해 hackathon_waiting이 시각적으로 hackathon_running보다 도드라짐**: helmet-soft 채도(#fff4c2)는 mint-wash(#eaf3ec)보다 명확히 높음. "곧 시작될 행사"가 "진행 중 행사"보다 강조되는 역전 가능. 단, hackathon_waiting은 짧은 transient 상태(보통 분 단위)라 빈도 낮음. 7/13 전북 실측 후 재검토.
+- (b) **stone(#eeece7) vs stone-2(#e6e3dd) 사이 선택 적절성**: stone-2가 paper 대비 더 강하나, "차분한 대기" 정체성에는 stone이 적정. 사용자 식별 가능하면 stone 유지.
+- (c) **wash 시스템 일관성 깨짐**: 5상태 중 2개만 wash가 아닌 soft/base. 의도적 비대칭(paper와의 거리 조절)이나, 향후 신규 phase 추가 시 "wash 통일 규칙" 부재로 결정 비용 발생 가능.
+- (d) **B-2 같은 다른 화면에서 STATUS_POSTIT_TINT 재사용 시 영향**: §18-13 후속 (b)에서 재사용 가능성 언급됨. 다른 컨텍스트(어두운 배경, 큰 면적)에서는 강화된 tint가 과할 수 있음 — 재사용 시 별도 매핑 권장.
+
+### 검증
+
+- [ ] viewer `b1` 새로고침 — tutorial_waiting 카드(2026 봄 ENK)·hackathon_waiting 카드(KU x ENK)가 paper 위에서 명확히 분리.
+- [ ] 다른 3개 카드(running·ended) tint 무변화.
+- [ ] PhaseFilterStepper 칩(상단)은 별도 PHASE_STAGES 매핑 — 무영향 확인.
+- [ ] hover lift·tape·shadow 동작 변화 없음.
+
+### 후속
+
+- (a) **5색 distinct 색맹 검증**: §18-13 후속 (c) 그대로 유효. 강화 후 deuteranopia/protanopia 모드 재확인.
+- (b) **wash 시스템 문서화**: tokens.css `--c-stone-wash`·`--c-helmet-wash` 주석에 "paper 직접 인접 사용 시 식별 부족 가능 — STATUS_POSTIT_TINT는 stone/helmet-soft 사용" 워닝 추가 검토.
+- (c) **anticipation 어휘 검증**: helmet-soft가 "곧 시작" 신호로 충분히 인지되는지 7/13 전북 실측.
+
+---
+
+## 18-22. §18-21 철회 + B-1 카드 하단 정보 통일 + KU 카피 정정 (2026-05-29 후속)
+
+> 사용자 피드백: (1) "지금 튜토리얼 대기 색깔 넘 이상하다" — §18-21에서 도입한 `--c-stone`은 wash hue 패밀리에서 벗어나 이질감. (2) "해커톤 대기 노랑은 원래대로 복구시켜" — `--c-helmet-soft`(#fff4c2)는 노랑 채도가 과해 hackathon_running보다 도드라지는 위계 역전. (3) "카드별로 정보를 통일하여 간소화. 좌측 하단 총 팀수와 총 인원수로 모든 상태 통일." (4) "튜토리얼 건너뛰는 상태는 여기서 표기할 필요 없다. 본행사 시작 전 으로 작성."
+
+### §18-21 전면 철회
+
+| 상태 | §18-21 (철회) | 복구 (이전 §18-13 값) |
+|------|--------------|---------------------|
+| tutorial_waiting | `--c-stone` (#eeece7) | `--c-stone-wash` (#f1efea) |
+| hackathon_waiting | `--c-helmet-soft` (#fff4c2) | `--c-helmet-wash` (#fbf6df) |
+
+원본 문제(paper 대비 ΔE 부족)는 미해결 상태로 다시 노출됨. 사용자가 시각 이질감·위계 역전보다 paper 묻힘을 수용 가능한 트레이드오프로 판단. 시각 강화 대신 **카드 정보 구조 단순화**로 카드 식별 부하를 줄이는 방향으로 전환.
+
+### 카드 하단 정보 통일
+
+HackathonCard 좌측 하단 메타 — 이전: `isPending ? '총 N명' : '접속 X/Y'` 분기 → 변경: 전 상태 `N팀 · 총 X명` 통일.
+
+| 상태 | 이전 | 변경 |
+|------|------|------|
+| tutorial_waiting | 8팀 · 총 240명 | 8팀 · 총 240명 |
+| tutorial_running | 18팀 · 접속 184/196 | 18팀 · 총 196명 |
+| hackathon_waiting | 30팀 · 총 180명 | 30팀 · 총 180명 |
+| hackathon_running | 18팀 · 접속 116/122 | 18팀 · 총 122명 |
+| hackathon_ended | 12팀 · 접속 156/156 | 12팀 · 총 156명 |
+
+근거: B-1은 "운영 중 해커톤 전체 규모를 한눈에" 파악하는 화면. 실시간 접속률은 B-2 대시보드 진입 후의 task. B-1에서 두 패턴이 섞이면 카드 비교 시 인지 부하 증가.
+
+### KU x ENK 카피 변경
+
+`runtime: '튜토리얼 없이 시작 예정'` → `'본행사 시작 전'`
+
+근거: "튜토리얼 건너뛰기" 운영 옵션은 B-2 진입 후 어드민이 결정·인지하는 정보. B-1 카드에서 노출하면 (a) 신규 운영자가 "왜 튜토리얼이 없는지" 추가 질문 유발, (b) hackathon_waiting 상태 자체가 "튜토리얼 종료 또는 미진행 후 본행사 직전" 의미를 이미 포함하므로 중복. `'본행사 시작 전'`이 두 진입 경로(튜토리얼 완료 후 + 튜토리얼 스킵)를 모두 포함하는 자연 표현.
+
+### 변경 파일
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx** | (1) `STATUS_POSTIT_TINT` 두 항목 wash 복구 + 주석에 §18-21 철회 사유. (2) `HackathonCard`: `isPending` 변수 삭제 + 좌측 하단 `{teamCount}팀 · 총 {h.total}명` 통일. (3) hackathons mock `KU x ENK` runtime 카피 변경. `claimed` 필드는 mock에 남김(다른 영역 재사용 가능성). |
+
+### 반증 시나리오
+
+- (a) **paper 묻힘 재발**: 두 waiting 카드가 다시 ΔE 3~5 수준으로 paper에 묻힘. 사용자가 이를 수용하기로 결정했으나 신규 운영자 첫 인상에서 카드 식별 실패 위험 잔존. 7/13 전북 실측 시 재확인.
+- (b) **접속 정보 손실**: tutorial_running·hackathon_running 카드에서 "184/196 접속" 정보 제거됨. 운영자가 진행 중 접속률을 B-1에서 인지하지 못함. 대안: 카드 hover popover 또는 B-2 진입 후 sticky 헤더에서만 노출. 현재 후자만 유지.
+- (c) **"본행사 시작 전" 모호성**: 튜토리얼 완료 후 대기와 튜토리얼 스킵 대기를 같은 카피로 표현 → 운영자가 카드만 보고 진행 단계 구분 못 함. 단, B-2 진입 후 즉시 인지 가능하므로 B-1 시점에서는 무관.
+- (d) **`claimed` 필드 잔존**: HackathonCard에서 미사용. 향후 코드 정리 시 정합성 검토 필요. 단 데이터 모델 자체는 rails API에서 유지될 수 있으므로 mock에서 즉시 제거하지 않음.
+
+### 검증
+
+- [ ] viewer `b1` 새로고침 — 두 waiting 카드가 stone-wash·helmet-wash로 복구.
+- [ ] 6 카드 모두 좌측 하단이 `N팀 · 총 X명` 형식 (접속 X/Y 표기 0건).
+- [ ] KU x ENK 카드 우측 상단 runtime이 `본행사 시작 전`.
+- [ ] 콘솔 0 에러.
+
+### 후속
+
+- (a) **paper 묻힘 재고**: 향후 카드 식별 부하가 실측에서 문제로 확인되면 (i) paper 자체를 한 단계 어둡게(#f3f0e8 등), (ii) 카드 hairline border 추가(§18-13 "border 제거" 룰 일부 완화), (iii) post-it shadow 강도 증가, (iv) gridlines 약화 — 4안 비교 후 결정.
+- (b) **접속률 노출 위치 재검토**: B-1 카드에서 접속률을 완전 제거했으므로, 운영자가 "지금 누구 못 들어왔지" 신호를 어디서 받는지 워크플로우 검증. B-2 sticky 헤더가 유일 노출처가 됨.
+- (c) **§18-13 doc 정합**: §18-13 본문은 wash 5종 매핑 유지로 정합. §18-21·§18-22 history만 남김.
+
+---
+
+## 18-23. tutorial_waiting — paper 위 → canvas(#ffffff) 더 밝게 (2026-05-29 후속)
+
+> 사용자 결정: "튜토리얼 대기 다른 색상 적용해줘. 차라리 더 밝은 색깔은 어때"
+
+§18-22에서 stone-wash(#f1efea) 복구했으나 paper(#faf9f6) 대비 -3% 명도 = 묻힘 재발. paper보다 **어둡게** 가는 방향(§18-21 시도)과 **밝게** 가는 방향이 가능했고, 사용자가 후자를 선택.
+
+### 변경
+
+| 상태 | 이전 | 변경 |
+|------|------|------|
+| tutorial_waiting | `--c-stone-wash` (#f1efea, paper -3%) | **`--c-canvas` (#ffffff, paper +3%)** |
+
+신규 토큰 추가 없음 — 디자인 시스템에 이미 정의된 가장 밝은 값(canvas).
+
+### 5상태 어휘 변경 (cold → **blank**)
+
+- 이전: cold(stone-wash) → engaged(tutorial-wash) → anticipation(helmet-wash) → live(mint-wash) → sunset(safety-wash)
+- 변경: **blank**(canvas) → engaged → anticipation → live → sunset
+
+"blank/fresh/아직 시작 안 함" 어휘가 흰 종이의 메타포와 맞물려 더 자연스러움. 운영자 시각에서 "백지 상태 → 채워지는 과정"으로 읽힘.
+
+### 변경 파일
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx** | `STATUS_POSTIT_TINT.tutorial_waiting` `--c-stone-wash` → `--c-canvas`. 주석 어휘 갱신(cold → blank). |
+
+### 반증 시나리오
+
+- (a) **canvas의 paper 대비도 ΔE ~3 수준**: stone-wash와 절댓값 차이는 비슷하나 **방향이 반대**(밝은 쪽). 인간 시각은 동일 ΔE라도 "밝은 쪽 차이"를 더 잘 감지(Helmholtz-Kohlrausch 효과)하므로 stone-wash보다 식별 유리 가능. 단 실측 필요.
+- (b) **흰 카드가 너무 "비어 보임"**: 다른 4 카드는 tint가 있는데 tutorial_waiting만 흰색 — 5상태 색 여정에서 동떨어진 인상. 단 이는 "blank" 어휘 의도와 정합. 시각 위계상 "가장 시작 전" 신호로 활용 가능.
+- (c) **하단 운영자 정보 박스(빈 상태) 흰 배경과 충돌**: `B1HackathonList` 빈 상태 박스가 `var(--c-canvas)` 사용 — tutorial_waiting 카드와 시각적으로 같은 배경. 다만 두 요소가 같은 화면에 동시 노출되는 경우 없음(빈 상태는 필터 0건 시만).
+- (d) **post-it 메타포 약화**: 회전·tape 어휘 유지하나 흰 종이는 "포스트잇"보다 "백지 노트"에 가까움. 다른 4 카드와 메타포 일관성이 미세하게 깨질 수 있음.
+
+### 검증
+
+- [ ] viewer `b1` 새로고침 — tutorial_waiting 카드(2026 봄 ENK)가 paper 위에서 명확히 더 **밝게** 분리.
+- [ ] 다른 4 카드 tint 무변화.
+- [ ] post-it shadow·tape·rotation 동작 무변화.
+
+### 후속
+
+- (a) **paper 자체 조정 검토**: tutorial_waiting을 canvas로 두려면 paper가 약간 더 어두워야 분리감 강화 가능(예: #f7f4ec). 단 다른 모든 화면 영향 크므로 후속.
+- (b) **빈 상태 박스 충돌 해소**: `B1HackathonList` 빈 상태 박스 배경을 `--c-paper`로 바꾸거나 hairline 강화 검토.
+- (c) **5색 어휘 doc 갱신**: §18-13 본문의 "cold → engaged → anticipation → live → sunset" 색 여정 표를 "blank → engaged → anticipation → live → sunset"으로 정정 (후속 작업).
+
+---
+
+## 18-24. hackathon_waiting 칩 → helmet 노랑 (2026-05-29 후속)
+
+> 사용자 결정: "해커톤 대기 칩에다가 노란색 넣자. 다른 카드들처럼 일관성있게." + "지금은 튜토리얼대기랑 해커톤대기랑 색깔이 똑같네."
+
+§18-13에서 도입된 5상태 chip 색 시스템에서 `tutorial_waiting`·`hackathon_waiting` 두 칩이 동일한 회색(#ebebec/#2a2823)을 사용해 시각 구분이 안 됨. 또한 hackathon_waiting 카드 tint가 helmet-wash(노랑)인데 칩은 회색이라 카드↔칩 hue 불일치.
+
+### 변경 — 두 위치 일괄
+
+**PHASE_STAGES** (operator.jsx, B-1 PhaseFilterStepper + B-2 PhaseHover popover):
+- `hackathon_waiting`: `bg #ebebec / fg #2a2823` → **`bg #fff4c2 / fg #6b4d00`**
+
+**StatusPill CSS** (viewer.html + Renewal.html 인라인 `<style>`, HackathonCard 좌상단 pill + 운영자 화면 헤더 pill):
+- `.jt-pill-hack-waiting`: `bg #ebebec / color #4a473e / border #d9d6cc` → **`bg #fff4c2 / color #6b4d00 / border #f1e07a`**
+
+색 선정 근거:
+- bg `#fff4c2` = `--c-helmet-soft` — 카드 helmet-wash(#fbf6df)와 같은 helmet 패밀리, 칩답게 한 단계 진한 soft 톤
+- fg `#6b4d00` — deep amber, 다른 칩들의 "soft bg + deep 같은 hue fg" 패턴 일관(tutorial purple #2e2c8a, mint #096c4d, rose #882019). WCAG AAA(~8:1) on #fff4c2
+- border `#f1e07a` — 다른 두 회색 칩이 hairline border 가지고 있어 일관성 유지, helmet 패밀리 중간톤
+
+### 5상태 칩 매핑 (변경 후)
+
+| 단계 | 상태 | 칩 bg | 칩 fg | hue |
+|------|------|-------|-------|-----|
+| 01 | tutorial_waiting  | #ebebec | #2a2823 | neutral grey |
+| 02 | tutorial_running  | #e1e0fa | #2e2c8a | purple (tutorial) |
+| 03 | hackathon_waiting | **#fff4c2** | **#6b4d00** | **helmet yellow** (anticipation) |
+| 04 | hackathon_running | mint-soft | mint | mint green |
+| 05 | hackathon_ended   | #ffe1de | #882019 | rose |
+
+5단계가 모두 distinct hue로 분리. 칩 stepper 좌측부터 grey → purple → yellow → green → rose 순서의 색 여정.
+
+### 카드 ↔ 칩 hue 정합
+
+| 상태 | 카드 tint | 칩 hue | 정합 |
+|------|----------|--------|------|
+| tutorial_waiting | canvas(#fff) | grey (#ebebec) | 둘 다 "blank/neutral" — OK |
+| tutorial_running | tutorial-wash | tutorial purple | ✓ |
+| hackathon_waiting | helmet-wash | **helmet yellow** | ✓ (이번 변경으로 정합) |
+| hackathon_running | mint-wash | mint | ✓ |
+| hackathon_ended | safety-wash | rose | rose/safety 인접 hue — OK |
+
+### 변경 파일
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx** | `PHASE_STAGES.hackathon_waiting`: bg #fff4c2 / fg #6b4d00 |
+| **viewer.html** 인라인 `<style>` | `.jt-pill-hack-waiting`: helmet 패밀리 3색 교체 |
+| **Jitda Renewal.html** 인라인 `<style>` | 동일 |
+
+### 반증 시나리오
+
+- (a) **#6b4d00 deep amber 어휘 친숙도 부족**: 다른 칩들은 토큰화된 hue(--c-tutorial·--c-mint)를 쓰는데 helmet은 deep 토큰이 없어 raw hex(#6b4d00) 사용. 향후 `--c-amber-deep` 같은 토큰 정식 등록 검토.
+- (b) **chip yellow가 hackathon_running mint와 인접해 진행 단계 위계 혼동**: 노랑→초록은 자연스러운 hue 진행이지만, "대기 → 진행" 단계가 색 강도 비슷해 어느 게 더 강조인지 모호. 단 stepper의 chevron(→)이 순서를 보강.
+- (c) **tokens.css 단일 소스 룰 위반 잔존**: `.jt-pill-hack-waiting`은 여전히 viewer/Renewal 인라인에만 존재. tokens.css 마이그레이션은 후속.
+- (d) **카드 tint helmet-wash + 칩 helmet-soft 톤차이 인지**: 카드는 wash(채도 ~10%), 칩은 soft(채도 ~25%). 같은 helmet 패밀리지만 강도 다름. 의도된 위계(칩=요약·강조 / 카드=면적 fill)이나 사용자 관점에서 "같은 노랑이 왜 다르지" 인지 가능성 — 디자인 시스템 §02 WASH/SOFT TIER 설명이 충분히 노출되는지 검토.
+
+### 검증
+
+- [ ] viewer `b1` 새로고침 — PhaseFilterStepper의 "03 해커톤 대기" 칩이 노랑.
+- [ ] B-1 HackathonCard "KU x ENK 연합 해커톤" 좌상단 StatusPill이 노랑.
+- [ ] tutorial_waiting 칩과 색이 명확히 다름(grey vs yellow).
+- [ ] viewer `b2-hack-waiting` 헤더 StatusPill도 노랑(같은 jt-pill-hack-waiting 클래스 공유).
+- [ ] PhaseHover popover에서 hackathon_waiting 단계도 노랑.
+
+### 후속
+
+- (a) **`.jt-pill-hack-waiting` tokens.css 이관**: 신규 인라인 정의가 tokens.css에 미존재. 점진적 마이그레이션. 동시에 `.jt-pill-tutorial-waiting`·`-tutorial-ended` legacy도 정리.
+- (b) **helmet-deep amber 토큰 등록**: `#6b4d00` 같은 deep amber를 `--c-amber-deep` 또는 `--c-helmet-ink`로 토큰화. raw hex 제거.
+- (c) **§18-13 색 여정 doc 정정**: §18-13 본문의 chip 매핑 표가 두 waiting을 같은 stone으로 명시 — §18-24로 변경됨을 반영(또는 history 노트 추가).
+
+---
+
+## 18-25. 팀 포스트잇 단일 노란색 + 전체 가나다순 + "개인 · " 접두사 제거 (2026-05-29)
+
+> 사용자 결정 3단계: ① "개인 1인팀 팀명을 개인.진하경 말고 그냥 이름만" → 접두사 제거. ② "솔로팀이든 다인팀이든 상관없이 걍 가나다순으로" → 전체 정렬. ③ "개인팀이랑 다인팀 카드 색깔 다른거 좀 별로네. 전체 다 그냥 노란색으로 통일" → 단일 색 채택.
+
+### 변경 요약
+
+| 영역 | 변경 |
+|------|------|
+| **PENDING_TEAMS** | "개인 · NAME" → "NAME" 접두사 제거(9팀). 전체 32팀 가나다순(한글 → 영문 → 숫자) — 1인/다인 섞임 |
+| **STARTED_TEAMS** | 동일 패턴, 30팀 가나다순 |
+| **TEAM_PROJECTS map** | 키 가나다순 |
+| **gallery.jsx TOP_LIKED** | "개인 · NAME" → "NAME" (likes 내림차순 보존, 정렬 변경 안 함) |
+| **operator.jsx `teamIdentityTint`** | `team` 인자 무시 → 항상 `'var(--c-helmet-wash)'`. 솔로/다인 분기 폐기 |
+| **tokens.css** | `--c-paper-cool`·`--c-paper-mint` 삭제. 코멘트 §18-25 명시 |
+| **Jitda Design System.html** | inline :root에서 2 토큰 제거. §02 PAPER IDENTITY TIER 3→1 swatch + 정책 갱신 (단일 노란색). §02 ENTITY × COLOR POLICY Team 행 갱신. §09f POST-IT CARD 미러 4-card 모두 `--c-helmet-wash` + 본문·props·DO/DON'T 갱신 |
+
+### 색 선택: `--c-helmet-wash` (#fbf6df)
+
+- 디자인시스템 정식 토큰 (§02 WASH TIER)
+- 클래식 포스트잇 노란색 어휘
+- HackathonCard hackathon_waiting과 토큰 공유 — 다른 entity·다른 화면이라 충돌 없음
+- WASH TIER 정책 부합
+
+### 폐기·통합
+
+| 이전 결정 | 처리 |
+|---|---|
+| §18-20 2색(파랑/초록) | **본 §18-25에서 폐기** — 단일 노란색 통일 |
+| `--c-paper-cool/-mint` 토큰 | 삭제 (다른 곳 미사용 확인) |
+| `teamIdentityTint(team)` 분기 | 단순화 — 인자 미사용 |
+
+### 가나다 정렬 (한글 → 영문 → 숫자)
+
+PENDING_TEAMS 32팀:
+노유진 · 뉴럴 네트 · 데이터 파이프라인 크루 · 디버그 라이프 · 런타임 에러 · 레이스 컨디션 · 류재석 · 머지 컨플릭트 · 명도윤 · 바이브 코더 · 백서아 · 비트 플립 · 세그폴트 어택 · 손미래 · 스택 오버플로우 · 시맨틱 메모리 · 엔드투엔드 인터랙션 테스트 마스터즈 · 엣지 케이스 · 우시현 · 진하경 · 천도현 · 캐시 미스 · 커널 패닉 · 코드밍아웃 · 터미널 사파리 · 황태리 · 훅 라이프 · await me · JS의 비밀 · null pointer · undefined · 404 NOT FOUND.
+
+### 사용자 우려 해소
+
+| 우려 | 해소 |
+|------|------|
+| "개인 · 진하경" 등 접두사 노이즈 | ✅ 접두사 제거, 이름만 |
+| 팀 데이터 순서 임의성 | ✅ 가나다순 |
+| 솔로/다인팀 색 분리가 별로 | ✅ 단일 노란색 — 클래식 포스트잇 |
+
+### 반증 시나리오
+
+- (a) **단일 색이 단조 — §18-17 mono 우려 재발**: 회전 4-variant + tape이 시각 다양성 보강. 실측 후 평가.
+- (b) **helmet-wash 공유 — HackathonCard와 시각 혼동**: B-1 vs B-2 동시 노출 안 됨. entity 다름 명문화로 후속 confusion 회피.
+- (c) **솔로팀 시각 구분 손실**: 아바타 도트 1개로 시각 식별 가능. 별도 색 신호 불필요.
+- (d) **가나다 정렬 vs task 적합성**: 검색 task에 유효. "미접속 팀" task는 필터 칩(§18-9)이 보완.
+
+### 검증
+
+- [ ] viewer `b2-tutorial-waiting` ⌘+Shift+R — 32카드 모두 helmet-wash.
+- [ ] 솔로 9팀 이름만(접두사 없음).
+- [ ] 가나다 순서.
+- [ ] `b2-tutorial-running` Kanban — 컬럼 내 가나다.
+- [ ] `b2-roster-detail` 모달 — 단일 노란색.
+- [ ] `--c-paper-cool/-mint` 잔존 0건.
+- [ ] 콘솔 0 에러.
+
+### 후속
+
+- (a) 7/13 전북 실측에서 30카드 동일 색 식별성 검증.
+- (b) 단조 시 회전 폭 ±1.4°→±2.0° 검토 (단 §10 "기울어진 결함" 위험).
+- (c) 가나다 정렬 vs 운영자 task 우선순위 실측.
+
+---
+
+## 18-26. 신규 화면 — 흰색 / 초록 단일 tint A/B 변형 (2026-05-29)
+
+> 사용자 결정: "노랑 단일처럼 흰색 단일이랑 초록 단일도 샘플 추가해줘"
+
+### 의도
+
+§18-25 단일 노란색(helmet-wash) 채택 후 비교 검증용. 흰색·초록 단일과 직접 좌·우 비교 가능하도록 신규 페이지 4개 추가 (기존 노랑 화면 보존).
+
+### 변경 (Pattern C — 신규 화면 4)
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx** | `MonoTintContext` React context 재도입(§18-17과 동일 패턴). `RosterRow` + `RosterTeamDetailModal` 양쪽에서 context 소비 — set 시 `teamIdentityTint()` (helmet-wash) 대신 context value 사용. 신규 함수 4종: `B2DashboardTutorialWaiting{White,Green}` + `B2DashboardTutorialRunning{White,Green}` — 각각 Provider로 감싸 `value="var(--c-canvas)"` 또는 `value="var(--c-mint-wash)"` 주입. window export 4종 추가 |
+| **viewer.html SCREENS** | 4 항목 추가: `b2-tutorial-{waiting,running}-{white,green}` (h=920) |
+| **Jitda Renewal.html** | 대응 DCArtboard 4 추가 |
+
+### 색 선택
+
+| 변형 | 토큰 | hex | 근거 |
+|------|------|-----|------|
+| **WHITE** | `--c-canvas` | #ffffff | 순백 — paper 어휘 제거, "벽이 곧 종이" 미니멀 |
+| **GREEN** | `--c-mint-wash` | #eaf3ec | §02 WASH TIER 등록. mint-soft(#d6f1de)보다 ~60% 채도 낮음, 큰 면적 fill 안전 |
+
+기준(노랑) `--c-helmet-wash` 와 같은 paper-wash tier — 공정한 A/B 비교.
+
+### 비교 포인트 (viewer 직접 검증)
+
+| 측면 | 노랑(helmet-wash) | 흰색(canvas) | 초록(mint-wash) |
+|------|------------------|--------------|----------------|
+| 어휘 | 클래식 포스트잇 | 미니멀 메모지 | 자연·평온 |
+| 카운트 색 가독성 | safety orange 잘 보임 | safety orange 강하게 대비 | mint hue와 충돌(orange↔green) |
+| paper(#faf9f6) 배경 분리 | 노랑 hue 명확 | 거의 동일 → 카드 식별 약함 | mint hue 분명 |
+| 다른 화면(b2-hack-waiting 등) 어휘 | helmet 컨벤션 정합 | canvas는 모달 어휘와 혼동 | mint는 "성공/진행" 컨벤션과 의미 충돌 |
+
+### 반증 시나리오
+
+- (a) **흰색 단일이 paper 배경(#faf9f6)과 거의 동일** → 카드 윤곽 약함. shadow에만 의존하므로 시각 식별 task에 부정적.
+- (b) **초록 단일이 mint(접속 OK) 어휘와 충돌**: paper-mint(채도 ~10%) vs c-mint(진초록)는 명도 차이 크나 hue 동일. 운영자가 카드 색을 "팀 접속 상태"로 오해 가능.
+- (c) **3개 페이지 동시 노출 — 디자이너 confusion**: A/B 변형 페이지가 메인 페이지와 같은 viewer 드롭다운에 노출. label에 [WHITE]·[GREEN] 명시로 구분.
+
+### viewer 진입
+
+B-2 영역 드롭다운에서 좌·우 비교:
+- `b2-tutorial-waiting` (노랑 메인) ↔ `b2-tutorial-waiting-white` ↔ `b2-tutorial-waiting-green`
+- `b2-tutorial-running` 동일 3-way 비교
+
+### 후속 결정 트리거
+
+비교 후 사용자 판단:
+- 노랑 유지 → A/B 페이지 정리 또는 보존
+- white/green 채택 → §18-25 부분 철회 + 신규 색 정식화
+- 혼합(다른 색) → 별도 결정
+
+### 검증
+
+- [ ] viewer 드롭다운 4 신규 페이지 노출.
+- [ ] `b2-tutorial-waiting-white`: 모든 RosterRow가 `--c-canvas` (흰색).
+- [ ] `b2-tutorial-waiting-green`: 모든 RosterRow가 `--c-mint-wash` (옅은 초록).
+- [ ] `b2-tutorial-running-{white,green}`: Kanban 컬럼 안 RosterRow도 동일 변형 tint.
+- [ ] 기존 `b2-tutorial-waiting` (노랑 메인)·기존 모달 동작 회귀 없음.
+- [ ] 콘솔 0 에러.
+
+---
+
+## 18-27. 해커톤 종료 버튼 강화 — danger-outlined → danger filled (2026-05-29 후속)
+
+> 사용자 보고: "튜토리얼 종료랑 해커톤 종료 버튼 색깔이랑 디자인이 좀 달라서. 다른 의미가 있는지? 해커톤 종료 버튼 잘 눈에 안 띔." + "통일 꼭 안 해도 되는데."
+
+### 원래 설계 의도 (변경 전)
+
+| 버튼 | 변형 | 의도 |
+|------|------|------|
+| 튜토리얼 종료 (`b2-tutorial-running`) | `jt-btn-primary` (검정 fill) | 일반 다음 단계 진행 — primary 강조 |
+| 종료 (`b2-started`) | `jt-btn-danger-outlined` (옅은 주황 outline) | **비가역 — 실수 방지 위해 의도적으로 약하게** (operator.jsx:417 주석) |
+
+### 원래 의도의 약점 (사용자 피드백으로 확인)
+
+1. **자기 모순**: 코드 주석은 "종료(비가역)는 약하게"라 했으나 튜토리얼 종료도 비가역(5상태 단방향). 두 종료 모두 비가역인데 한쪽만 약화는 일관성 결여.
+2. **안전망 중복**: 두 종료 모두 확인 모달(`b2-tutorial-end-confirm`/`b2-end`+`b2-end-countdown`)을 거침. 모달이 이미 실수 방지 역할 — 버튼까지 숨길 필요 약함.
+3. **운영자 task 방해**: 종료 시점 운영자가 버튼을 찾지 못해 당황 가능. 1-action away의 종료 버튼은 명확히 보여야 함.
+
+### 변경
+
+`b2-started` 헤더 종료 버튼만 강화 (튜토리얼 종료는 유지 — "통일 꼭 안 해도" 결정).
+
+| 위치 | 이전 | 변경 |
+|------|------|------|
+| `hackathon_running` statusActions | `jt-btn-danger-outlined` | **`jt-btn-danger`** (주황 fill + 흰 텍스트) |
+
+색·어휘:
+- 이전: `bg transparent / color safety / border safety-soft` — 옅은 윤곽
+- 변경: `bg --c-safety (#ff6b1f) / color #fff / hover bg --c-safety-deep` — 솔리드 fill + elevation
+
+### 결과 위계
+
+| 상태 | 버튼 | 시각 위계 |
+|------|------|----------|
+| tutorial_waiting | [튜토리얼 시작] critical (검정 + helmet ring + shine) | **최강** — 단일 핵심 액션 |
+| tutorial_running | [튜토리얼 종료] primary (검정 fill) | 강 — 일반 진행 |
+| hackathon_waiting | [해커톤 시작] critical (검정 + helmet ring + shine) | **최강** — 단일 핵심 액션 |
+| hackathon_running | [종료] **danger (주황 fill)** ← 변경 | 강 — 비가역 경고 색 |
+| hackathon_ended | (없음) | — |
+
+비가역 종료가 "주황 fill"로 명확한 어휘 획득(`--c-safety`). 시작 액션의 critical(검정 + 노랑)과 시각적으로 명확히 분리.
+
+### 변경 파일
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx** | (1) `DashboardShell` `statusActions.hackathon_running` className `jt-btn-danger-outlined` → `jt-btn-danger`. (2) 주석 갱신(§18-25 → §18-27 사유 + "약하게 배치" 문구 제거). |
+
+### 반증 시나리오
+
+- (a) **운영자 의도치 않은 종료 클릭 증가 가능성**: 강조된 버튼이 호버·클릭 빈도 증가. 단 모달이 안전망. 7/13 전북 실측 시 종료 모달 도달률·취소율 측정 권장.
+- (b) **`primary`(검정 튜토리얼 종료)와 `danger`(주황 해커톤 종료) 위계 비대칭**: 두 비가역 액션이 다른 색 → "왜 다를까" 인지 부하. 단 사용자가 "통일 꼭 안 해도"라 명시적 수용. 위계 차이는 "튜토리얼=가벼움/해커톤=무거움" 운영자 멘탈 모델과 정합.
+- (c) **danger filled가 critical보다 약하지만 충분히 강조**: critical은 검정+노랑 ring으로 "최강", danger filled는 주황 fill로 "강". 두 위계 사이 시각 거리가 충분한지 — 실측 필요.
+- (d) **튜토리얼 종료도 primary 외 위계 검토 여지**: 사용자가 통일 안 해도 된다 했으나, 일관성 측면에서 튜토리얼 종료도 일부 danger 어휘 차용 가능(예: 텍스트만 주황). 후속 검토.
+
+### 검증
+
+- [ ] viewer `b2-started` 새로고침 — 헤더 우측 [종료] 버튼이 주황 fill + 흰 텍스트 + shadow-sm.
+- [ ] hover 시 safety-deep 배경 + shadow-md.
+- [ ] `b2-tutorial-running` [튜토리얼 종료] 무변화(검정 primary 유지).
+- [ ] 클릭 시 `b2-end` 모달 정상 진입.
+
+### 후속
+
+- (a) **튜토리얼 종료 위계 재검토**: 통일 결정은 사용자가 보류. 7/13 실측 후 두 종료의 의미·운영자 동작 빈도 비교하여 정렬 여부 결정.
+- (b) **종료 모달 도달 후 이탈률 측정**: 강화된 버튼으로 모달 진입 증가 시 진짜 종료율 vs 취소율 비교. 실수 클릭 가설 검증.
+- (c) **코드 주석 정정**: `operator.jsx:417` "약하게 배치" 표현 제거 완료. 향후 같은 패턴(약화 의도)이 다른 곳에 남아있는지 grep 검토.
+
+---
+
+## 18-28. 팀 포스트잇 최종 단일 흰색 + A/B 변형 페이지 삭제 (2026-05-29)
+
+> 사용자 결정: "흰색으로 전부 통일해줘. 팀 카드는 무조건 흰색만 쓰도록 디자인시스템에도 반영하고" + "안쓰는 화면들은 삭제하고" + "[이미지: b2-roster-detail 모달이 아직 노랑] 이거 수정하고"
+
+### 최종 정책
+
+| 항목 | 값 |
+|------|-----|
+| 팀 카드 tint | `var(--c-canvas)` (#ffffff) 단일 |
+| 카드별 모달 tint | 동일 — RosterTeamDetailModal도 흰색 |
+| 적용 대상 | RosterRow + RosterTeamDetailModal 전부. 다인/1인팀·접속 상태 무관 |
+| 윤곽 형성 | paper(#faf9f6) 배경 위에서 postit-shadow + tape이 카드 경계 형성 |
+
+### 변경
+
+| 영역 | 변경 |
+|------|------|
+| **operator.jsx** | `teamIdentityTint()` → `'var(--c-canvas)'`. `MonoTintContext` createContext 삭제. RosterRow·RosterTeamDetailModal에서 useContext 제거. A/B 변형 함수 4개 삭제(White/Green × Waiting/Running). window export에서 4종 제거 |
+| **viewer.html SCREENS** | 4 항목 삭제 |
+| **Jitda Renewal.html** | 4 DCArtboard 삭제 |
+| **tokens.css** | Post-it 어휘 코멘트 갱신 — 단일 흰색 명시 + 5종 폐기 박제 |
+| **Jitda Design System.html** | §02 PAPER IDENTITY TIER → 단일 흰색 + Canvas 1-swatch. §02 ENTITY × COLOR POLICY Team 행 갱신. §02 WASH TIER blurb 갱신. §09f POST-IT CARD 미러 4-card 모두 canvas + 본문·props·DO/DON'T 갱신 |
+
+### 폐기 누적
+
+| § | 이전 결정 | 처리 |
+|---|----------|------|
+| 18-15 | hash 3톤 | 이미 §18-20에서 폐기 |
+| 18-17 | mono A/B | 이미 §18-20에서 폐기 |
+| 18-20 | 2색 (파랑/초록) | 이미 §18-25에서 폐기 |
+| 18-25 | 단일 노랑 (helmet-wash) | **본 §18-28에서 폐기** |
+| 18-26 | white/green A/B 4 페이지 | **본 §18-28에서 폐기 + 페이지 자체 삭제** |
+
+### 사용자 우려 해소
+
+| 우려 | 해소 |
+|------|------|
+| "노랑 → 흰색 통일" | ✅ canvas (#ffffff) 단일 |
+| "팀 카드는 무조건 흰색만 — 디자인시스템 반영" | ✅ §02 POST-IT TINT 단일 흰색 명문화 + §09f DO 룰 갱신 |
+| "안쓰는 화면 삭제" | ✅ A/B 변형 4 페이지 JSX·viewer·Renewal 모두 정리 |
+| "b2-roster-detail 모달이 아직 노랑" | ✅ 모달도 teamIdentityTint() 사용하므로 흰색 자동 적용 |
+
+### 흰색 vs paper 분리
+
+paper 배경(#faf9f6) 위 흰색(#ffffff) 카드 → 명도 차이 1.5%. 카드 식별은 shadow + tape이 담당.
+
+| 신호 | 역할 |
+|------|------|
+| `--postit-shadow-rest` | "들린 종이" 어휘 — paper 위 카드 분리 |
+| tape (ink alpha 단색) | 카드 상단 중앙 — 시각 단서 |
+| 회전 ±1.4° 4-variant | 정적 그리드 단조감 보완 |
+
+### 반증 시나리오
+
+- (a) **흰색 vs paper 명도 차이 ↓ → 카드 윤곽 약함**: shadow만으로 충분한지 7/13 전북 실측. 부족 시 hairline border 추가 또는 shadow 강도 ↑.
+- (b) **단일 색 단조감**: 회전 4-variant + tape이 시각 다양성 제공. 사용자 평가 후 결정.
+- (c) **모달도 흰색**: §18-19 의도("카드를 펴 본다") 시각 연속성 강화. OK.
+
+### 검증
+
+- [ ] viewer `b2-tutorial-waiting` ⌘+Shift+R — 32카드 모두 흰색.
+- [ ] `b2-roster-detail` 모달 흰색 (이미지 노랑 문제 해소).
+- [ ] viewer 드롭다운에 white/green A/B 4 페이지 미노출.
+- [ ] `MonoTintContext` 코드 잔존 0건.
+- [ ] 콘솔 0 에러.
+
+### 후속
+
+- (a) **paper 배경 강화 검토**: 명도 차이 부족 시 `--c-paper` 약간 어둡게 조정. 단 전체 화면 영향.
+- (b) **shadow 강도 보강**: 흰색 카드 윤곽이 약하면 `--postit-shadow-rest` 강화.
+- (c) **HackathonCard 5상태 wash 유지**: 본 정책은 팀 카드 한정. HackathonCard는 status-driven wash(§18-13).
+
+---
+
+## 19. Paper Surface 도입 + C-1 v1 폐기 + v2 canonical 채택 (2026-05-29)
+
+### 결정
+양피지 질감 표면(§09g `.jt-paper-surface`) 도입. 모달·큰 카드·empty state에 사용. C-1 v1 (`C1TeamRoom` + `WaitingIllustration` 일러스트 + 좌측 일러스트 + 우측 흰 패널) 폐기. v2 (`C1TeamRoomV2`: 좌측 메시지 + 우측 paper 패널)를 canonical `c1`으로 채택.
+
+### Paper Surface 사양 (`tokens.css` §618g)
+- `.jt-paper-surface-wrap` (filter drop-shadow) > `.jt-paper-surface` (clip-path 종이 가장자리 + ::before 가장자리 fold + ::after 안쪽 도장 vignette).
+- 폭 280px 이상 권장. 작은 카드·dense 리스트는 `.jt-postit-card` / `.jt-card`.
+- ModalSurface와 결합: className으로 `jt-paper-surface` 추가 → borderRadius/shadow 자동 무효화.
+- Interactive 변형: `.jt-paper-interactive` 추가 → hover lift(translateY(-3px) + 강한 shadow), active scale, focus-visible outline. postit과 동일 어휘.
+- 배경 부착 어휘: 와시 테이프 2장 / 압정 1개 + 회전 — 디자인 시스템 §09g 데모 2종 제공.
+
+### C-1 v1 폐기 — 변경 코드
+| 파일 | 변경 |
+|------|------|
+| `participant.jsx` | `C1TeamRoom`·`C1RoomBefore/AfterTutorial/Ended`·`C1Waiting/Ended`·`ParticipantStatusBadge`·`WaitingIllustration` 함수 삭제. window export 정리(v2만 유지) |
+| `participant.jsx` `TeamPostitV2` | `.jt-postit-card` → `.jt-paper-surface` 전환. 회전(`--postit-rot`·`heroPostitRotation`) 제거, tape 유지. 폭 360→440, 내부 padding 확대 |
+| `operator.jsx` `RosterTeamDetailModal` | `className="jt-paper-surface"` 추가, 폭 380→440, padding 확대. 위치는 `top/bottom:60 flex` → `top:50% transform:translate(-50%,-50%) + maxHeight:calc(100% - 120px)`로 단순화 |
+| `operator.jsx` `B1Empty` | inline 카드 → `jt-paper-surface-wrap > jt-paper-surface` 적용 |
+| `viewer.html` SCREENS | `c1`·`c1-after-tutorial`·`c1-ended` 라벨 그대로 두고 render만 V2로 교체. `c1-long-name`·`c1-many-members` 유지 (V2 사용). `c1-ended-long-name`·`c1-ended-many-members`·`c1-v2`·`c1-after-tutorial-v2`·`c1-ended-v2`·`c1-v2-long-name`·`c1-v2-many-members` 제거. ACTIONS `c1-ended-v2 → c1-ended` 갱신 |
+| `viewer.html` 필수 컴포넌트 체크 | `C1RoomBefore` → `C1RoomBeforeV2` |
+| `Jitda Renewal.html` | v1 artboard 3종 (`c1`·`c1-after-tutorial`·`c1-ended`)을 V2 컴포넌트로 교체. v2 별도 artboard 3종 제거 |
+
+### 기획문서 정렬
+- `STRUCTURE.md` §2 화면 수 갱신 (54→49), §3 인덱스 표 C 영역 행 5개로 정리 (v1·v2 통합).
+- 페이지정의서·화면상태정의서는 본 작업 범위 외 (UI만 변경, 정책 매트릭스 무변경) — 후속 검토 시 v1 일러스트 참조 제거 필요.
+
+### 검증
+- viewer `?id=b1-empty` paper surface 적용 + 가장자리 fold 가장자리에만 노출.
+- viewer `?id=c1` `?id=c1-after-tutorial` `?id=c1-ended` V2 컴포넌트 렌더 + 우측 paper 팀 패널.
+- viewer `?id=b2-roster-detail` paper 모달 중앙 정렬 + 폭 440 + padding 확대.
+- 콘솔 0 에러. `window.C1RoomBefore` undefined 검증(v1 deletion 확인).
+
+### 후속 검증 포인트
+- (a) C-1에서 paper 가장자리 fold(우측 상단 highlight)가 우측 팀 패널 위치와 충돌하지 않는지 — 현 폭 440에서 OK이나 다인팀 7명 케이스 스크롤 발생 시 본문 영역 가독성 재확인 필요.
+- (b) `.jt-paper-interactive` 적용 가능한 화면 식별 — 갤러리 카드·결과 카드 등 향후 후보. 현재 적용 0건 (opt-in modifier).
+- (c) tape/pushpin 데코 어휘는 디자인 시스템 §09g 데모 한정. 실제 화면 적용 시점에서 reusable class(`.jt-paper-tape`·`.jt-paper-pushpin`) 승격 검토.
+- (d) C-1 v1 폐기로 `WaitingIllustration` SVG 어휘(idle/tutorial/tutorialDone/go/ended) 영구 손실 — 향후 일러스트 필요 시 재사용 자산 0. 의도된 결과(좌측 일러스트 패턴이 V2 디자인에서 폐기됐으므로).
+
+---
+
+*검토자: 짓다 디자인 / 작성일: 2026-05-29 (§18 RosterRow 포스트잇 어휘 + §18-8 wash 톤 + §18-9 단일 토글 + §18-10 Switch primitive + §18-11 토글 작동·재정렬 애니 + §18-12 모달 peel 폐기 + 백드롭 settle 차단 + §18-13 HackathonCard 5상태 색 여정 + §18-14 단계 필터 작동 + §18-15 팀 identity 색 정책 (§18-20으로 단순화) + §18-16 미접속 chip 3-state (§18-18로 대체) + §18-17 mono tint A/B 변형 (§18-20으로 폐기·채택) + §18-18 카운트 색·weight 3-state + §18-19 모달 큰 포스트잇 리디자인 + §18-20 팀 유형 2색 정책 (§18-25로 단순화) + §18-21 B-1 대기 tint 강화 (§18-22에서 철회) + §18-22 §18-21 철회·카드 정보 통일·KU 카피 정정 + §18-23 tutorial_waiting canvas 전환 + §18-24 hackathon_waiting 칩 helmet 노랑 + §18-25 팀 포스트잇 단일 노란색 + 가나다순 (§18-28로 단순화) + §18-26 white/green A/B (§18-28에서 삭제) + §18-27 해커톤 종료 danger filled 강화 + §18-28 팀 포스트잇 최종 단일 흰색 + §19 Paper Surface 도입·C-1 v1 폐기·v2 canonical)*
 
 
+
+---
+
+## §20 폰트 토큰 단일화 — Pretendard 메인화 (2026-06-02)
+
+**결정**: 메인 폰트 Pretendard 단일화. Wanted Sans · JetBrains Mono 제거.
+
+- `--font-display`: Wanted Sans → **Pretendard Variable** (display=body 동일 폰트, 굵기·크기·자간으로 위계 구분)
+- `--font-body`: 그대로 Pretendard Variable
+- `--font-mono`: D2Coding 우선 + IBM Plex Mono 폴백. JetBrains Mono 제거.
+- `--font-sans` (미정의·12 callsite) → `var(--font-body)`로 마이그레이션 후 토큰 제거.
+
+**파일 변경**
+- `tokens.css`: Wanted Sans `@import` 제거, 토큰 3종 갱신.
+- `viewer.html`: Wanted Sans `<link>` 제거, 인라인 override 동기화, 뷰어 chrome 하드코딩 `'JetBrains Mono'` / `'Pretendard Variable'` → `var(--font-mono)` / `var(--font-body)` 교체 (10건).
+- `Jitda Renewal.html`, `Jitda Design System.html`: 동일 정리 + Type 섹션·token 표·visible 라벨 문구 갱신.
+- JSX 5개 파일(`shared`, `dialogs`, `gallery`, `participant`, `operator`): `'var(--font-sans)'` 12 callsite → `'var(--font-body)'` 교체.
+
+**가시 영향**: display 800 굵기 헤드라인이 Wanted Sans → Pretendard로 바뀜. 둘 다 산세리프라 차이는 미세. mono 영역은 D2Coding이 우선 적용되어 한글·영문 등폭 일관성 향상.
+
+**검증**: `grep`으로 `Wanted Sans`/`JetBrains`/`font-sans` 잔존 호출 0건 확인 (changelog 코멘트 제외).

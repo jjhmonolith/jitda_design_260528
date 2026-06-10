@@ -4,11 +4,14 @@
   <meta charset="utf-8" />
   <title>짓다 · 화면 뷰어</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- dev-only: 브라우저가 viewer.html을 304로 잡고 옛 ?v= 캐시 키를 그대로 들고있는 문제 회피 (2026-06-01 §19-4) -->
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css" />
 
   <!-- 단일 소스: tokens.css 직접 로드 (2026-05-27 전환). 아래 인라인 <style>은 viewer-specific override만 유지. -->
-  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="tokens.css?v=20260601j" />
 
   <!-- viewer 인라인 override (기존 토큰 값은 tokens.css와 다를 수 있음 — 우선순위: 인라인 > tokens.css) -->
   <style>
@@ -54,9 +57,9 @@
       --c-coral: var(--c-helmet);
       --c-coral-soft: var(--c-helmet-soft);
 
-      --font-display: 'Wanted Sans Variable', 'Wanted Sans', system-ui, sans-serif;
+      --font-display: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
       --font-body: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
-      --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, 'Menlo', monospace;
+      --font-mono: 'D2Coding', 'IBM Plex Mono', ui-monospace, 'Menlo', monospace;
 
       --r-xs: 2px;
       --r-sm: 4px;
@@ -116,7 +119,7 @@
     .jt-pill-pending { background: var(--c-stone); color: var(--c-ink-3); }
     .jt-pill-tutorial { background: var(--c-tutorial-soft); color: var(--c-tutorial); }
     .jt-pill-started { background: var(--c-mint-soft); color: var(--c-mint); }
-    .jt-pill-paused { background: var(--c-amber-soft); color: var(--c-amber); }
+    /* .jt-pill-paused 폐기 (2026-05-29): 일시정지 기능 제거 */
     .jt-pill-ended { background: #ebebec; color: var(--c-ink-3); }
     .jt-pill-danger { background: var(--c-rose-soft); color: var(--c-rose); }
     .jt-pill-info { background: var(--c-blue-soft); color: var(--c-blue); }
@@ -124,15 +127,15 @@
     .jt-pill-tutorial-waiting { background: #ebebec; color: #4a473e; border: 1px solid #d9d6cc; }
     .jt-pill-tutorial-running { background: #e1e0fa; color: #2e2c8a; }
     .jt-pill-tutorial-ended   { background: #d2ece5; color: #0a5a4a; }
-    .jt-pill-hack-waiting     { background: #ebebec; color: #4a473e; border: 1px solid #d9d6cc; }
+    .jt-pill-hack-waiting     { background: #fff4c2; color: #6b4d00; border: 1px solid #f1e07a; }
     .jt-pill-hack-running     { background: var(--c-mint-soft); color: var(--c-mint); }
     .jt-pill-hack-ended       { background: #ffe1de; color: #882019; }
 
     /* 2026-05-28: viewer-specific override만 유지 — border-radius 만 r-sm 으로 변경(viewer는 sm, tokens.css 기본은 pill).
        기존의 .jt-btn 전체 재정의는 tokens.css 의 variant(border-color 등) override를 source 순서로 덮어버려 폐기.
-       모든 base 속성(display, height, padding, border, transition 등)은 tokens.css 에 위임. */
+       모든 base 속성(display, height, padding, border, transition 등)은 tokens.css 에 위임.
+       2026-06-01: .jt-btn-sm 별도 곡률 override 폐기 — .jt-btn의 var(--r-sm) 4px 상속. 사이즈 무관 곡률 통일. */
     .jt-btn { border-radius: var(--r-sm); }
-    .jt-btn-sm { border-radius: var(--r-xs); }
 
     /* === Interaction tokens (2026-05-27 추가 — tokens.css 미러) === */
     --dur-instant: 75ms; --dur-fast: 150ms; --dur-base: 240ms;
@@ -212,7 +215,7 @@
       font-family: inherit; font-size: 14px;
       background: var(--c-canvas);
       border: 1px solid var(--c-hairline-strong);
-      border-radius: var(--r-xs);
+      border-radius: var(--r-sm);
       color: var(--c-ink); outline: none;
     }
     .jt-input:focus { border-color: var(--c-ink); box-shadow: 0 0 0 2px var(--c-helmet); }
@@ -231,8 +234,8 @@
     .jt-avatar {
       width: 28px; height: 28px; border-radius: 50%;
       display: inline-flex; align-items: center; justify-content: center;
-      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
-      letter-spacing: 0.04em; background: var(--c-stone); color: var(--c-ink);
+      font-family: var(--font-body); font-size: 10px; font-weight: 700;
+      letter-spacing: -0.04em; background: var(--c-stone); color: var(--c-ink);
       flex-shrink: 0;
     }
     .jt-blueprint-bg {
@@ -392,10 +395,13 @@
         calc(100% - 4px) 100%, 100% 88%, calc(100% - 5px) 72%, 100% 55%, calc(100% - 4px) 38%, 100% 22%, calc(100% - 3px) 8%, calc(100% - 7px) 0, 7px 0);
     }
 
+    /* Paper Surface는 tokens.css §618g로 이동 (2026-05-29).
+       §19-4 FORCE OVERRIDE 룰셋은 2026-06-01 §19-5에서 제거 — tokens.css 적용 검증 완료. */
+
   </style>
 
   <style>
-    html, body { margin: 0; padding: 0; min-height: 100%; background: #1a1a1f; font-family: 'Pretendard Variable', system-ui, sans-serif; color: #e5e5ec; }
+    html, body { margin: 0; padding: 0; min-height: 100%; background: #1a1a1f; font-family: var(--font-body); color: #e5e5ec; }
     @keyframes blink { 50% { opacity: 0; } }
     @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(24,99,220,0.5); } 50% { box-shadow: 0 0 0 6px rgba(24,99,220,0); } }
 
@@ -425,7 +431,7 @@
     #toolbar button.nav:hover, #toolbar a.btn:hover { background: #e6b500; }
     #toolbar button.nav:disabled { opacity: 0.35; cursor: not-allowed; background: #555; color: #ccc; }
     #toolbar .meta {
-      color: #8a8aa0; font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+      color: #8a8aa0; font-family: var(--font-mono); font-size: 11.5px;
       letter-spacing: 0.04em; white-space: nowrap;
     }
     #toolbar .spacer { flex: 1; }
@@ -450,7 +456,7 @@
     }
     .art-frame .id-badge {
       position: absolute; top: 8px; right: 8px; z-index: 9999;
-      font-family: 'JetBrains Mono', monospace; font-size: 10px;
+      font-family: var(--font-mono); font-size: 10px;
       background: rgba(20,19,15,0.85); color: #ffce2b;
       padding: 4px 8px; border-radius: 3px;
       letter-spacing: 0.04em;
@@ -468,7 +474,7 @@
     }
     #status code {
       background: rgba(0,0,0,0.3); padding: 1px 6px; border-radius: 3px;
-      font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+      font-family: var(--font-mono); font-size: 11.5px;
     }
 
     /* ── Loading ──────────────────────────────── */
@@ -476,7 +482,7 @@
       position: fixed; inset: 0;
       display: flex; align-items: center; justify-content: center;
       background: #1a1a1f; color: #ffce2b;
-      font-family: 'JetBrains Mono', monospace; font-size: 14px;
+      font-family: var(--font-mono); font-size: 14px;
       z-index: 10000;
     }
     body.ready #loading { display: none; }
@@ -486,7 +492,7 @@
       position: fixed; bottom: 20px; right: 20px;
       background: rgba(20,20,25,0.95); color: #aaa;
       padding: 10px 14px; border-radius: 6px;
-      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      font-family: var(--font-mono); font-size: 11px;
       border: 1px solid rgba(255,255,255,0.1);
       pointer-events: none;
       opacity: 0.7;
@@ -495,6 +501,120 @@
       background: rgba(255,255,255,0.1); padding: 1px 5px; border-radius: 3px;
       font-family: inherit; color: #fff;
     }
+
+    /* ── Comments (viewer-only feature, not part of design system) ── */
+    #toolbar .comment-btn {
+      background: transparent; color: #e5e5ec;
+      border: 1px solid rgba(255,255,255,0.18);
+    }
+    #toolbar .comment-btn:hover { background: rgba(255,255,255,0.06); }
+    #toolbar .comment-btn.is-active {
+      background: #ffce2b; color: #14130f;
+      border-color: #ffce2b; font-weight: 600;
+    }
+    #toolbar .comment-count {
+      display: inline-block; margin-left: 6px;
+      padding: 1px 6px; border-radius: 10px;
+      background: rgba(255,206,43,0.18); color: #ffce2b;
+      font-family: var(--font-mono); font-size: 10.5px;
+    }
+    #toolbar .comment-btn.is-active .comment-count {
+      background: rgba(20,19,15,0.2); color: #14130f;
+    }
+
+    .comment-pin-layer {
+      position: absolute; inset: 0;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .comment-add-overlay {
+      position: absolute; inset: 0;
+      cursor: crosshair;
+      background: rgba(255, 206, 43, 0.04);
+      z-index: 90;
+    }
+    .art-frame.is-comment-add { cursor: crosshair; }
+
+    .comment-pin {
+      position: absolute;
+      width: 26px; height: 26px;
+      transform: translate(-50%, -100%);
+      pointer-events: auto;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 12px; font-weight: 700;
+      color: #14130f;
+      background: #ffce2b;
+      border: 2px solid #14130f;
+      border-radius: 50% 50% 50% 2px;
+      box-shadow: 0 4px 10px rgba(20,19,15,0.25);
+      transition: transform 120ms ease;
+      user-select: none;
+    }
+    .comment-pin:hover { transform: translate(-50%, -100%) scale(1.12); }
+    .comment-pin.is-draft {
+      background: #fff4c2;
+      border-style: dashed;
+    }
+
+    .comment-popover {
+      position: absolute;
+      transform: translate(-50%, 6px);
+      min-width: 260px; max-width: 320px;
+      background: #fff;
+      border: 1px solid #d9d5c9;
+      border-radius: 6px;
+      box-shadow: 0 12px 32px rgba(20,19,15,0.20);
+      padding: 12px;
+      z-index: 200;
+      pointer-events: auto;
+      font-family: var(--font-body);
+      color: #14130f;
+    }
+    .comment-popover textarea {
+      width: 100%; min-height: 64px;
+      padding: 8px 10px;
+      font: inherit; font-size: 13px; line-height: 1.5;
+      color: #14130f;
+      background: #fcfbf6;
+      border: 1px solid #d9d5c9;
+      border-radius: 4px;
+      resize: vertical;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .comment-popover textarea:focus { border-color: #14130f; box-shadow: 0 0 0 2px #ffce2b; }
+    .comment-popover .body {
+      font-size: 13px; line-height: 1.55;
+      white-space: pre-wrap; word-break: break-word;
+      color: #2a2823;
+    }
+    .comment-popover .meta {
+      margin-top: 8px;
+      font-family: var(--font-mono);
+      font-size: 10.5px; letter-spacing: 0.04em;
+      color: #8a8779;
+    }
+    .comment-popover .actions {
+      display: flex; gap: 6px; margin-top: 10px;
+      justify-content: flex-end;
+    }
+    .comment-popover button {
+      font: inherit; font-size: 12px;
+      padding: 5px 10px; border-radius: 3px;
+      border: 1px solid #d9d5c9;
+      background: #fff; color: #14130f;
+      cursor: pointer;
+    }
+    .comment-popover button:hover { background: #f4f2ec; }
+    .comment-popover button.primary {
+      background: #14130f; color: #ffce2b;
+      border-color: #14130f; font-weight: 600;
+    }
+    .comment-popover button.primary:hover { background: #000; }
+    .comment-popover button.danger { color: #cc4a0a; border-color: #ffe0cf; }
+    .comment-popover button.danger:hover { background: #ffe0cf; }
   </style>
 
   <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -510,6 +630,10 @@
     <select id="screen-select" title="화면 선택"></select>
     <span class="meta" id="meta">—</span>
     <div class="spacer"></div>
+    <button id="comment-toggle" class="comment-btn" title="댓글 모드 토글 (C)">💬 댓글<span id="comment-count" class="comment-count" hidden>0</span></button>
+    <button id="comment-export" class="comment-btn" title="JSON 내보내기">⬇</button>
+    <button id="comment-import" class="comment-btn" title="JSON 가져오기">⬆</button>
+    <input type="file" id="comment-import-file" accept="application/json,.json" hidden />
     <a href="Jitda Renewal.html" class="link">캔버스 (전체)</a>
     <a href="STRUCTURE.md" class="link">구조 맵</a>
   </div>
@@ -522,14 +646,14 @@
     <kbd>←</kbd> <kbd>→</kbd> 화면 이동 · <kbd>/</kbd> 화면 검색
   </div>
 
-  <!-- JSX 컴포넌트 (shared 먼저 로드) -->
-  <script type="text/babel" src="shared.jsx"></script>
-  <script type="text/babel" src="auth.jsx"></script>
-  <script type="text/babel" src="operator.jsx"></script>
-  <script type="text/babel" src="participant.jsx"></script>
-  <script type="text/babel" src="gallery.jsx"></script>
-  <script type="text/babel" src="dialogs.jsx"></script>
-  <script type="text/babel" src="judge.jsx"></script>
+  <!-- JSX 컴포넌트 (shared 먼저 로드) — ?v= 토큰: 브라우저 메모리 캐시 무효화 (dev only) -->
+  <script type="text/babel" src="shared.jsx?v=20260602m"></script>
+  <script type="text/babel" src="auth.jsx?v=20260602i"></script>
+  <script type="text/babel" src="operator.jsx?v=20260601g"></script>
+  <script type="text/babel" src="participant.jsx?v=20260610k"></script>
+  <script type="text/babel" src="gallery.jsx?v=20260602l"></script>
+  <script type="text/babel" src="dialogs.jsx?v=20260601g"></script>
+  <script type="text/babel" src="judge.jsx?v=20260601g"></script>
 
   <script type="text/babel" data-presets="react">
     // ──────────────────────────────────────────────────────────────
@@ -548,6 +672,7 @@
       { id: 'a2-popup',        section: 'A. 인증',      label: 'A-2 · 팝업 차단 우회',                    render: () => <A2PopupBlocked /> },
       { id: 'a3',              section: 'A. 인증',      label: 'A-3 · OAuth 콜백 (처리)',                 render: () => <A3OAuthCallback /> },
       { id: 'a3-failed',       section: 'A. 인증',      label: 'A-3 · 인증 실패 + 5초 카운트다운',        render: () => <A3OAuthFailed /> },
+      { id: 'a4',              section: 'A. 인증',      label: 'A-4 · 운영자 회원가입',                  render: () => <A4OperatorSignup /> },
 
       // ─ B. 운영자 ───────────────────────────────
       { id: 'b1',                    section: 'B. 운영자',  label: 'B-1 · 해커톤 목록 (5상태)',              h: 920, render: () => <B1HackathonList /> },
@@ -556,35 +681,44 @@
       { id: 'b2-tutorial-running',   section: 'B. 운영자',  label: 'B-2 · ② 튜토리얼 진행 — 완료율 모니터',  h: 920, render: () => <B2DashboardTutorialRunning /> },
       { id: 'b2-hack-waiting',       section: 'B. 운영자',  label: 'B-2 · ④ 해커톤 대기 — 시작 직전',        h: 920, render: () => <B2DashboardHackathonWaiting /> },
       { id: 'b2-started',            section: 'B. 운영자',  label: 'B-2 · ⑤ 해커톤 진행 — 팀 활동',           h: 920, render: () => <B2DashboardStarted /> },
-      { id: 'b2-paused',             section: 'B. 운영자',  label: 'B-2 · 일시정지 (② 또는 ⑤ 위 오버레이)',  h: 920, render: () => <B2DashboardPaused /> },
+      // b2-paused 폐기 (2026-05-29): 일시정지 기능 제거
       { id: 'b2-ended',              section: 'B. 운영자',  label: 'B-2 · ⑥ 해커톤 종료 — 결과 + 갤러리',    h: 920, render: () => <B2DashboardEnded /> },
       { id: 'b2-skip',               section: 'B. 운영자',  label: 'B-2 모달 · 튜토리얼 건너뛰기 경고',              render: () => <B2SkipTutorialModal /> },
-      { id: 'b2-end',                section: 'B. 운영자',  label: 'B-2 모달 · 종료 1단계 (이름 타이핑)',            render: () => <B2EndModal /> },
+      { id: 'b2-end',                section: 'B. 운영자',  label: 'B-2 모달 · 종료 1단계 ("종료" 입력)',           render: () => <B2EndModal /> },
       { id: 'b2-end-countdown',      section: 'B. 운영자',  label: 'B-2 모달 · 종료 2단계 (30초 카운트다운)',        render: () => <B2EndModalCountdown /> },
       { id: 'b2-tutorial-start-confirm',  section: 'B. 운영자',  label: 'B-2 모달 · 튜토리얼 시작 확인 (① → ②)',              render: () => <B2TutorialStartConfirm /> },
       { id: 'b2-tutorial-end-confirm',    section: 'B. 운영자',  label: 'B-2 모달 · 튜토리얼 종료 확인 + 완료 현황 (② → ④)', render: () => <B2TutorialEndConfirm /> },
       { id: 'b2-hackathon-start-confirm', section: 'B. 운영자',  label: 'B-2 모달 · 해커톤 시작 확인 (④ → ⑤)',                render: () => <B2HackathonStartConfirm /> },
       { id: 'b2-roster-detail',           section: 'B. 운영자',  label: 'B-2 모달 · 팀 상세 (RosterRow 카드 클릭 → 멤버·접속)', h: 920, render: () => <B2RosterDetail /> },
 
-      // ─ C. 참가자 ───────────────────────────────
-      { id: 'c1',                    section: 'C. 참가자',  label: 'C-1 · 대기실 ① 시작 전 (tutorial_waiting / 튜토리얼 없는 hackathon_waiting)', render: () => <C1RoomBefore /> },
-      { id: 'c1-after-tutorial',     section: 'C. 참가자',  label: 'C-1 · 대기실 ② 튜토리얼 후 (hackathon_waiting · 튜토리얼 후)', render: () => <C1RoomAfterTutorial /> },
-      { id: 'c1-ended',              section: 'C. 참가자',  label: 'C-1 · 대기실 ③ 해커톤 종료 (hackathon_ended)',   render: () => <C1RoomEnded /> },
-      { id: 'c1-long-name',          section: 'C. 참가자',  label: 'C-1 · 대기실 ① 시작 전 · edge: 긴 팀명 (25+자)', render: () => <C1TeamRoom state="roomBefore" team={MOCK_TEAM_LONG_NAME} /> },
-      { id: 'c1-many-members',       section: 'C. 참가자',  label: 'C-1 · 대기실 ① 시작 전 · edge: 다인팀 (7명)',   render: () => <C1TeamRoom state="roomBefore" team={MOCK_TEAM_MANY_MEMBERS} /> },
-      { id: 'c1-ended-long-name',    section: 'C. 참가자',  label: 'C-1 · 대기실 ③ 종료 · edge: 긴 팀명',           render: () => <C1TeamRoom state="roomEnded" team={MOCK_TEAM_LONG_NAME} /> },
-      { id: 'c1-ended-many-members', section: 'C. 참가자',  label: 'C-1 · 대기실 ③ 종료 · edge: 다인팀 (7명)',      render: () => <C1TeamRoom state="roomEnded" team={MOCK_TEAM_MANY_MEMBERS} /> },
-      { id: 'c2',                    section: 'C. 참가자',  label: 'C-2 · 셀프 튜토리얼 (상단 접이식)',               render: () => <C2Tutorial /> },
-      { id: 'c3',                    section: 'C. 참가자',  label: 'C-3 · 1인팀 캔버스 (OpenCode 임베드)',            render: () => <C3PersonalCoding /> },
+      // ─ C. 참가자 ─ (v1 폐기 2026-05-29 — v2를 canonical c1으로 채택) ───────────────
+      { id: 'c1',                    section: 'C. 참가자',  label: 'C-1 · 대기실 ① 시작 전 (tutorial_waiting)',       render: () => <C1RoomBeforeV2 /> },
+      { id: 'c1-after-tutorial',     section: 'C. 참가자',  label: 'C-1 · 대기실 ② 튜토리얼 후 (hackathon_waiting)',  render: () => <C1RoomAfterTutorialV2 /> },
+      { id: 'c1-ended',              section: 'C. 참가자',  label: 'C-1 · 대기실 ③ 해커톤 종료 (hackathon_ended)',    render: () => <C1RoomEndedV2 /> },
+      { id: 'c1-long-name',          section: 'C. 참가자',  label: 'C-1 · 대기실 ① · edge: 긴 팀명 (25+자)',          render: () => <C1TeamRoomV2 state="roomBefore" team={MOCK_TEAM_LONG_NAME} /> },
+      { id: 'c1-many-members',       section: 'C. 참가자',  label: 'C-1 · 대기실 ① · edge: 다인팀 (7명)',             render: () => <C1TeamRoomV2 state="roomBefore" team={MOCK_TEAM_MANY_MEMBERS} /> },
+      { id: 'c2',                    section: 'C. 참가자',  label: 'C-2 · 셀프 튜토리얼 · Step 1 기획',                render: () => <C2Tutorial key="c2s1" step={1} /> },
+      { id: 'c2-step2',             section: 'C. 참가자',  label: 'C-2 · 셀프 튜토리얼 · Step 2 만들기',              render: () => <C2Tutorial key="c2s2" step={2} /> },
+      { id: 'c2-step3',             section: 'C. 참가자',  label: 'C-2 · 셀프 튜토리얼 · Step 3 바꾸기',              render: () => <C2Tutorial key="c2s3" step={3} /> },
+      { id: 'c2-step4',             section: 'C. 참가자',  label: 'C-2 · 셀프 튜토리얼 · Step 4 내 손으로',           render: () => <C2Tutorial key="c2s4" step={4} /> },
+      { id: 'c3',                    section: 'C. 참가자',  label: 'C-3 · 1인팀 캔버스 (미리보기 완성)',              render: () => <C3PersonalCoding /> },
+      { id: 'c3-preview-empty',     section: 'C. 참가자',  label: 'C-3 · 1인팀 캔버스 (미리보기 미준비)',            render: () => <C3PersonalCodingEmpty /> },
+      { id: 'c3-spawning',          section: 'C. 참가자',  label: 'C-3 · 1인팀 캔버스 (서버 기동 중)',               render: () => <C3PersonalCodingSpawning /> },
       { id: 'c4',                    section: 'C. 참가자',  label: 'C-4 · 다인팀 캔버스 (커서 + 전송 요청)',          render: () => <C4TeamCanvas /> },
 
       // ─ D. 갤러리 ───────────────────────────────
       { id: 'd1',                    section: 'D. 갤러리',  label: 'D-1 · 목록 (진행 중 · 8개 공개)',         h: 920, render: () => <D1GalleryList /> },
       { id: 'd1-ended',              section: 'D. 갤러리',  label: 'D-1 · 목록 (종료 후 · 12개 자동 공개)',    h: 920, render: () => <D1GalleryListEnded /> },
+      { id: 'd1-ended-operator',     section: 'D. 갤러리',  label: 'D-1 · 목록 (종료 후 · 운영자 시점 — 대시보드 복귀 버튼)', h: 920, render: () => <D1GalleryListEnded role="operator" /> },
       { id: 'd1-empty',              section: 'D. 갤러리',  label: 'D-1 · 빈 상태 (아직 공개된 작품 없음)',           render: () => <D1GalleryEmpty /> },
       { id: 'd1-loading',            section: 'D. 갤러리',  label: 'D-1 · 로딩 상태 (스켈레톤)',                       render: () => <D1GalleryLoading /> },
       { id: 'd2',                    section: 'D. 갤러리',  label: 'D-2 · 상세 (기본 · 정보 탭 · 좋아요)',     h: 920, render: () => <D2GalleryDetail /> },
-      { id: 'd2-comments',           section: 'D. 갤러리',  label: 'D-2 · 댓글 탭 (4건)',                       h: 920, render: () => <D2GalleryDetailComments /> },
+      { id: 'd2-comments',           section: 'D. 갤러리',  label: 'D-2 · 댓글 탭 (입력 폼 상시 노출 · 답글 요약)', h: 920, render: () => <D2GalleryDetailComments /> },
+      { id: 'd2-comments-thread',    section: 'D. 갤러리',  label: 'D-2 · 댓글 스레드 (답글 풀펼침)',           h: 920, render: () => <D2GalleryDetailCommentsThread /> },
+      { id: 'd2-comments-thread-compose', section: 'D. 갤러리', label: 'D-2 · 댓글 스레드 + 답글 작성 폼',      h: 920, render: () => <D2GalleryDetailCommentsThreadCompose /> },
+      { id: 'd2-comments-menu',      section: 'D. 갤러리',  label: 'D-2 · 댓글 더보기 메뉴 열림 (본인)',         h: 920, render: () => <D2GalleryDetailCommentsMenu /> },
+      { id: 'd2-comments-edit',      section: 'D. 갤러리',  label: 'D-2 · 댓글 수정 모드',                       h: 920, render: () => <D2GalleryDetailCommentsEdit /> },
+      { id: 'd2-comments-delete',    section: 'D. 갤러리',  label: 'D-2 · 댓글 삭제 확인',                       h: 920, render: () => <D2GalleryDetailCommentsDelete /> },
       { id: 'd2-comments-empty',     section: 'D. 갤러리',  label: 'D-2 · 댓글 빈 상태',                        h: 920, render: () => <D2GalleryDetailCommentsEmpty /> },
       { id: 'd2-loading',            section: 'D. 갤러리',  label: 'D-2 · 라이브 프리뷰 로딩 (서버 기동 중)',   h: 920, render: () => <D2GalleryDetailLoading /> },
       { id: 'd2-mine',               section: 'D. 갤러리',  label: 'D-2 · 내 프로젝트 (공개 설정 활성)',        h: 920, render: () => <D2GalleryDetailMine /> },
@@ -596,13 +730,15 @@
       { id: 'e1-saving',             section: 'E. 다이얼로그', label: 'E-1 · 저장 중 (스피너)',                          render: () => <E1ProjectSettings stateVariant="saving" /> },
       { id: 'e1-saved',              section: 'E. 다이얼로그', label: 'E-1 · 저장 완료 (인라인 확인)',                  render: () => <E1ProjectSettings stateVariant="saved" /> },
       { id: 'e1-unsaved-close',      section: 'E. 다이얼로그', label: 'E-1 · 미저장 종료 경고',                          render: () => <E1UnsavedCloseConfirm /> },
-      { id: 'e4',                    section: 'E. 다이얼로그', label: 'E-4 · 합의 투표 (15초 · 만장일치)',                render: () => <E4ConsensusVote stateVariant="voting" /> },
-      { id: 'e4-waiting',            section: 'E. 다이얼로그', label: 'E-4 · 응답 대기 (본인 동의 후 · 팀원 응답 대기)', render: () => <E4ConsensusVote stateVariant="waiting" /> },
-      { id: 'e4-v2',                 section: 'E. 다이얼로그', label: 'E-4 v2 · 합의 투표 (매치 수락 어휘 · 거대 ring)', render: () => <E4ConsensusVote stateVariant="voting-v2" /> },
-      { id: 'e4-waiting-v2',         section: 'E. 다이얼로그', label: 'E-4 v2 · 응답 대기 (매치 수락 어휘 · 거대 ring)', render: () => <E4ConsensusVote stateVariant="waiting-v2" /> },
-      { id: 'e4-rejected',           section: 'E. 다이얼로그', label: 'E-4 · 합의 무산 (캔버스 복귀 CTA)',                render: () => <E4ConsensusVote stateVariant="rejected" /> },
+      // E-4 v1(작은 링·4열 카드)은 2026-06-01 폐기. v2(거대 ring)만 정본.
+      { id: 'e4-v2',                 section: 'E. 다이얼로그', label: 'E-4 v2 · 합의 투표 (4인)',                            render: () => <E4ConsensusVote stateVariant="voting-v2" /> },
+      { id: 'e4-v2-large',           section: 'E. 다이얼로그', label: 'E-4 v2 · 합의 투표 (10인 · 큰 팀)',                    render: () => <E4ConsensusVote stateVariant="voting-v2" teamSize="large" /> },
+      { id: 'e4-waiting-v2',         section: 'E. 다이얼로그', label: 'E-4 v2 · 응답 대기 (4인)',                            render: () => <E4ConsensusVote stateVariant="waiting-v2" /> },
+      { id: 'e4-waiting-v2-large',   section: 'E. 다이얼로그', label: 'E-4 v2 · 응답 대기 (10인 · 큰 팀)',                    render: () => <E4ConsensusVote stateVariant="waiting-v2" teamSize="large" /> },
+      { id: 'e4-rejected-v2',        section: 'E. 다이얼로그', label: 'E-4 v2 · 합의 무산 (4인)',                            render: () => <E4ConsensusVote stateVariant="rejected-v2" /> },
+      { id: 'e4-rejected-v2-large',  section: 'E. 다이얼로그', label: 'E-4 v2 · 합의 무산 (10인 · 큰 팀)',                    render: () => <E4ConsensusVote stateVariant="rejected-v2" teamSize="large" /> },
       { id: 'e5',                    section: 'E. 다이얼로그', label: 'E-5 · AI 선택지 투표 (3안 + 기타)',              render: () => <E5AIChoiceVote /> },
-      { id: 'e6-paused',             section: 'E. 다이얼로그', label: 'E-6 · 일시정지 오버레이 (바이브코딩 위 백드롭)', render: () => <E6Paused /> },
+      // E-6 폐기 (2026-05-29): 일시정지 기능 제거
       // E-7 폐기 (2026-05-27): 참가자 종료 예고 없음 정책 — 운영자 b2-end-countdown 만료 시 곧바로 c1-ended로 전환.
 
       // ─ F. 심사 ─────────────────────────────────
@@ -622,8 +758,9 @@
       // A. 인증 흐름
       'a1':                  { 'submit': 'c1', 'operator-login': 'a2' }, // 입장 / 운영자 진입
       'a1-invalid':          { 'retry': 'a1', 'operator-login': 'a2' },  // 다시 시도 / 운영자
-      'a2':                  { 'google': 'a3', 'email': 'b1' },          // Google / 이메일 분기
+      'a2':                  { 'google': 'a3', 'email': 'b1', 'signup': 'a4' }, // Google / 이메일 / 회원가입
       'a3-failed':           { 'retry': 'a2', 'back-to-login': 'a2' },   // 재시도 / 돌아가기
+      'a4':                  { 'submit': 'b1-empty', 'back-to-login': 'a2' }, // 가입 완료 → 빈 대시보드 / 로그인 복귀
 
       // B. 운영자 5상태 단방향 머신 (2026-05-26: ③ 폐기 → 5상태 모델)
       // 모든 4개 전이는 확인 모달을 거친다 (어드민-역할-기획 §"규칙" 단방향 전이 — 모두 확인 필수)
@@ -632,9 +769,9 @@
       'b2-tutorial-running': { 'end-tutorial': 'b2-tutorial-end-confirm' },                  // ② → 확인 모달
       'b2-hack-waiting':     { 'start-hackathon': 'b2-hackathon-start-confirm', 'open-team': 'b2-roster-detail' },            // ④ → 확인 모달 / 팀 카드 클릭
       'b2-roster-detail':    { 'close-roster-detail': 'b2-tutorial-waiting' },              // 백드롭·X 클릭 시 원래 화면(예시: ①)으로 복귀
-      'b2-started':          { 'pause': 'b2-paused', 'end': 'b2-end' },                      // ⑤ → paused / 종료 모달
-      'b2-paused':           { 'resume': 'b2-started', 'end': 'b2-end' },
-      'b2-ended':            { 'open-gallery': 'd1-ended' },                                  // ⑥ → 갤러리
+      'b2-started':          { 'end': 'b2-end', 'open-gallery': 'd1', 'resolve-hand-raise': 'b2-started', 'open-absent': 'b2-started', 'close-absent': 'b2-started' }, // ⑤ → 종료 / 갤러리 / 손들기 해결 / 불참 모달 토글. 카드 open-team 제거 (v15)
+      'b2-ended':            { 'open-gallery': 'd1-ended-operator', 'open-token-all': 'b2-ended', 'close-token-all': 'b2-ended' }, // ⑥ → 운영자 갤러리 / 전체 팀 토큰 모달 토글(자기 화면 유지)
+      'd1-ended-operator':   { 'back-to-dashboard': 'b2-ended', 'open-card': 'd2' },         // 운영자 갤러리 → 대시보드 복귀 / 작품 상세
 
       // B 모달 6종 (3개 기존 + 3개 신규)
       'b2-skip':                  { 'cancel': 'b2-tutorial-waiting', 'proceed': 'b2-hack-waiting' },     // ① 건너뛰기 → ④
@@ -644,16 +781,29 @@
       'b2-end':                   { 'cancel': 'b2-started',          'proceed': 'b2-end-countdown' },    // ⑤ 종료 1단계
       'b2-end-countdown':         { 'cancel': 'b2-started',          'confirm': 'b2-ended' },            // ⑤ 종료 2단계
 
-      // E. 다이얼로그
-      'e4':                  { 'agree': 'e4-waiting', 'reject': 'e4-rejected' }, // 동의 → 대기 / 거부 → 무산(만장일치 룰)
-      'e4-waiting':          { 'back-to-canvas': 'c4' }, // 데모 한정 — 실 운영은 전원 동의 시 success, timeout 시 e4-rejected
-      'e4-v2':               { 'agree': 'e4-waiting-v2', 'reject': 'e4-rejected' }, // v2 세트
-      'e4-waiting-v2':       { 'back-to-canvas': 'c4' },
-      'e4-rejected':         { 'back-to-canvas': 'c4' },  // 합의 무산 → 다인팀 캔버스 복귀
+      // C-4 다인팀 — composer 단일 전송 버튼이 합의(E-4) 트리거 (전송요청·일반전송 통합 2026-06-08)
+      'c4':                     { 'request-send': 'e4-v2' },
+
+      // E. 다이얼로그 (E-4: v1 폐기 2026-06-01, v2만 정본 — 만장일치 룰)
+      'e4-v2':                  { 'agree': 'e4-waiting-v2', 'reject': 'e4-rejected-v2' }, // 동의 → 대기 / 거부 → 무산
+      'e4-v2-large':            { 'agree': 'e4-waiting-v2-large', 'reject': 'e4-rejected-v2-large' },
+      'e4-waiting-v2':          { 'back-to-canvas': 'c4' }, // 데모 한정 — 실 운영은 전원 동의 시 success, timeout 시 e4-rejected-v2
+      'e4-waiting-v2-large':    { 'back-to-canvas': 'c4' },
+      'e4-rejected-v2':         { 'back-to-canvas': 'c4' }, // 합의 무산 → 다인팀 캔버스 복귀
+      'e4-rejected-v2-large':   { 'back-to-canvas': 'c4' },
+
+      // C-1 v2 — 운영자 디자인 어휘 이식 (2026-05-29). 종료 상태에서만 갤러리 CTA 노출.
+      'c1-ended':            { 'open-gallery': 'd1-ended' },
 
       // D. 갤러리
       'd1':                  { 'open-card': 'd2' },
       'd1-ended':            { 'open-card': 'd2' },
+      // D-2 댓글 와이어링 — 통합 액션, 답글 요약 → 스레드, 스레드 → 백
+      // RepliesSummary는 각 댓글의 idx별로 `open-thread-N` 액션을 발행하지만,
+      // 디자인 프로토타입에선 모두 동일 스레드 화면으로 매핑(개별 데이터 분기는 실제 앱 책임).
+      'd2-comments':            { 'open-thread-0': 'd2-comments-thread', 'open-thread-1': 'd2-comments-thread', 'open-thread-2': 'd2-comments-thread', 'open-thread-3': 'd2-comments-thread' },
+      'd2-comments-thread':     { 'close-thread': 'd2-comments' },
+      'd2-comments-thread-compose': { 'close-thread': 'd2-comments' },
     };
 
     // 현재 화면 — 클릭 핸들러가 참조
@@ -720,6 +870,9 @@
       );
 
       document.body.classList.add('ready');
+
+      // 핀 레이어는 React 트리 밖에서 관리 — render commit 후 다음 tick에 동기화
+      setTimeout(() => window.__viewerComments && window.__viewerComments.syncForScreen(screen.id), 0);
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -766,7 +919,7 @@
     // 초기 렌더 — JSX 컴포넌트가 정의된 후 실행되도록 약간 지연
     function tryInitialRender() {
       // 모든 핵심 컴포넌트가 정의되었는지 확인
-      const required = ['A1CodeLogin', 'B1HackathonList', 'C1RoomBefore', 'D1GalleryList', 'E1ProjectSettings', 'F1JudgeDashboard'];
+      const required = ['A1CodeLogin', 'B1HackathonList', 'C1RoomBeforeV2', 'D1GalleryList', 'E1ProjectSettings', 'F1JudgeDashboard'];
       const allReady = required.every(name => typeof window[name] === 'function');
       if (!allReady) {
         setTimeout(tryInitialRender, 50);
@@ -776,6 +929,339 @@
       render(initialId, false);
     }
     tryInitialRender();
+  </script>
+
+  <!-- ──────────────────────────────────────────────────────────────
+       Comments layer — viewer 도구 전용 기능 (디자인 시스템 아님)
+       · 화면(art-frame) 위에 좌표 기반 핀 메모 (Figma 스타일)
+       · 저장: localStorage (key: jitda-viewer-comments-v1)
+       · 내보내기/가져오기: JSON 파일 수동 관리
+       · 단축키: C (모드 토글), Esc (모드 해제), Cmd/Ctrl+Enter (저장)
+       ────────────────────────────────────────────────────────────── -->
+  <script>
+    (function () {
+      const STORAGE_KEY = 'jitda-viewer-comments-v1';
+      let comments = [];
+      let mode = 'view';            // 'view' | 'add'
+      let openPopoverFor = null;    // comment.id | '__draft__' | null
+      let draftPin = null;
+      let currentScreenId = null;
+
+      const $toggle = document.getElementById('comment-toggle');
+      const $count = document.getElementById('comment-count');
+      const $export = document.getElementById('comment-export');
+      const $import = document.getElementById('comment-import');
+      const $importFile = document.getElementById('comment-import-file');
+
+      const clamp01 = (v) => Math.max(0, Math.min(1, v));
+      const genId = () => 'c_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 8);
+
+      function load() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return [];
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed;
+          if (parsed && Array.isArray(parsed.comments)) return parsed.comments;
+          return [];
+        } catch (e) {
+          console.warn('comments load failed', e);
+          return [];
+        }
+      }
+      function save() {
+        const payload = { version: 1, updatedAt: new Date().toISOString(), comments };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        updateCount();
+      }
+
+      function getArtFrame() { return document.querySelector('#root .art-frame'); }
+
+      function getOrCreateLayer(frame) {
+        let layer = frame.querySelector(':scope > .comment-pin-layer');
+        if (!layer) {
+          layer = document.createElement('div');
+          layer.className = 'comment-pin-layer';
+          frame.appendChild(layer);
+        }
+        return layer;
+      }
+
+      function updateCount() {
+        const n = comments.filter(c => c.screenId === currentScreenId).length;
+        if (n > 0) { $count.textContent = String(n); $count.hidden = false; }
+        else { $count.hidden = true; }
+      }
+
+      function setMode(next) {
+        const prev = mode;
+        mode = next;
+        $toggle.classList.toggle('is-active', mode === 'add');
+        const frame = getArtFrame();
+        if (!frame) return;
+        frame.classList.toggle('is-comment-add', mode === 'add');
+        let overlay = frame.querySelector(':scope > .comment-add-overlay');
+        if (mode === 'add' && !overlay) {
+          overlay = document.createElement('div');
+          overlay.className = 'comment-add-overlay';
+          overlay.addEventListener('click', handleOverlayClick);
+          // 핀 레이어보다 아래에 두어 핀이 클릭 가능하도록
+          const layer = getOrCreateLayer(frame);
+          frame.insertBefore(overlay, layer);
+        } else if (mode !== 'add' && overlay) {
+          overlay.remove();
+        }
+        if (prev === 'add' && mode !== 'add' && draftPin) {
+          draftPin = null;
+          if (openPopoverFor === '__draft__') openPopoverFor = null;
+          renderPins();
+        }
+      }
+
+      function handleOverlayClick(e) {
+        const frame = getArtFrame();
+        if (!frame) return;
+        const rect = frame.getBoundingClientRect();
+        const x = clamp01((e.clientX - rect.left) / rect.width);
+        const y = clamp01((e.clientY - rect.top) / rect.height);
+        draftPin = {
+          id: '__draft__',
+          screenId: currentScreenId,
+          x, y,
+          text: '',
+          createdAt: new Date().toISOString(),
+        };
+        openPopoverFor = '__draft__';
+        renderPins();
+      }
+
+      function buildPin(c, n, isDraft) {
+        const el = document.createElement('div');
+        el.className = 'comment-pin' + (isDraft ? ' is-draft' : '');
+        el.style.left = (c.x * 100) + '%';
+        el.style.top = (c.y * 100) + '%';
+        el.textContent = isDraft ? '✎' : String(n);
+        el.title = isDraft ? '새 댓글 작성 중' : (c.text || '').slice(0, 80);
+        el.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          openPopoverFor = (openPopoverFor === c.id) ? null : c.id;
+          renderPins();
+        });
+        return el;
+      }
+
+      function buildPopover(c, isDraft) {
+        const wrap = document.createElement('div');
+        wrap.className = 'comment-popover';
+        wrap.style.left = (c.x * 100) + '%';
+        wrap.style.top = (c.y * 100) + '%';
+        wrap.addEventListener('click', (e) => e.stopPropagation());
+
+        const editing = isDraft || c.__editing;
+
+        if (editing) {
+          const ta = document.createElement('textarea');
+          ta.placeholder = '메모를 입력하세요… (Cmd/Ctrl+Enter 저장)';
+          ta.value = c.text || '';
+          ta.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit(); }
+            else if (e.key === 'Escape') { e.preventDefault(); cancel(); }
+          });
+
+          const actions = document.createElement('div');
+          actions.className = 'actions';
+          const cancelBtn = document.createElement('button');
+          cancelBtn.textContent = '취소';
+          cancelBtn.addEventListener('click', cancel);
+          const saveBtn = document.createElement('button');
+          saveBtn.className = 'primary';
+          saveBtn.textContent = '저장';
+          saveBtn.addEventListener('click', commit);
+          actions.append(cancelBtn, saveBtn);
+
+          wrap.append(ta, actions);
+          setTimeout(() => ta.focus(), 0);
+
+          function commit() {
+            const text = ta.value.trim();
+            if (!text) { cancel(); return; }
+            if (isDraft) {
+              comments.push({
+                id: genId(),
+                screenId: c.screenId,
+                x: c.x, y: c.y,
+                text,
+                createdAt: c.createdAt,
+              });
+              draftPin = null;
+              openPopoverFor = null;
+              setMode('view');
+            } else {
+              const t = comments.find(x => x.id === c.id);
+              if (t) {
+                t.text = text;
+                t.updatedAt = new Date().toISOString();
+                delete t.__editing;
+              }
+              openPopoverFor = c.id;
+            }
+            save();
+            renderPins();
+          }
+          function cancel() {
+            if (isDraft) {
+              draftPin = null;
+              openPopoverFor = null;
+              setMode('view');
+            } else {
+              delete c.__editing;
+              renderPins();
+            }
+          }
+        } else {
+          const body = document.createElement('div');
+          body.className = 'body';
+          body.textContent = c.text;
+
+          const meta = document.createElement('div');
+          meta.className = 'meta';
+          const d = new Date(c.updatedAt || c.createdAt);
+          meta.textContent = isFinite(d.getTime()) ? d.toLocaleString() : '';
+
+          const actions = document.createElement('div');
+          actions.className = 'actions';
+          const editBtn = document.createElement('button');
+          editBtn.textContent = '편집';
+          editBtn.addEventListener('click', () => { c.__editing = true; renderPins(); });
+          const delBtn = document.createElement('button');
+          delBtn.className = 'danger';
+          delBtn.textContent = '삭제';
+          delBtn.addEventListener('click', () => {
+            if (!confirm('이 댓글을 삭제할까요?')) return;
+            comments = comments.filter(x => x.id !== c.id);
+            openPopoverFor = null;
+            save();
+            renderPins();
+          });
+          actions.append(editBtn, delBtn);
+
+          wrap.append(body, meta, actions);
+        }
+        return wrap;
+      }
+
+      function renderPins() {
+        const frame = getArtFrame();
+        if (!frame) return;
+        const layer = getOrCreateLayer(frame);
+        layer.innerHTML = '';
+
+        const list = comments.filter(c => c.screenId === currentScreenId);
+        list.forEach((c, i) => layer.appendChild(buildPin(c, i + 1, false)));
+
+        if (draftPin && draftPin.screenId === currentScreenId) {
+          layer.appendChild(buildPin(draftPin, list.length + 1, true));
+        }
+
+        if (openPopoverFor) {
+          const target = openPopoverFor === '__draft__'
+            ? draftPin
+            : comments.find(c => c.id === openPopoverFor);
+          if (target && target.screenId === currentScreenId) {
+            layer.appendChild(buildPopover(target, target.id === '__draft__'));
+          }
+        }
+        updateCount();
+      }
+
+      window.__viewerComments = {
+        syncForScreen(id) {
+          const screenChanged = id !== currentScreenId;
+          currentScreenId = id;
+          if (screenChanged) {
+            // 화면 전환 시 열려있던 popover 닫고 다른 화면의 draft 폐기
+            openPopoverFor = null;
+            if (draftPin && draftPin.screenId !== id) {
+              draftPin = null;
+              if (mode === 'add') setMode('view');
+            }
+          }
+          renderPins();
+          // add 모드면 새 art-frame에 overlay 다시 부착
+          if (mode === 'add') setMode('add');
+        },
+      };
+
+      // 빈 곳 클릭 시 popover 닫기 (draft는 유지)
+      document.addEventListener('click', (e) => {
+        if (e.target.closest('.comment-pin')) return;
+        if (e.target.closest('.comment-popover')) return;
+        if (e.target.closest('#toolbar')) return;
+        if (openPopoverFor && openPopoverFor !== '__draft__') {
+          openPopoverFor = null;
+          renderPins();
+        }
+      });
+
+      // 툴바 이벤트
+      $toggle.addEventListener('click', () => setMode(mode === 'add' ? 'view' : 'add'));
+
+      $export.addEventListener('click', () => {
+        const payload = { version: 1, exportedAt: new Date().toISOString(), comments };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'jitda-viewer-comments.json';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(a.href);
+      });
+
+      $import.addEventListener('click', () => $importFile.click());
+      $importFile.addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const parsed = JSON.parse(text);
+          const list = Array.isArray(parsed)
+            ? parsed
+            : (parsed && Array.isArray(parsed.comments) ? parsed.comments : null);
+          if (!list) { alert('JSON 형식이 올바르지 않습니다.'); return; }
+          if (!confirm(`기존 댓글 ${comments.length}건을 가져온 ${list.length}건으로 덮어쓸까요?`)) return;
+          comments = list
+            .filter(c => c && typeof c.screenId === 'string' && typeof c.text === 'string')
+            .map(c => ({
+              id: c.id || genId(),
+              screenId: c.screenId,
+              x: clamp01(Number(c.x) || 0),
+              y: clamp01(Number(c.y) || 0),
+              text: String(c.text),
+              createdAt: c.createdAt || new Date().toISOString(),
+              updatedAt: c.updatedAt,
+            }));
+          save();
+          renderPins();
+        } catch (err) {
+          alert('JSON 파싱 실패: ' + err.message);
+        } finally {
+          $importFile.value = '';
+        }
+      });
+
+      // 단축키 — C: 모드 토글, Esc: add 모드 해제
+      document.addEventListener('keydown', (e) => {
+        const tag = (e.target.tagName || '').toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+        if (e.key === 'c' || e.key === 'C') { e.preventDefault(); setMode(mode === 'add' ? 'view' : 'add'); }
+        else if (e.key === 'Escape' && mode === 'add') { setMode('view'); }
+      });
+
+      // 초기 로드
+      comments = load();
+      updateCount();
+    })();
   </script>
 </body>
 </html>

@@ -30,6 +30,7 @@
       --c-blueprint-soft: #dde4ec;
       --c-safety: #ff6b1f;
       --c-safety-soft: #ffe0cf;
+      --c-safety-wash: #faebe1;
       --c-safety-deep: #cc4a0a;
       --c-concrete: #c3bfb3;
       --c-concrete-light: #ebe7dd;
@@ -38,6 +39,12 @@
       --c-amber-soft: #fbeacf;
       --c-mint: #096c4d;
       --c-mint-soft: #d6f1de;
+      --c-mint-wash: #eaf3ec;
+      --c-tutorial: #2e2c8a;
+      --c-tutorial-soft: #e1e0fa;
+      --c-tutorial-wash: #eeedf7;
+      --c-stone-wash: #f1efea;
+      --c-helmet-wash: #fbf6df;
 
       --c-rose: var(--c-safety);
       --c-rose-soft: var(--c-safety-soft);
@@ -431,7 +438,7 @@
     .pill-pending { background: var(--c-stone); color: var(--c-ink-3); }
     .pill-tutorial { background: var(--c-blueprint-soft); color: var(--c-blueprint); }
     .pill-started { background: var(--c-mint-soft); color: var(--c-mint); }
-    .pill-paused { background: var(--c-amber-soft); color: var(--c-amber); }
+    /* .pill-paused 폐기 (2026-05-29): 일시정지 기능 제거 */
     .pill-ended { background: #ebebec; color: var(--c-ink-3); }
     .pill-danger { background: var(--c-rose-soft); color: var(--c-rose); }
     .pill-info { background: var(--c-blueprint-soft); color: var(--c-blueprint); }
@@ -659,7 +666,109 @@
     @media (max-width: 1400px) {
       .toc { display: none; }
     }
+
+    /* §09g Paper Surface — tokens.css §618g 미러. 디자인 시스템 시각 데모용. */
+    .jt-paper-surface-wrap {
+      filter:
+        drop-shadow(0 18px 24px rgba(20, 19, 15, .16))
+        drop-shadow(0 2px 1px rgba(20, 19, 15, .08));
+    }
+    .jt-paper-surface {
+      position: relative;
+      background: #ffffff;
+      border-radius: 0;
+      box-shadow: none;
+      clip-path: polygon(
+        1.2% 1.4%, 10% .6%, 22% 1.2%, 34% .5%, 49% 1.1%,
+        63% .4%, 78% 1.3%, 91% .6%, 98.8% 1.8%,
+        99.2% 12%, 98.4% 24%, 99.4% 38%, 98.2% 52%,
+        99% 66%, 98.4% 80%, 97.7% 98.6%,
+        85% 99.2%, 71% 98.5%, 57% 99.4%, 43% 98.6%,
+        29% 99.3%, 14% 98.4%, 2.2% 98.8%,
+        .8% 84%, 1.6% 70%, .7% 56%, 1.5% 42%, .6% 28%, 1.2% 14%
+      );
+    }
+    .jt-paper-surface::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background:
+        linear-gradient(104deg, transparent 4%,  rgba(20,19,15,.02) 5%,  transparent 7%),
+        linear-gradient(31deg,  transparent 92%, rgba(255,255,255,.18) 93%, transparent 95%),
+        linear-gradient(154deg, transparent 92%, rgba(20,19,15,.02) 93%, transparent 95%);
+      mix-blend-mode: multiply; opacity: .55; z-index: 0;
+    }
+    .jt-paper-surface::after {
+      content: ""; position: absolute; inset: 6px; pointer-events: none;
+      box-shadow:
+        inset 8px 0 14px rgba(20, 19, 15, .04),
+        inset -6px 0 12px rgba(255, 255, 255, .30),
+        inset 0 7px 14px rgba(255, 255, 255, .35),
+        inset 0 -8px 14px rgba(20, 19, 15, .05);
+      z-index: 0;
+    }
+    /* §09g paper pinned (mirror of tokens.css §618g) — 노란 I자 압정 + hover 회전 */
+    .jt-paper-pinned {
+      position: relative;
+      padding-top: 14px;
+      display: inline-block;
+    }
+    .jt-paper-pinned::before {
+      content: "";
+      position: absolute;
+      top: -2px;
+      left: 50%;
+      width: 30px;
+      height: 28px;
+      margin-left: -15px;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 28'><defs><radialGradient id='c' cx='0.32' cy='0.28' r='0.7'><stop offset='0' stop-color='%23545454'/><stop offset='0.45' stop-color='%23222222'/><stop offset='1' stop-color='%23000000'/></radialGradient></defs><ellipse cx='17' cy='22' rx='10' ry='2.6' fill='%23000000' fill-opacity='0.32'/><ellipse cx='15' cy='13' rx='10.5' ry='9.5' fill='url(%23c)'/><ellipse cx='11' cy='8.5' rx='3.2' ry='2.1' fill='%23ffffff' fill-opacity='0.55'/><ellipse cx='10' cy='7.5' rx='1.4' ry='0.9' fill='%23ffffff' fill-opacity='0.75'/></svg>");
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-position: center top;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .jt-paper-pinned .jt-paper-surface-wrap {
+      transform-origin: 50% 0%;
+      transform: rotate(-1.5deg);
+      transition: transform 0.24s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  filter 0.24s ease;
+    }
+    .jt-paper-pinned:not(.jt-paper-pinned-static):hover .jt-paper-surface-wrap,
+    .jt-paper-pinned:not(.jt-paper-pinned-static):focus-within .jt-paper-surface-wrap {
+      transform: rotate(0deg);
+      filter:
+        drop-shadow(0 26px 34px rgba(20, 19, 15, .22))
+        drop-shadow(0 3px 2px rgba(20, 19, 15, .10));
+    }
+    /* §09g paper pinned tall (mirror of tokens.css) — 클래식 thumbtack (돔 + 가시적 목) */
+    .jt-paper-pinned-tall::before {
+      top: -16px;
+      width: 32px;
+      height: 42px;
+      margin-left: -16px;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 42'><defs><radialGradient id='d' cx='0.32' cy='0.28' r='0.72'><stop offset='0' stop-color='%235a5a5a'/><stop offset='0.45' stop-color='%23222222'/><stop offset='1' stop-color='%23000000'/></radialGradient><linearGradient id='n' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='%23262626'/><stop offset='0.4' stop-color='%23121212'/><stop offset='1' stop-color='%23000000'/></linearGradient></defs><ellipse cx='18' cy='38' rx='10.5' ry='2.2' fill='%23000000' fill-opacity='0.34'/><path d='M 11 21 Q 11 18.5 13 18.5 L 17 18.5 Q 19 18.5 19 21 L 19 38 L 11 38 Z' fill='url(%23n)'/><ellipse cx='15' cy='19' rx='4.2' ry='1' fill='%23000000' fill-opacity='0.7'/><ellipse cx='15' cy='11' rx='11' ry='10' fill='url(%23d)'/><ellipse cx='10.5' cy='7.5' rx='3.5' ry='2.3' fill='%23ffffff' fill-opacity='0.55'/><ellipse cx='9.5' cy='6.5' rx='1.4' ry='0.9' fill='%23ffffff' fill-opacity='0.78'/></svg>");
+    }
+    /* 코르크보드 데모 배경 (정체성 장식이 아닌 시각 컨텍스트용) */
+    .jt-corkboard-demo {
+      background-color: #b88e5a;
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(60, 30, 10, 0.55) 0.6px, transparent 1.6px),
+        radial-gradient(circle at 70% 50%, rgba(60, 30, 10, 0.5) 0.5px, transparent 1.5px),
+        radial-gradient(circle at 45% 80%, rgba(40, 20, 5, 0.6) 0.7px, transparent 1.8px),
+        radial-gradient(circle at 85% 20%, rgba(80, 40, 15, 0.4) 0.5px, transparent 1.4px),
+        radial-gradient(circle at 10% 65%, rgba(50, 25, 8, 0.45) 0.6px, transparent 1.6px),
+        radial-gradient(circle at 30% 90%, rgba(70, 35, 12, 0.5) 0.5px, transparent 1.5px),
+        radial-gradient(circle at 60% 10%, rgba(45, 22, 6, 0.5) 0.6px, transparent 1.7px),
+        radial-gradient(circle at 90% 75%, rgba(55, 28, 10, 0.45) 0.55px, transparent 1.5px),
+        linear-gradient(135deg, #b08458 0%, #c1976a 50%, #a87b50 100%);
+      background-size: 6px 6px, 5px 5px, 7px 7px, 5px 5px, 6px 6px, 5px 5px, 6px 6px, 5px 5px, 100% 100%;
+    }
   </style>
+
+  <!-- 브랜드 마크 단일 진실원천: shared.jsx의 JitdaIcon / JitdaWordmark / JitdaMark를 그대로 렌더 -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="shared.jsx?v=20260602m"></script>
 </head>
 <body>
   <!-- Floating TOC -->
@@ -672,11 +781,13 @@
     <a href="#radius"><span>05</span>Radius</a>
     <a href="#button"><span>06</span>Button</a>
     <a href="#pill"><span>07</span>Status</a>
+    <a href="#phase-stepper"><span>07b</span>Phase</a>
     <a href="#input"><span>08</span>Input</a>
     <a href="#pattern"><span>09</span>Pattern</a>
     <a href="#live-frame"><span>09c</span>Frame</a>
     <a href="#motion"><span>09d</span>Motion</a>
     <a href="#overlay"><span>09e</span>Overlay</a>
+    <a href="#paper-surface"><span>09g</span>Paper</a>
     <a href="#components"><span>09f</span>Library</a>
     <a href="#rules"><span>10</span>Rules</a>
     <a href="#copy"><span>11</span>Copy</a>
@@ -710,68 +821,38 @@
         <span class="sec-tag">SVG · 1 color / 2 color</span>
       </div>
       <p class="sec-desc">
-        안전모(헬멧 옐로우) 위에 핸들바 콧수염을 얹은 마크. "짓는다 = 만드는 일"을 의인화한 캐릭터로,
-        작업복처럼 친근하면서 산업 도면처럼 정확하게 읽혀야 합니다. 최소 노출 크기는 20px.
+        노란 병아리 캐릭터 + 한글 "짓다" 워드마크. 단일 진실원천은 <code>shared.jsx</code>의
+        <code>JitdaIcon</code> / <code>JitdaWordmark</code> / <code>JitdaMark</code> 컴포넌트 — 이 페이지는 그 컴포넌트를
+        직접 마운트해 보여줍니다. 디자인 화면(viewer · Renewal · 앱 영역)도 동일 컴포넌트를 사용하므로,
+        <strong>로고를 갱신하려면 <code>shared.jsx</code>만 수정하면 본 페이지·앱 화면이 함께 업데이트됩니다.</strong>
       </p>
 
       <div class="grid grid-3" style="margin-bottom: 16px;">
-        <div class="logo-display">
-          <svg width="120" height="100" viewBox="0 0 48 40">
-            <path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M 24 5 L 24 24" stroke="#14130f" stroke-width="2" stroke-linecap="round"/>
-            <path d="M 8 22 L 40 22 L 40 24 L 8 24 Z" fill="#e6b500"/>
-            <path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/>
-          </svg>
-          <span class="logo-tag">PRIMARY · LIGHT BG</span>
-        </div>
-        <div class="logo-display dark">
-          <svg width="120" height="100" viewBox="0 0 48 40">
-            <path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#f4f2ec" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M 24 5 L 24 24" stroke="#f4f2ec" stroke-width="2" stroke-linecap="round"/>
-            <path d="M 8 22 L 40 22 L 40 24 L 8 24 Z" fill="#e6b500"/>
-            <path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#f4f2ec" stroke-width="2" stroke-linejoin="round"/>
-            <path d="M 4 28 L 44 28" stroke="#e6b500" stroke-width="1.4"/>
-            <path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#f4f2ec"/>
-          </svg>
-          <span class="logo-tag">DARK BG</span>
-        </div>
-        <div class="logo-display helmet">
-          <svg width="120" height="100" viewBox="0 0 48 40">
-            <path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#14130f"/>
-            <path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#14130f"/>
-            <path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/>
-          </svg>
-          <span class="logo-tag" style="color: rgba(20,19,15,0.55);">MONO · KNOCKOUT</span>
-        </div>
+        <div class="logo-display" id="jitda-brand-primary"></div>
+        <div class="logo-display dark" id="jitda-brand-dark"></div>
+        <div class="logo-display helmet" id="jitda-brand-helmet"></div>
       </div>
 
       <div class="grid grid-3">
         <div class="spec">
-          <div class="spec-sub">SIGNATURE A</div>
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <svg width="40" height="34" viewBox="0 0 48 40"><path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 22 L 40 22 L 40 24 L 8 24 Z" fill="#e6b500"/><path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/></svg>
-            <span style="font-family: var(--font-display); font-size: 22px; font-weight: 800; letter-spacing: -0.04em;">짓다</span>
-            <span class="mono" style="font-size: 9px; letter-spacing: 0.22em; color: var(--c-muted);">JITDA</span>
-          </div>
-          <div style="margin-top: 10px;" class="mono" style="font-size: 11px; color: var(--c-slate);">로고 + 국문 + 영문 캡션</div>
+          <div class="spec-sub">SIGNATURE A · 표준</div>
+          <div id="jitda-sig-a" style="min-height: 36px; display: inline-flex; align-items: center;"></div>
+          <div style="margin-top: 12px;" class="mono" style="font-size: 11px; color: var(--c-slate);">JitdaMark size=22 · 인증(A) 영역</div>
         </div>
         <div class="spec">
           <div class="spec-sub">SIGNATURE B · 콤팩트</div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <svg width="36" height="30" viewBox="0 0 48 40"><path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 22 L 40 22 L 40 24 L 8 24 Z" fill="#e6b500"/><path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/></svg>
-            <span style="font-family: var(--font-display); font-size: 20px; font-weight: 800; letter-spacing: -0.04em;">짓다</span>
-          </div>
-          <div style="margin-top: 10px;" class="mono" style="font-size: 11px; color: var(--c-slate);">앱 헤더용</div>
+          <div id="jitda-sig-b" style="min-height: 24px; display: inline-flex; align-items: center;"></div>
+          <div style="margin-top: 12px;" class="mono" style="font-size: 11px; color: var(--c-slate);">JitdaMark size=13 · 앱 헤더(B/C/D)</div>
         </div>
         <div class="spec">
-          <div class="spec-sub">MIN SIZE</div>
-          <div style="display: flex; align-items: center; gap: 14px;">
-            <svg width="20" height="17" viewBox="0 0 48 40"><path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/></svg>
-            <svg width="32" height="27" viewBox="0 0 48 40"><path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 22 L 40 22 L 40 24 L 8 24 Z" fill="#e6b500"/><path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/></svg>
-            <svg width="48" height="40" viewBox="0 0 48 40"><path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 22 L 40 22 L 40 24 L 8 24 Z" fill="#e6b500"/><path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/></svg>
+          <div class="spec-sub">PROPORTION</div>
+          <div class="mono" style="font-size: 11px; color: var(--c-slate); line-height: 1.7;">
+            · 워드마크 height = size<br/>
+            · 아이콘 height = size × 1.55<br/>
+            · gap = size × 0.32<br/>
+            · 글꼴 fontSize = size × 1.18<br/>
+            <span style="color: var(--c-muted);">(JitdaMark default props · shared.jsx)</span>
           </div>
-          <div style="margin-top: 10px;" class="mono" style="font-size: 11px; color: var(--c-slate);">20px · 32px · 48px (권장 최소 20)</div>
         </div>
       </div>
     </section>
@@ -838,10 +919,59 @@
       <div class="grid grid-4">
         <div class="swatch"><div class="swatch-color" style="background:#1f3a52;"><span class="swatch-corner">BLUEPRINT</span></div><div class="swatch-meta"><div class="swatch-name">Blueprint</div><div class="swatch-token">info / 튜토리얼</div><div class="swatch-hex">#1F3A52</div></div></div>
         <div class="swatch"><div class="swatch-color" style="background:#096c4d;"><span class="swatch-corner">MINT</span></div><div class="swatch-meta"><div class="swatch-name">Mint</div><div class="swatch-token">success / 진행 중</div><div class="swatch-hex">#096C4D</div></div></div>
-        <div class="swatch"><div class="swatch-color" style="background:#a06a0a;"><span class="swatch-corner">AMBER</span></div><div class="swatch-meta"><div class="swatch-name">Amber</div><div class="swatch-token">warn / 일시정지</div><div class="swatch-hex">#A06A0A</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#a06a0a;"><span class="swatch-corner">AMBER</span></div><div class="swatch-meta"><div class="swatch-name">Amber</div><div class="swatch-token">warn / 주의</div><div class="swatch-hex">#A06A0A</div></div></div>
         <div class="swatch"><div class="swatch-color" style="background:#ff6b1f;"><span class="swatch-corner">SAFETY</span></div><div class="swatch-meta"><div class="swatch-name">Safety</div><div class="swatch-token">danger / 종료 (tape)</div><div class="swatch-hex">#FF6B1F</div></div></div>
         <div class="swatch" style="opacity:0.55;"><div class="swatch-color" style="background:#b3251c;"><span class="swatch-corner">DEPRECATED</span></div><div class="swatch-meta"><div class="swatch-name">Rose <span style="font-size: 9px; color: var(--c-slate);">→ safety alias</span></div><div class="swatch-token">deprecated · 신규 코드 사용 금지</div><div class="swatch-hex">#B3251C</div></div></div>
       </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px;" class="mono">▸ WASH TIER · 큰 면적 fill 전용 (soft 보다 ~60% 채도 낮음)</h3>
+      <p style="font-size: 12.5px; color: var(--c-slate); margin: 0 0 12px; line-height: 1.6; max-width: 720px;"><code class="mono">-soft</code> 톤은 칩·작은 카드(4 개 voting 모달 등)에 최적이나, <strong>60카드 그리드 같은 큰 면적 fill</strong>에서는 시각 피로 유발. <code class="mono">-wash</code> 톤은 paper(#faf9f6) 쪽으로 더 끌어내려 면적이 커도 차분하다. 사용처: B-1 HackathonCard 5상태 tint(<code class="mono">STATUS_POSTIT_TINT</code>). RosterRow 팀 카드는 <code class="mono">--c-canvas</code>(단일 흰색, §18-27). <strong>DON'T</strong>: 칩·작은 카드에는 wash 대신 soft 사용 — 인지 강도 부족.</p>
+      <div class="grid grid-4">
+        <div class="swatch"><div class="swatch-color" style="background:#d6f1de;"><span class="swatch-corner dark">SOFT</span></div><div class="swatch-meta"><div class="swatch-name">Mint Soft</div><div class="swatch-token">--c-mint-soft</div><div class="swatch-hex">#D6F1DE</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#eaf3ec;"><span class="swatch-corner dark">WASH</span></div><div class="swatch-meta"><div class="swatch-name">Mint Wash</div><div class="swatch-token">--c-mint-wash</div><div class="swatch-hex">#EAF3EC</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#ffe0cf;"><span class="swatch-corner dark">SOFT</span></div><div class="swatch-meta"><div class="swatch-name">Safety Soft</div><div class="swatch-token">--c-safety-soft</div><div class="swatch-hex">#FFE0CF</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#faebe1;"><span class="swatch-corner dark">WASH</span></div><div class="swatch-meta"><div class="swatch-name">Safety Wash</div><div class="swatch-token">--c-safety-wash</div><div class="swatch-hex">#FAEBE1</div></div></div>
+      </div>
+
+      <p style="font-size: 12.5px; color: var(--c-slate); margin: 14px 0 8px; line-height: 1.6;">B-1 HackathonCard 5상태 색 여정(cold → engaged → anticipation → live → sunset)을 위해 3종 추가 (2026-05-29):</p>
+      <div class="grid grid-4">
+        <div class="swatch"><div class="swatch-color" style="background:#eeece7;"><span class="swatch-corner dark">SOFT</span></div><div class="swatch-meta"><div class="swatch-name">Stone</div><div class="swatch-token">--c-stone</div><div class="swatch-hex">#EEECE7</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#f1efea;"><span class="swatch-corner dark">WASH</span></div><div class="swatch-meta"><div class="swatch-name">Stone Wash <span style="font-size: 9px; color: var(--c-slate); font-weight: 700;">NEW</span></div><div class="swatch-token">--c-stone-wash</div><div class="swatch-hex">#F1EFEA</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#e1e0fa;"><span class="swatch-corner dark">SOFT</span></div><div class="swatch-meta"><div class="swatch-name">Tutorial Soft</div><div class="swatch-token">--c-tutorial-soft</div><div class="swatch-hex">#E1E0FA</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#eeedf7;"><span class="swatch-corner dark">WASH</span></div><div class="swatch-meta"><div class="swatch-name">Tutorial Wash <span style="font-size: 9px; color: var(--c-tutorial); font-weight: 700;">NEW</span></div><div class="swatch-token">--c-tutorial-wash</div><div class="swatch-hex">#EEEDF7</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#fff4c2;"><span class="swatch-corner dark">SOFT</span></div><div class="swatch-meta"><div class="swatch-name">Helmet Soft</div><div class="swatch-token">--c-helmet-soft</div><div class="swatch-hex">#FFF4C2</div></div></div>
+        <div class="swatch"><div class="swatch-color" style="background:#fbf6df;"><span class="swatch-corner dark">WASH</span></div><div class="swatch-meta"><div class="swatch-name">Helmet Wash <span style="font-size: 9px; color: var(--c-helmet-deep); font-weight: 700;">NEW</span></div><div class="swatch-token">--c-helmet-wash</div><div class="swatch-hex">#FBF6DF</div></div></div>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px;" class="mono">▸ POST-IT TINT · 팀 카드 단일 흰색 (2026-05-29 §18-27 · 최종)</h3>
+      <p style="font-size: 12.5px; color: var(--c-slate); margin: 0 0 12px; line-height: 1.6; max-width: 720px;">팀 카드(RosterRow) + 팀 상세 모달 전용. <strong>전체 팀 단일 흰색</strong> — 다인/1인팀·접속 상태 무관. <code class="mono">--c-canvas</code> (#ffffff). paper(#faf9f6) 배경 위에서 shadow·tape로 카드 윤곽 형성. 이전 정책 5종(§18-15 3톤 / §18-17 mono / §18-20 2색 / §18-25 노랑 / §18-26 white·green A/B): 모두 폐기. <strong>DON'T</strong>: 팀 카드 외 다른 entity에 단일 흰색 정책 확산 금지(HackathonCard는 5상태 wash 여정 유지). 미접속·step 등 상태는 색 외 채널(카운트 색·weight)로 분리.</p>
+      <div class="grid grid-4">
+        <div class="swatch"><div class="swatch-color" style="background:#ffffff; box-shadow: inset 0 0 0 1px var(--c-hairline);"><span class="swatch-corner dark">CANVAS</span></div><div class="swatch-meta"><div class="swatch-name">Canvas · 팀 카드 · 모달</div><div class="swatch-token">--c-canvas</div><div class="swatch-hex">#FFFFFF</div></div></div>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px;" class="mono">▸ ENTITY × COLOR POLICY · 어떤 entity에 어떤 어휘를 쓸까</h3>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid var(--c-hairline); background: var(--c-stone);">
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 180px;">Entity</th>
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 200px;">색의 의미</th>
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600;">팔레트 / 사용처</th>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);">
+          <td style="padding: 8px 10px;"><strong>Hackathon</strong></td>
+          <td style="padding: 8px 10px;">status (5상태)</td>
+          <td style="padding: 8px 10px;">WASH tier — stone/tutorial/helmet/mint/safety. HackathonCard 한정. 화면 1개 진입 전 카드. 색 = 진행 단계</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);">
+          <td style="padding: 8px 10px;"><strong>Team</strong></td>
+          <td style="padding: 8px 10px;">단일 흰색</td>
+          <td style="padding: 8px 10px;"><code class="mono">--c-canvas</code> (#ffffff, §18-27). RosterRow + 카드별 모달 공통. 다인/1인팀·접속 상태 무관. 상태(미접속)는 카운트 색·weight로 분리(§18-18). paper 배경 위에서 shadow·tape로 카드 윤곽</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 10px;"><strong>Member</strong></td>
+          <td style="padding: 8px 10px;">identity (성씨)</td>
+          <td style="padding: 8px 10px;"><code class="mono">ROSTER_AVATAR_PALETTE</code> — helmet/blue/mint/amber/helmet-deep/safety 6색. 성씨 charCode hash. 같은 성씨 = 같은 색</td>
+        </tr>
+      </table>
     </section>
 
     <!-- 03 TYPE -->
@@ -1050,13 +1180,13 @@
       <div class="sec-head">
         <span class="sec-num">07</span>
         <h2 class="sec-title">Status Pill · 해커톤 상태</h2>
-        <span class="sec-tag">5 stages · 단방향 · paused</span>
+        <span class="sec-tag">5 stages · 단방향</span>
       </div>
       <p class="sec-desc">
         해커톤은 5단계 단방향으로 흐릅니다 — 튜토리얼 대기·진행 → 해커톤 대기·진행·종료.
         [튜토리얼 종료] 클릭 시 별도 종료 상태 없이 즉시 해커톤 대기로 전이됩니다(2026-05-26: tutorial_ended 폐기, hackathon_waiting으로 통합).
         단계(튜토리얼/해커톤)는 색 계열, 진행도(대기/진행/종료)는 명도로 이중 인코딩.
-        일시정지는 진행 단계 위에만 중첩 표시.
+        일시정지/재시작 토글은 2026-05-29 폐기됨.
       </p>
 
       <div class="spec">
@@ -1067,7 +1197,6 @@
           <span class="pill" style="background:#ebebec; color:#2a2823; border:1px solid #d9d6cc;"><span class="dot"></span>해커톤 대기</span>
           <span class="pill pill-started"><span class="dot"></span>해커톤 진행</span>
           <span class="pill" style="background:#ffe1de; color:#882019;"><span class="dot"></span>해커톤 종료</span>
-          <span class="pill pill-paused"><span class="dot"></span>일시정지</span>
         </div>
 
         <div class="spec-sub">기타 알림</div>
@@ -1076,6 +1205,110 @@
           <span class="pill pill-danger"><span class="dot"></span>비가역</span>
           <span class="pill" style="background: var(--c-helmet-soft); color: var(--c-amber);"><span class="dot"></span>주의</span>
         </div>
+      </div>
+    </section>
+
+    <!-- 07b PHASE STEPPER & HOVER -->
+    <section id="phase-stepper">
+      <div class="sec-head">
+        <span class="sec-num">07b</span>
+        <h2 class="sec-title">Phase · 5단계 stepper</h2>
+        <span class="sec-tag">filter (B-1) · hover popover (B-2)</span>
+      </div>
+      <p class="sec-desc">
+        Status Pill의 단일 칩을 5단계 흐름 컨텍스트로 확장. 두 가지 사용 — (1) B-1 해커톤 목록 단계 필터, (2) B-2 대시보드 StatusPill 호버 시 노출되는 진행도 popover.
+        색·번호 prefix는 Status Pill과 100% 공유 (operator.jsx <span class="mono" style="font-size:11.5px;">PHASE_STAGES</span> const). 2026-05-28 도입 — 기존 상시 노출 StageStrip 폐기.
+      </p>
+
+      <div class="spec">
+        <div class="spec-sub">FILTER STEPPER · B-1 해커톤 목록</div>
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+          <span style="font-size: 13px; color: var(--c-slate); margin-right: 4px;">단계</span>
+          <button style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; font-size:12.5px; font-weight:600; border:1px solid var(--c-ink); background:var(--c-ink); color:var(--c-canvas); cursor:pointer;">전체 <span class="mono" style="font-size:11px; opacity:0.7; margin-left:2px;">6</span></button>
+          <span style="width:1px; height:18px; background:var(--c-hairline-strong); margin:0 4px;"></span>
+          <button style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; font-size:12.5px; font-weight:500; border:1px solid transparent; background:#ebebec; color:#2a2823; cursor:pointer;"><span class="mono" style="font-size:10px; opacity:0.55;">01</span>튜토리얼 대기<span class="mono" style="font-size:11px; opacity:0.7; margin-left:2px;">1</span></button>
+          <span style="color:var(--c-hairline-strong); font-size:14px;">›</span>
+          <button style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; font-size:12.5px; font-weight:500; border:1px solid transparent; background:#e1e0fa; color:#2e2c8a; cursor:pointer;"><span class="mono" style="font-size:10px; opacity:0.55;">02</span>튜토리얼 진행<span class="mono" style="font-size:11px; opacity:0.7; margin-left:2px;">1</span></button>
+          <span style="color:var(--c-hairline-strong); font-size:14px;">›</span>
+          <button style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; font-size:12.5px; font-weight:500; border:1px solid transparent; background:#ebebec; color:#2a2823; cursor:pointer;"><span class="mono" style="font-size:10px; opacity:0.55;">03</span>해커톤 대기<span class="mono" style="font-size:11px; opacity:0.7; margin-left:2px;">1</span></button>
+          <span style="color:var(--c-hairline-strong); font-size:14px;">›</span>
+          <button style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; font-size:12.5px; font-weight:500; border:1px solid transparent; background:var(--c-mint-soft); color:var(--c-mint); cursor:pointer;"><span class="mono" style="font-size:10px; opacity:0.55;">04</span>해커톤 진행<span class="mono" style="font-size:11px; opacity:0.7; margin-left:2px;">2</span></button>
+          <span style="color:var(--c-hairline-strong); font-size:14px;">›</span>
+          <button style="display:inline-flex; align-items:center; gap:6px; padding:5px 11px; border-radius:999px; font-size:12.5px; font-weight:500; border:1px solid transparent; background:#ffe1de; color:#882019; cursor:pointer;"><span class="mono" style="font-size:10px; opacity:0.55;">05</span>해커톤 종료<span class="mono" style="font-size:11px; opacity:0.7; margin-left:2px;">1</span></button>
+        </div>
+        <div class="mono" style="font-size: 11px; color: var(--c-slate); margin-top: 8px;">
+          ↳ "전체" + 5단계 칩. 단계 사이 chevron(›). 활성 필터는 동일 색에 1px 인셋 ring으로 표시. count 0인 단계는 opacity 0.45.
+        </div>
+      </div>
+
+      <div class="spec">
+        <div class="spec-sub">HOVER POPOVER · B-2 대시보드 StatusPill</div>
+        <p style="font-size: 13px; color: var(--c-slate); line-height: 1.6; margin: 0 0 12px 0;">
+          StatusPill에 마우스 오버 또는 키보드 포커스 시 노출. 현재 단계 강조(색 채움 + "← 현재"), 지난 단계 dim(slate, opacity 0.65), 미래 단계 muted(투명 배경).
+          CSS: <span class="mono" style="font-size:11.5px;">.jt-phase-hover</span> / <span class="mono" style="font-size:11.5px;">.jt-phase-popover</span> (tokens.css). <span class="mono" style="font-size:11.5px;">:hover</span> / <span class="mono" style="font-size:11.5px;">:focus-within</span> 트리거.
+        </p>
+        <div style="display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap;">
+          <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline-strong); border-radius: var(--r-md); box-shadow: var(--shadow-popover); padding: 10px 12px; min-width: 220px; display: flex; flex-direction: column; gap: 4px;">
+            <div class="mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-muted); margin-bottom: 4px;">PHASE</div>
+            <div style="display:flex; align-items:center; gap:8px; padding:5px 9px; border-radius:6px; font-size:12px; background:#ebebec; color:#2a2823; font-weight:700; border:1px solid #2a2823;">
+              <span class="mono" style="font-size:10px; opacity:0.6; min-width:16px;">01</span>
+              <span style="flex:1;">튜토리얼 대기</span>
+              <span class="mono" style="font-size:10px; opacity:0.7;">← 현재</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:5px 9px; border-radius:6px; font-size:12px; color:var(--c-muted); font-weight:500;">
+              <span class="mono" style="font-size:10px; opacity:0.6; min-width:16px;">02</span>
+              <span style="flex:1;">튜토리얼 진행</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:5px 9px; border-radius:6px; font-size:12px; color:var(--c-muted); font-weight:500;">
+              <span class="mono" style="font-size:10px; opacity:0.6; min-width:16px;">03</span>
+              <span style="flex:1;">해커톤 대기</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:5px 9px; border-radius:6px; font-size:12px; color:var(--c-muted); font-weight:500;">
+              <span class="mono" style="font-size:10px; opacity:0.6; min-width:16px;">04</span>
+              <span style="flex:1;">해커톤 진행</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:5px 9px; border-radius:6px; font-size:12px; color:var(--c-muted); font-weight:500;">
+              <span class="mono" style="font-size:10px; opacity:0.6; min-width:16px;">05</span>
+              <span style="flex:1;">해커톤 종료</span>
+            </div>
+          </div>
+          <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline-strong); border-radius: var(--r-md); box-shadow: var(--shadow-popover); padding: 10px 12px; min-width: 220px; display: flex; flex-direction: column; gap: 4px;">
+            <div class="mono" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--c-muted); margin-bottom: 4px;">PHASE · 진행 중</div>
+            <div style="display:flex; align-items:center; gap:8px; padding:5px 9px; border-radius:6px; font-size:12px; color:var(--c-slate); font-weight:500; opacity:0.65;">
+              <span class="mono" style="font-size:10px; opacity:0.6; min-width:16px;">01</span>
+              <span style="flex:1;">튜토리얼 대기</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:5px 9px; border-radius:6px; font-size:12px; color:var(--c-slate); font-weight:500; opacity:0.65;">
+              <span class="mono" style="font-size:10px; opacity:0.6; min-width:16px;">02</span>
+              <span style="flex:1;">튜토리얼 진행</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:5px 9px; border-radius:6px; font-size:12px; color:var(--c-slate); font-weight:500; opacity:0.65;">
+              <span class="mono" style="font-size:10px; opacity:0.6; min-width:16px;">03</span>
+              <span style="flex:1;">해커톤 대기</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:5px 9px; border-radius:6px; font-size:12px; background:var(--c-mint-soft); color:var(--c-mint); font-weight:700; border:1px solid var(--c-mint);">
+              <span class="mono" style="font-size:10px; opacity:0.6; min-width:16px;">04</span>
+              <span style="flex:1;">해커톤 진행</span>
+              <span class="mono" style="font-size:10px; opacity:0.7;">← 현재</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; padding:5px 9px; border-radius:6px; font-size:12px; color:var(--c-muted); font-weight:500;">
+              <span class="mono" style="font-size:10px; opacity:0.6; min-width:16px;">05</span>
+              <span style="flex:1;">해커톤 종료</span>
+            </div>
+          </div>
+        </div>
+        <div class="mono" style="font-size: 11px; color: var(--c-slate); margin-top: 12px;">
+          ↳ 좌: 첫 단계(튜토리얼 대기) — 미래 단계는 muted. 우: 진행 중(해커톤 진행) — 지난 단계는 dim(opacity 0.65).
+        </div>
+      </div>
+
+      <div class="spec">
+        <div class="spec-sub">DO / DON'T</div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">B-2 GNB는 로고+계정만 — 행사명은 sticky 헤더 h2가 단일 노출.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">Phase 필터·popover 색은 <strong>Status Pill과 100% 동일</strong>한 PHASE_STAGES const 공유.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">호버 popover에 <span class="mono" style="font-size:11.5px;">aria-haspopup="true"</span> + <span class="mono" style="font-size:11.5px;">aria-label="단계 진행도 보기"</span> + <span class="mono" style="font-size:11.5px;">tabIndex={0}</span> — 키보드 접근 보장.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">B-2에서 StageStrip을 상시 행으로 부활시키지 않기 — 동일 정보 두 번 노출 회피.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">GNB breadcrumb로 해커톤명을 다시 넣지 않기 — sticky h2와 중복.</span></div>
       </div>
     </section>
 
@@ -1602,6 +1835,236 @@
       </table>
 
       <p style="font-size: 12px; color: var(--c-muted); margin: 12px 0 0; line-height: 1.5;"><strong>판단 기준</strong>: (a) 본문이 스크롤되는가? (b) 본문에 별도 정보 박스/리스트/폼이 있는가? (c) 헤더가 "맥락 라벨"이고 본문이 "데이터·인터랙션"으로 명확히 분리되는가? — 셋 중 하나 이상이면 인터랙션 모달.</p>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ MODAL VARIANT · 시각 어휘 선택 (2026-06-01 신설)</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin: 0 0 12px; line-height: 1.6;"><code class="mono">&lt;ModalSurface variant /&gt;</code> prop으로 모달의 시각 어휘를 선택. 단순 confirm 모달은 <code class="mono">'default'</code>, RosterRow zoom-in은 <code class="mono">'postit'</code>. <strong>paper variant는 폐기</strong>(§09g) — 표에 기록만 남기고 신규 사용 금지.</p>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-bottom: 8px;">
+        <tr style="border-bottom: 2px solid var(--c-hairline-strong); background: var(--c-stone);">
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 130px; font-family: var(--font-mono);">variant</th>
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600;">시각 어휘</th>
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 260px;">사용처</th>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);">
+          <td class="mono" style="padding: 10px;"><strong>default</strong></td>
+          <td style="padding: 10px;">canvas bg(#fff) + radius 10px + shadow-modal + border 없음. topStrip 옵션(ink·caution·caution-static).</td>
+          <td style="padding: 10px; color: var(--c-slate);">B2EndModal · B2EndModalCountdown · B2SkipTutorialModal · B2TutorialStartConfirm · B2HackathonStartConfirm 등 — 단순 confirm·인터랙션 모달 전반.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);">
+          <td class="mono" style="padding: 10px;"><strong>postit</strong> <span style="font-size: 10px; background: var(--c-mint); color: #fff; padding: 1px 6px; border-radius: 3px; margin-left: 4px; vertical-align: middle;">NEW</span></td>
+          <td style="padding: 10px;"><code class="mono">.jt-postit-card .jt-postit-card-static</code> 결합 — tape ::before + 정적 회전(<code class="mono">--postit-rot</code> 호출부 주입) + r-xs + shadow-rest. hover/active 비활성. overflow: visible 필수.</td>
+          <td style="padding: 10px; color: var(--c-slate);"><strong>RosterTeamDetailModal 전용</strong> — RosterRow 그리드의 zoom-in. <em>다른 모달 확산 금지</em>(§09e POSTIT MODAL DON'T).</td>
+        </tr>
+        <tr style="background: rgba(255, 107, 31, 0.04);">
+          <td class="mono" style="padding: 10px; text-decoration: line-through; color: var(--c-safety-deep);"><strong>~~paper~~</strong></td>
+          <td style="padding: 10px; text-decoration: line-through; color: var(--c-muted);">clip-path 종이 가장자리 + fold + vignette + 압정 생략 카르브아웃.</td>
+          <td style="padding: 10px; color: var(--c-safety-deep); font-weight: 500;">DEPRECATED 2026-06-01 — §09g 참조. RosterTeamDetailModal은 postit으로 전환됨.</td>
+        </tr>
+      </table>
+      <p style="font-size: 12px; color: var(--c-muted); margin: 0 0 0; line-height: 1.5;"><strong>구현</strong>: <code class="mono">shared.jsx</code> ModalSurface가 variant 분기 — postit일 때 <code class="mono">jt-postit-card jt-postit-card-static</code> 자동 결합, base style은 background/border-radius/box-shadow 인라인 미주입(클래스가 덮음).</p>
+    </section>
+
+    <!-- 09g PAPER SURFACE — DEPRECATED 2026-06-01 -->
+    <section id="paper-surface" style="opacity: 0.55;">
+      <div class="sec-head">
+        <span class="sec-num">09g</span>
+        <h2 class="sec-title" style="text-decoration: line-through; text-decoration-color: var(--c-safety-deep); text-decoration-thickness: 2px;">Paper Surface · 양피지 질감 표면</h2>
+        <span class="sec-tag" style="background: var(--c-safety-deep); color: #fff; border-color: var(--c-safety-deep);">DEPRECATED 2026-06-01</span>
+      </div>
+
+      <div style="padding: 16px 18px; background: var(--c-safety-soft); border-left: 4px solid var(--c-safety-deep); border-radius: 0 6px 6px 0; margin-bottom: 18px; font-size: 13px; line-height: 1.65; color: var(--c-ink-2);">
+        <strong style="color: var(--c-safety-deep); font-family: var(--font-mono); letter-spacing: 0.06em;">DEPRECATED (2026-06-01)</strong> — paper 어휘는 더 이상 사용하지 않습니다.
+        <ul style="margin: 8px 0 4px; padding-left: 20px;">
+          <li>모든 사용처(B-1 빈 상태 · RosterTeamDetailModal · C-1 TeamPostitV2 · D-1 갤러리 빈 상태)는 <strong><code class="mono">.jt-postit-card</code></strong> 어휘로 통일됨.</li>
+          <li>모달 패턴: <code class="mono">&lt;ModalSurface variant="postit" /&gt;</code> (§09e ▸ POSTIT MODAL 참조).</li>
+          <li>본 섹션은 <strong>결정 흔적 보존</strong> 목적으로 남겨두며, 신규 작업에서 절대 사용하지 마세요.</li>
+          <li>CSS 룰셋(<code class="mono">tokens.css §618g</code>)도 deprecated 주석만 추가하고 보존 — 실 화면 사용 0건.</li>
+        </ul>
+      </div>
+
+      <p class="sec-desc" style="text-decoration: line-through;">불규칙한 종이 가장자리 + 사선 접힘 음영 + 내부 도장 그림자로 "기록물·문서"의 무게감을 부여하는 표면 어휘. 단일 정보 카드의 위계를 카드 그리드/리스트 위로 끌어올릴 때 사용. 작업복(검정 잉크)·테이프(노란 안전선)와 결합 가능.</p>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ 시각 데모 · 기본</h3>
+      <div style="display: flex; gap: 32px; padding: 40px 24px; background: linear-gradient(rgba(45,42,36,0.04) 1px, transparent 1px) 0 0 / 24px 24px, linear-gradient(90deg, rgba(45,42,36,0.04) 1px, transparent 1px) 0 0 / 24px 24px, var(--c-paper); border-radius: 8px; align-items: center; justify-content: center; flex-wrap: wrap;">
+        <!-- 데모 1: empty state (b1-empty 패턴) -->
+        <div class="jt-paper-surface-wrap" style="width: 280px;">
+          <div class="jt-paper-surface" style="min-height: 200px; padding: 32px 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+            <div style="width: 40px; height: 40px; border-radius: 8px; background: var(--c-stone); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; color: var(--c-ink-3);">📄</div>
+            <div style="font-size: 16px; font-weight: 700; color: var(--c-ink); margin-bottom: 6px;">empty state</div>
+            <div style="font-size: 12px; color: var(--c-slate); line-height: 1.55;">아직 항목이 없습니다.<br />추가하면 여기에 표시돼요.</div>
+          </div>
+        </div>
+        <!-- 데모 2: 모달/큰 카드 (header + body + footer) -->
+        <div class="jt-paper-surface-wrap" style="width: 280px;">
+          <div class="jt-paper-surface" style="display: flex; flex-direction: column;">
+            <div style="padding: 22px 22px 12px; border-bottom: 1px solid var(--c-hairline);">
+              <div style="font-size: 16px; font-weight: 700; color: var(--c-ink);">큰 정보 카드</div>
+              <div style="font-size: 11px; color: var(--c-slate); margin-top: 3px; font-family: var(--font-mono);">N / M · 메타</div>
+            </div>
+            <div style="padding: 14px 22px; font-size: 12px; color: var(--c-slate); line-height: 1.65;">
+              본문 영역. 헤더-본문-푸터 구조도 paper surface 안에서 잘 동작합니다.
+            </div>
+            <div style="padding: 10px 22px; border-top: 1px solid var(--c-hairline); font-size: 11px; color: var(--c-muted); font-family: var(--font-mono);">footer · meta</div>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 36px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ 배경 부착 · 노란 I자 압정 (paper 표준)</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin: 0 0 16px; line-height: 1.6;"><strong>paper는 항상 상단 중앙에 노란 I자 압정이 박혀 있다</strong> — paper의 정체성. <code class="mono">.jt-paper-pinned</code> 클래스가 압정·hover 회전을 자동 주입. 호버 시 압정을 축으로 ~2° 회전. 클릭 이벤트는 wrap에 별도 핸들러.</p>
+      <div style="display: flex; gap: 40px; padding: 60px 36px 50px; background: linear-gradient(rgba(45,42,36,0.04) 1px, transparent 1px) 0 0 / 24px 24px, linear-gradient(90deg, rgba(45,42,36,0.04) 1px, transparent 1px) 0 0 / 24px 24px, var(--c-paper); border-radius: 8px; align-items: center; justify-content: center; flex-wrap: wrap;">
+
+        <!-- 압정 paper 데모 -->
+        <div class="jt-paper-pinned" style="display: inline-block;">
+          <div class="jt-paper-surface-wrap" style="width: 280px;">
+            <div class="jt-paper-surface" style="min-height: 200px; padding: 32px 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+              <div style="font-family: var(--font-mono); font-size: 10.5px; color: var(--c-helmet-deep); letter-spacing: 0.16em;">PINNED</div>
+              <div style="font-size: 16px; font-weight: 700; color: var(--c-ink); margin-top: 8px;">상단 중앙 압정</div>
+              <div style="font-size: 12px; color: var(--c-slate); line-height: 1.55; margin-top: 8px;">호버하면 압정을 축으로 살짝 흔들.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <p style="font-size: 12px; color: var(--c-muted); margin: 12px 0 0; line-height: 1.5;"><strong>구현 메모</strong>: 압정 SVG는 <code class="mono">tokens.css §618g</code>의 <code class="mono">.jt-paper-pinned::before</code>가 data-URI로 자동 주입. 노란색 그라디언트는 캡(<code class="mono">--c-helmet</code>) → 몸통(<code class="mono">--c-helmet-deep</code>) → 바닥 플랜지(짙은 amber)로 입체감. 압정의 <code class="mono">::before</code>는 wrap의 <code class="mono">filter: drop-shadow</code> 영향을 받지 않도록 wrap 외부에 배치.</p>
+
+      <h3 style="font-size: 14px; margin: 36px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ Variant · 클래식 thumbtack (돔 + 가시적 목)</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin: 0 0 16px; line-height: 1.6;"><strong>코르크보드 메타포 강조 시 사용</strong> — <code class="mono">.jt-paper-pinned</code>에 <code class="mono">.jt-paper-pinned-tall</code> modifier 병기. 기본 변형은 검정 돔만 보이지만, tall은 cylindrical 목이 종이로 박혀 들어가는 형태로 실제 압정의 어휘가 더 강하게 드러납니다. hover 회전·정적 자세는 부모 룰 그대로 상속.</p>
+      <div class="jt-corkboard-demo" style="display: flex; gap: 40px; padding: 60px 36px 50px; border-radius: 8px; align-items: center; justify-content: center; flex-wrap: wrap;">
+
+        <!-- 압정 tall variant 데모 (노란 메모지 — 참조 이미지 어휘) -->
+        <div class="jt-paper-pinned jt-paper-pinned-tall" style="display: inline-block;">
+          <div class="jt-paper-surface-wrap" style="width: 280px;">
+            <div class="jt-paper-surface" style="min-height: 180px; padding: 32px 28px; background: #f3e96b; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+              <div style="font-family: var(--font-mono); font-size: 10.5px; color: #5a4a00; letter-spacing: 0.16em;">PINNED · TALL</div>
+              <div style="font-size: 16px; font-weight: 700; color: var(--c-ink); margin-top: 8px;">검정 thumbtack</div>
+              <div style="font-size: 12px; color: var(--c-ink-2); line-height: 1.55; margin-top: 8px;">돔 아래로 가시적인 목이<br/>종이 안쪽으로 박힙니다.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 기본 paper에도 적용 가능 (비교용) -->
+        <div class="jt-paper-pinned jt-paper-pinned-tall" style="display: inline-block;">
+          <div class="jt-paper-surface-wrap" style="width: 280px;">
+            <div class="jt-paper-surface" style="min-height: 180px; padding: 32px 28px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+              <div style="font-family: var(--font-mono); font-size: 10.5px; color: var(--c-slate); letter-spacing: 0.16em;">PINNED · TALL</div>
+              <div style="font-size: 16px; font-weight: 700; color: var(--c-ink); margin-top: 8px;">기본 paper 적용</div>
+              <div style="font-size: 12px; color: var(--c-slate); line-height: 1.55; margin-top: 8px;">노란 종이가 아니어도<br/>variant 적용 가능합니다.</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <p style="font-size: 12px; color: var(--c-muted); margin: 12px 0 0; line-height: 1.5;"><strong>마크업</strong>: <code class="mono">&lt;div class="jt-paper-pinned jt-paper-pinned-tall"&gt;</code> · <strong>SVG</strong>: 32×42 viewBox · 돔(11rx, 10ry) + 목(폭 8px) + 종이 위 캐스트 그림자(ellipse 10.5×2.2) · <strong>기본과 호환</strong>: <code class="mono">.jt-paper-pinned-static</code>·hover 회전 등 모든 modifier 그대로 동작.</p>
+
+      <h3 style="font-size: 14px; margin: 36px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ POSTIT vs PAPER · 용례 분리 <span style="color: var(--c-safety-deep); margin-left: 8px;">(DEPRECATED — paper 통째 폐기, postit 단일 어휘로 통일)</span></h3>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--c-hairline-strong);">
+            <th style="padding: 8px 0; text-align: left; font-family: var(--font-mono); color: var(--c-slate); font-weight: 600;">속성</th>
+            <th style="padding: 8px 12px; text-align: left;">postit (<code class="mono">.jt-postit-card</code>)</th>
+            <th style="padding: 8px 12px; text-align: left; text-decoration: line-through; color: var(--c-safety-deep);">paper (<code class="mono">.jt-paper-pinned</code>) — DEPRECATED</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--c-hairline);">
+            <td style="padding: 8px 0; color: var(--c-ink-2);">정체성 장식</td>
+            <td style="padding: 8px 12px;">노란 테이프 1조각 (상단 중앙, ~-2° 회전)</td>
+            <td style="padding: 8px 12px;">노란 I자 압정 1개 (상단 중앙)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--c-hairline);">
+            <td style="padding: 8px 0; color: var(--c-ink-2);">정적 회전</td>
+            <td style="padding: 8px 12px;">팀명 hash 기반 ±2° (들뜸)</td>
+            <td style="padding: 8px 12px;"><strong>없음</strong> (반듯)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--c-hairline);">
+            <td style="padding: 8px 0; color: var(--c-ink-2);">가장자리</td>
+            <td style="padding: 8px 12px;">사각형 + <code class="mono">--r-xs</code> (2px) 미세 둥글기</td>
+            <td style="padding: 8px 12px;">불규칙 clip-path (찢긴 종이 가장자리)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--c-hairline);">
+            <td style="padding: 8px 0; color: var(--c-ink-2);">hover</td>
+            <td style="padding: 8px 12px;">회전 → 0° + <code class="mono">translateY(-3px)</code> + shadow 강화 (들뜸 펴짐)</td>
+            <td style="padding: 8px 12px;">압정 축으로 ~2° 회전 + shadow 강화 (벽에 박힌 종이 흔들)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--c-hairline);">
+            <td style="padding: 8px 0; color: var(--c-ink-2);">최소 크기</td>
+            <td style="padding: 8px 12px;">~160×80px (작은 카드 가능)</td>
+            <td style="padding: 8px 12px;">280×200px 권장 (큰 카드 전용)</td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--c-hairline);">
+            <td style="padding: 8px 0; color: var(--c-ink-2);">사용 위계</td>
+            <td style="padding: 8px 12px;">팀 카드 그리드 (수십~수백) · 빠른 스캔</td>
+            <td style="padding: 8px 12px;">단일 정보 카드 · empty state · 주인공 패널</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: var(--c-ink-2);">예시 화면</td>
+            <td style="padding: 8px 12px;">B-2 RosterRow (60팀 그리드)</td>
+            <td style="padding: 8px 12px;">B-1 empty · C-1 팀 패널 · B-2 모달(예외)</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-safety-deep); text-transform: uppercase; font-family: var(--font-mono); text-decoration: line-through;">▸ 예외 · 모달에서 paper 사용 — DEPRECATED</h3>
+      <div style="padding: 14px 16px; background: var(--c-safety-soft); border-left: 3px solid var(--c-safety); border-radius: 0 6px 6px 0; font-size: 13px; color: var(--c-ink-2); line-height: 1.6;">
+        <p style="margin: 0 0 8px;"><strong style="color: var(--c-safety-deep);">DEPRECATED (2026-06-01)</strong> — 본 카르브아웃은 더 이상 적용되지 않습니다. <code class="mono">RosterTeamDetailModal</code>은 <strong>§09e ▸ POSTIT MODAL</strong> 어휘(<code class="mono">&lt;ModalSurface variant="postit" /&gt;</code>)로 전환됨.</p>
+        <p style="margin: 0 0 6px; text-decoration: line-through;">매우 예외적 케이스: 모달이 paper 어휘를 빌릴 수 있다. 단, 다음 카르브아웃:</p>
+        <ul style="margin: 0; padding-left: 20px; text-decoration: line-through;">
+          <li>압정 생략 — 모달은 backdrop으로 이미 "분리됨"이 강조되므로 압정의 "벽에 박힘" 메타포 불필요.</li>
+          <li>호버 회전 비활성 — 모달은 고정 중앙 정렬, 인터랙션 표면이 아님.</li>
+          <li>clip-path 가장자리 + ::before fold + ::after vignette만 유지 (paper 어휘 골격).</li>
+        </ul>
+        <p style="margin: 8px 0 0; text-decoration: line-through;">→ 마크업: <code class="mono">&lt;ModalSurface className="jt-paper-surface" /&gt;</code> 만 사용. <code class="mono">.jt-paper-pinned</code> 적용 금지.</p>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ ANATOMY · 마크업 구조</h3>
+      <div style="background: var(--c-ink); color: #e3dfd0; font-family: var(--font-mono); font-size: 12px; padding: 16px 20px; border-radius: 6px; line-height: 1.7; overflow-x: auto;">
+<span style="color: #8a8779;">&lt;!-- drop-shadow는 wrap이 담당 (clip-path된 자식 가장자리 그림자) --&gt;</span><br/>
+&lt;div class=<span style="color: #ffce2b;">"jt-paper-surface-wrap"</span> style=<span style="color: #ffce2b;">"width: 360px"</span>&gt;<br/>
+&nbsp;&nbsp;&lt;div class=<span style="color: #ffce2b;">"jt-paper-surface"</span> style=<span style="color: #ffce2b;">"padding: 32px;"</span>&gt;<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #8a8779;">&lt;!-- 내용 --&gt;</span><br/>
+&nbsp;&nbsp;&lt;/div&gt;<br/>
+&lt;/div&gt;
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ TOKENS · 핵심 규칙</h3>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2); width: 200px;">background</td><td style="padding: 6px 0;">#ffffff (고정 — 흰 종이)</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">clip-path</td><td style="padding: 6px 0;">29-vertex polygon — 종이 찢김 가장자리 (위·아래·좌·우 모두 미세하게 비대칭)</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">::before (fold)</td><td style="padding: 6px 0;">사선 3종 (104° 14% / 31° 82% / 154° 80%) — 가장자리 쪽에 집중 · opacity .45 · multiply 합성</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">::after (vignette)</td><td style="padding: 6px 0;">inset 6px box-shadow 4방향 — 안쪽 도장 그림자 + 위·왼쪽은 밝은 highlight</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">drop-shadow</td><td style="padding: 6px 0;">filter 18px/.16 + 2px/.08 (wrap이 담당 — clip-path 모양 따라 그림자)</td></tr>
+        <tr><td class="mono" style="padding: 6px 0; color: var(--c-ink-2);">border-radius</td><td style="padding: 6px 0;"><strong>0</strong> (clip-path가 모양 결정 — 직사각형 모서리 둥글기 무효)</td></tr>
+      </table>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ 사용 위계 · 어디 쓸까</h3>
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-bottom: 16px;">
+        <tr style="border-bottom: 1px solid var(--c-hairline);">
+          <td style="padding: 8px 0; width: 220px; vertical-align: top;"><strong>Empty State 카드</strong></td>
+          <td style="padding: 8px 0; vertical-align: top;">신규 운영자·빈 갤러리·결과 없음 — 가운데 단일 paper로 "비어있음의 무게감". 예: <code class="mono">B1Empty</code>.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);">
+          <td style="padding: 8px 0; vertical-align: top;"><strong>큰 단일 카드</strong></td>
+          <td style="padding: 8px 0; vertical-align: top;">화면 본문의 주인공이 되는 카드(폭 ≥320px). 예: 참가자 C-1 우측 팀 패널 <code class="mono">TeamPostitV2</code>, 운영자 b2-roster-detail 모달.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);">
+          <td style="padding: 8px 0; vertical-align: top;"><strong>인터랙션 모달</strong></td>
+          <td style="padding: 8px 0; vertical-align: top;"><code class="mono">&lt;ModalSurface className="jt-paper-surface"&gt;</code> 형태로 결합. <code class="mono">jt-modal-surface.jt-paper-surface</code> 셀렉터가 borderRadius/shadow 자동 무효화.</td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0; vertical-align: top;"><strong>비추 사용처</strong></td>
+          <td style="padding: 8px 0; vertical-align: top;">팀 카드 그리드(60팀+) · dense 리스트 · 작은 칩 — 가장자리·접힘이 시각 노이즈. 그리드는 <code class="mono">.jt-postit-card</code>, 작은 카드는 <code class="mono">.jt-card</code> 사용.</td>
+        </tr>
+      </table>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-helmet-deep); text-transform: uppercase; font-family: var(--font-mono);">▸ 규칙</h3>
+      <div class="rules" style="margin-top: 8px;">
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">반드시 <code class="mono">.jt-paper-surface-wrap</code> 으로 감싸기. filter:drop-shadow가 clip-path된 자식의 가장자리를 따라가는 그림자를 만듦.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">최소 폭 280px·최소 높이 200px 권장. 더 작으면 가장자리 노이즈가 콘텐츠를 압박.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">밝은 backdrop (var(--c-paper) / canvas 그리드) 위에서 사용. 가장자리 형태가 보여야 어휘가 성립.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text"><code class="mono">border-radius</code>·<code class="mono">box-shadow</code> 인라인으로 추가하지 말기. clip-path가 모양을 정의하므로 둘 다 의미 없음.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">어두운 backdrop (모달 위 모달 등) 위에 단독 사용 금지 — 가장자리가 사라져 사각형으로 보임. 어두운 위에는 <code class="mono">.jt-modal-surface</code> (둥근 모서리) 사용.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">postit (회전 + tape) 어휘와 동시 사용 지양 — 두 metaphor 충돌. 단, 큰 paper modal에 tape 한 줄은 허용 (식별 신호).</span></div>
+      </div>
     </section>
 
     <!-- 09f COMPONENT LIBRARY EXTENSIONS -->
@@ -1658,7 +2121,7 @@
           <code class="mono" style="color: var(--c-ink);">.jt-countdown-ring-critical</code>
           <span>safety 색 6px halo + 28px elevation 그림자</span>
           <span>jt-ring-pulse 2.4s ease-in-out infinite</span>
-          <span>사용처: E-4 합의 투표(15s) · E-6 일시정지 · B-2 종료(30s)</span>
+          <span>사용처: E-4 합의 투표(15s) · B-2 종료(30s)</span>
         </div>
       </div>
 
@@ -1669,6 +2132,54 @@
           <span class="jt-tooltip" style="bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);">남은 시간 안내</span>
         </button>
         <span style="font-size: 12px; color: var(--c-slate);"><code class="mono">.jt-tooltip</code> — dark ink + 6/10 padding + mono font. fade-in 150ms decelerate.</span>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ SWITCH · 2-state 토글 (on/off)</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin: 0 0 12px; line-height: 1.6;"><strong>ARIA</strong>: <code class="mono">role="switch"</code> + <code class="mono">aria-checked</code> + <code class="mono">aria-label</code>. <code class="mono">&lt;button type="button"&gt;</code> 요소 사용 (form submit 회피). 라벨 클릭으로도 토글되도록 <code class="mono">&lt;label&gt;</code> 래핑 권장. 색 variant: 기본 ink / <code class="mono">.is-safety</code>(위험·필터 강조) / <code class="mono">.is-mint</code>(성공·공개). 사이즈: 기본 44×24 / <code class="mono">.is-sm</code> 36×20.</p>
+      <div style="display: flex; gap: 24px; align-items: center; padding: 20px; background: var(--c-paper); border-radius: 8px; flex-wrap: wrap;">
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start;">
+          <span style="font-size: 11px; color: var(--c-muted); font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;">DEFAULT · INK</span>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <button type="button" role="switch" aria-checked="false" aria-label="off 예시" class="jt-switch"></button>
+            <button type="button" role="switch" aria-checked="true" aria-label="on 예시" class="jt-switch"></button>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start;">
+          <span style="font-size: 11px; color: var(--c-muted); font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;">.is-safety</span>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <button type="button" role="switch" aria-checked="false" aria-label="off 예시" class="jt-switch is-safety"></button>
+            <button type="button" role="switch" aria-checked="true" aria-label="on 예시" class="jt-switch is-safety"></button>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start;">
+          <span style="font-size: 11px; color: var(--c-muted); font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;">.is-mint</span>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <button type="button" role="switch" aria-checked="false" aria-label="off 예시" class="jt-switch is-mint"></button>
+            <button type="button" role="switch" aria-checked="true" aria-label="on 예시" class="jt-switch is-mint"></button>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start;">
+          <span style="font-size: 11px; color: var(--c-muted); font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;">.is-sm</span>
+          <div style="display: flex; gap: 12px; align-items: center;">
+            <button type="button" role="switch" aria-checked="false" aria-label="off 예시" class="jt-switch is-sm"></button>
+            <button type="button" role="switch" aria-checked="true" aria-label="on 예시" class="jt-switch is-sm is-safety"></button>
+          </div>
+        </div>
+      </div>
+      <div style="display: flex; gap: 24px; align-items: center; padding: 20px; background: var(--c-paper); border-radius: 8px; margin-top: 14px;">
+        <span style="font-size: 11px; color: var(--c-muted); font-family: var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase;">LABELED · pill 래핑 (RosterView 패턴)</span>
+        <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; padding: 4px 4px 4px 10px; border-radius: 999px; border: 1px solid var(--c-hairline);">
+          <span style="width: 6px; height: 6px; border-radius: 50%; background: var(--c-safety);" aria-hidden="true"></span>
+          <span style="font-size: 13px; font-weight: 500; color: var(--c-ink);">미접속만 보기</span>
+          <span class="mono" style="font-size: 11px; color: var(--c-muted);">16</span>
+          <button type="button" role="switch" aria-checked="false" aria-label="off 예시" class="jt-switch is-safety is-sm"></button>
+        </label>
+      </div>
+      <div class="rules" style="margin-top: 12px;">
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text"><code class="mono">role="switch"</code> + <code class="mono">aria-checked</code>로 ARIA 노출. <code class="mono">aria-pressed</code> 대신 <code class="mono">aria-checked</code> — switch는 별도 role.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">라벨 + 스위치는 <code class="mono">&lt;label&gt;</code>로 묶기 — 텍스트 클릭도 토글되도록.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">기본 <code class="mono">&lt;input type="checkbox"&gt;</code>의 default 외관에 의존하지 말기 — 브라우저별 외관 다름. 항상 <code class="mono">.jt-switch</code> 클래스 부여.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">대량 데이터 필터에 색 variant 남용 금지 — <code class="mono">.is-safety</code>는 "위험/주의 필터"(미접속만 보기 등) 한정.</span></div>
       </div>
 
       <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ SPIN · 로딩 회전</h3>
@@ -1684,7 +2195,7 @@
         <!-- 접속 행 -->
         <div style="position: relative; padding: 7px 10px; display: flex; align-items: center; gap: 10px; border-radius: 6px; background: transparent;">
           <div style="position: relative; flex-shrink: 0;">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--c-helmet); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; font-weight: 700;">김</div>
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--c-helmet); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-size: 10px; font-weight: 700; letter-spacing: -0.04em;">민준</div>
             <span style="position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px; border-radius: 50%; background: var(--c-mint); border: 2px solid var(--c-canvas);"></span>
           </div>
           <span style="font-size: 13px; font-weight: 600; color: var(--c-ink);">김민준</span>
@@ -1694,7 +2205,7 @@
              UI 2상태 통합(2026-05-27): "입장 전"(API not_entered)과 같은 시각으로 표시. -->
         <div style="position: relative; padding: 7px 10px; display: flex; align-items: center; gap: 10px; border-radius: 6px; background: rgba(20,19,15,0.025);">
           <div style="position: relative; flex-shrink: 0;">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--c-mint); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; font-weight: 700; opacity: 0.5;">박</div>
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--c-mint); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-size: 10px; font-weight: 700; letter-spacing: -0.04em; opacity: 0.5;">지호</div>
             <span style="position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px; border-radius: 50%; background: #c94560; border: 2px solid var(--c-canvas);"></span>
           </div>
           <span style="font-size: 13px; font-weight: 600; color: var(--c-muted);">박지호</span>
@@ -1704,7 +2215,7 @@
              비접속 시각은 미접속과 동일하되 이름 우측에 "미등록" 라벨(mono caps + hairline outline + muted)로 차이 노출. -->
         <div style="position: relative; padding: 7px 10px; display: flex; align-items: center; gap: 10px; border-radius: 6px; background: rgba(20,19,15,0.025);">
           <div style="position: relative; flex-shrink: 0;">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--c-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; font-weight: 700; opacity: 0.5;">이</div>
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--c-blue); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-size: 10px; font-weight: 700; letter-spacing: -0.04em; opacity: 0.5;">서윤</div>
             <span style="position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px; border-radius: 50%; background: #c94560; border: 2px solid var(--c-canvas);"></span>
           </div>
           <span style="font-size: 13px; font-weight: 600; color: var(--c-muted);">이서윤</span>
@@ -1715,7 +2226,7 @@
         <div style="position: relative; padding: 7px 10px; display: flex; align-items: center; gap: 10px; border-radius: 6px; background: var(--c-helmet-soft);">
           <span style="position: absolute; left: 2px; top: 8px; bottom: 8px; width: 3px; border-radius: 2px; background: var(--c-helmet-deep);"></span>
           <div style="position: relative; flex-shrink: 0; margin-left: 4px;">
-            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--c-amber); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 12px; font-weight: 700;">최</div>
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--c-amber); color: #fff; display: flex; align-items: center; justify-content: center; font-family: var(--font-sans); font-size: 10px; font-weight: 700; letter-spacing: -0.04em;">지유</div>
             <span style="position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px; border-radius: 50%; background: var(--c-mint); border: 2px solid var(--c-canvas);"></span>
           </div>
           <span style="font-size: 13px; font-weight: 600; color: var(--c-ink);">최지유</span>
@@ -1745,6 +2256,285 @@
         <strong>Props</strong>: <code class="mono">states</code> — 기본 <code class="mono">['on','off']</code> 2상태. <code class="mono">'pending'</code>도 인자로 받을 수 있으나 off와 동일 시각으로 통합 노출 (UI 2상태 정책).
         <br /><strong>DO</strong>: 멤버 행 위쪽 RosterMemberRow 인디케이터와 항상 같은 색 도트 어휘 유지.
         <br /><strong>DON'T</strong>: 이모지(🟢🔘⬜) 사용 금지. "입장 전" 별도 시각도 폐기(2026-05-27) — 운영자/참가자 task 동일성 분석에 따라 미접속으로 통합.
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ POST-IT CARD · 단일 흰색 어휘 (B-2 RosterRow 전용)</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin: 0 0 14px; line-height: 1.6;">설계도에 붙인 포스트잇 어휘. <code class="mono">.jt-postit-card</code> 클래스 + 인라인 CSS 변수(<code class="mono">--postit-rot</code>·<code class="mono">--postit-tint</code>)로 회전·색 부여. <strong style="color: var(--c-helmet-deep);">색 정책 (§18-27)</strong>: <strong>전체 단일 흰색</strong>(<code class="mono">--c-canvas</code>) — 다인/1인팀·접속 상태 무관. paper(#faf9f6) 배경 위에서 shadow·tape로 카드 윤곽. <strong>상태 = 카운트 색·weight (§18-18)</strong>: 전원 접속=muted w500 / 일부 미접속=safety w600 / 전원 미접속=safety-deep w700 (roster mode 한정). 회전(±1.4° 4-variant)은 deterministic by team name hash. 카드별 모달도 같은 tint(§18-19). RosterRow + RosterTeamDetailModal 사용 — 다른 카드에 확산 금지.</p>
+
+      <div style="display: grid; gap: 14px; padding: 20px; background: var(--c-paper); border-radius: 8px; grid-template-columns: repeat(4, minmax(0, 1fr));">
+        <!-- 다인팀 · 전원 접속: paper-cool + muted w500 -->
+        <div class="jt-postit-card" style="--postit-rot: var(--postit-rot-a); --postit-tint: var(--c-canvas); border-radius: var(--r-xs); padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; min-height: 60px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+            <span style="font-size: 12.5px; font-weight: 700;">터미널 사파리</span>
+            <span class="mono" style="font-size: 10px; font-weight: 500; color: var(--c-muted);">4/4</span>
+          </div>
+          <div style="display: flex; gap: 4px;">
+            <span style="width: 22px; height: 22px; border-radius: 50%; background: var(--c-helmet); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700;">민준</span>
+            <span style="width: 22px; height: 22px; border-radius: 50%; background: var(--c-blue); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700;">서윤</span>
+            <span style="width: 22px; height: 22px; border-radius: 50%; background: var(--c-mint); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700;">지호</span>
+            <span style="width: 22px; height: 22px; border-radius: 50%; background: var(--c-amber); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700;">유나</span>
+          </div>
+        </div>
+        <!-- 다인팀 · 일부 미접속: paper-cool + safety w600 -->
+        <div class="jt-postit-card" style="--postit-rot: var(--postit-rot-b); --postit-tint: var(--c-canvas); border-radius: var(--r-xs); padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; min-height: 60px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+            <span style="font-size: 12.5px; font-weight: 700;">커널 패닉</span>
+            <span class="mono" style="font-size: 10px; font-weight: 600; color: var(--c-safety);">2/3</span>
+          </div>
+          <div style="display: flex; gap: 4px;">
+            <span style="width: 22px; height: 22px; border-radius: 50%; background: var(--c-helmet-deep); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700;">도현</span>
+            <span style="width: 22px; height: 22px; border-radius: 50%; background: var(--c-amber); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700;">예린</span>
+            <span style="width: 22px; height: 22px; border-radius: 50%; border: 1px dashed var(--c-hairline-strong); background: var(--c-stone); color: var(--c-muted); display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; opacity: 0.7;">태웅</span>
+          </div>
+        </div>
+        <!-- 1인팀 · 전원 접속: paper-mint + muted w500 -->
+        <div class="jt-postit-card" style="--postit-rot: var(--postit-rot-c); --postit-tint: var(--c-canvas); border-radius: var(--r-xs); padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; min-height: 60px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+            <span style="font-size: 12.5px; font-weight: 700;">노유진</span>
+            <span class="mono" style="font-size: 10px; font-weight: 500; color: var(--c-muted);">1/1</span>
+          </div>
+          <div style="display: flex; gap: 4px;">
+            <span style="width: 22px; height: 22px; border-radius: 50%; background: var(--c-blue); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700;">유진</span>
+          </div>
+        </div>
+        <!-- 1인팀 · 전원 미접속: paper-mint + safety-deep w700 -->
+        <div class="jt-postit-card" style="--postit-rot: var(--postit-rot-d); --postit-tint: var(--c-canvas); border-radius: var(--r-xs); padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; min-height: 60px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+            <span style="font-size: 12.5px; font-weight: 700;">류재석</span>
+            <span class="mono" style="font-size: 10px; font-weight: 700; color: var(--c-safety-deep);">0/1</span>
+          </div>
+          <div style="display: flex; gap: 4px;">
+            <span style="width: 22px; height: 22px; border-radius: 50%; border: 1px dashed var(--c-hairline-strong); background: var(--c-stone); color: var(--c-muted); display: inline-flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; opacity: 0.7;">재석</span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: var(--c-slate); margin: 10px 0 0;"><strong>전체 단일 흰색</strong>(<code class="mono">--c-canvas</code>, §18-27) — 다인/1인팀·접속 상태 무관. 카운트 색·weight는 접속 상태(§18-18). 카드별 모달도 동일.</p>
+
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 14px;">
+        <tr style="border-bottom: 1px solid var(--c-hairline); background: var(--c-stone);">
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 220px;">속성</th>
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600;">값</th>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">--postit-rot-{a,b,c,d}</td><td style="padding: 8px 10px;">-1.4° / -0.6° / +0.6° / +1.4° (4-variant deterministic by team-name hash) — 시각 변화 목적</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">tint (§18-27)</td><td style="padding: 8px 10px;"><strong>전체 단일 흰색</strong> — <code class="mono">var(--c-canvas)</code>(#ffffff). 다인/1인팀·접속 상태 무관. 카드별 모달도 동일. paper(#faf9f6) 배경 위에서 shadow·tape로 카드 윤곽</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">offline 카운트 (§18-18)</td><td style="padding: 8px 10px;"><strong>roster mode 한정 · 3-state via 카운트 색·weight</strong>: ① 전원 접속(onCount === total) = <code class="mono">var(--c-muted)</code> w500 / ② 일부 미접속(0 &lt; onCount &lt; total) = <code class="mono">var(--c-safety)</code> w600 / ③ 전원 미접속(onCount === 0) = <code class="mono">var(--c-safety-deep)</code> w700. mono 10px 유지. chip 폐기(§18-16 시선 강탈 우려). 카운트 위치(title 우측) 그대로</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">--postit-shadow-rest</td><td style="padding: 8px 10px;">shadow-md 급. 1px + 14px dual layer. 비대칭 — 그라데이션 없음</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">--postit-shadow-lift (hover)</td><td style="padding: 8px 10px;">shadow-hover 급. 4px + 28px dual layer. 회전 0°로 정렬되면서 <strong>그림자가 깊어져</strong> "조사 모드 진입" 단서. <strong>카드 layout 위치는 그대로</strong>(translateY 금지, §19-5).</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">tape (::before)</td><td style="padding: 8px 10px;">크기 단계별 비례(▸ TAPE SIZE) · ink alpha 0.10 단색. top: calc(-h/2) 자동 비례 · rotate(-2°) · hover 시 rotate(0°)로 펴짐. <strong>화면 절대 좌표 고정</strong> — 카드 회전축이자 박힌 점.</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">transform-origin</td><td style="padding: 8px 10px;"><strong>50% 0%</strong> (상단 중앙, tape 박힌 위치) — "tape 축으로 흔들" 단서. 정적 회전은 카드 밑변이 좌우로 기울고, 호버 시 rotate(0)이 "tape이 잡아당겨 펴짐"으로 작동. <strong>2026-06-01 §19-4 결정</strong> (이전: 50% 100% 밑변 = "위로 들리는" 단서).</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">hover transform</td><td style="padding: 8px 10px;"><code class="mono">rotate(0deg) !important</code> — 회전 펴짐만. <strong>translateY 금지</strong>(§19-5): tape 박힌 점이 layout 이동으로 함께 끌려가면 "박혀있다" 메타포 깨짐. shadow lift + 회전 펴짐 두 신호로 "조사 모드 진입" 표현.</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">active transform</td><td style="padding: 8px 10px;"><code class="mono">rotate(0deg) scale(0.985) !important</code> — 1.5% 축소만. translateY 금지(§19-5). origin 50% 0%이라 카드 상단 고정 + 밑변이 1.5% 줄어듦.</td></tr>
+        <tr><td class="mono" style="padding: 8px 10px;">prefers-reduced-motion</td><td style="padding: 8px 10px;">회전·peel 비활성, tint·tape 정적 유지 — 시각 정체성은 페이퍼 톤으로 대체</td></tr>
+      </table>
+
+      <div class="rules" style="margin-top: 14px;">
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">tint는 단일 흰색(§18-27, <code class="mono">--c-canvas</code>) — 다인/1인팀·접속 상태 무관. 회전은 팀명 hash 4-variant. 같은 팀 어디서나 같은 자세·색. 카드별 모달도 같은 tint.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">미접속 신호는 카운트 N/M 자체의 색·weight로(§18-18) — muted w500 / safety w600 / safety-deep w700. roster mode 한정. tutorial-progress·activity는 muted w500 통일.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">hover 시 회전 0°로 펴지며 box-shadow 깊어짐 — "조사 모드 진입" 단서. <strong>카드 layout 위치는 그대로</strong>(translateY 없음, §19-5). 키보드 <code class="mono">:focus-visible</code>은 outline만.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text"><strong>tape이 박힌 점(상단 중앙)을 화면 절대 좌표 기준 고정</strong>. transform-origin 50% 0% + hover에 translateY/translateX 금지 (§19-4·§19-5). 사용자가 "tape에 박혀 있다"고 즉각 인지하는 메타포.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text"><strong>tint를 상태로 인코딩 금지</strong> — 같은 팀이 화면마다 다른 색으로 보이면 혼란(§18-15 사용자 결정). 상태는 별도 신호로.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">RosterRow 외 카드(ActivityRow·GalleryCard·HackathonCard·ProjectCard)에 적용 금지. 60카드 GPU 검증 미흡 + entity 별 색 정책 분리.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">회전 각도 ±1.4° 초과 금지. 5° 이상은 "기울어 보이는 결함"으로 해석되어 시각 노이즈.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text"><strong>hover/active에 translateY·translateX 등 layout 이동 금지</strong>(§19-5). origin이 50% 0%이라도 layout이 이동하면 회전축(=tape 박힌 점)도 함께 끌려가 "박혀있다" 메타포 깨짐. lift 시각은 box-shadow만으로.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text"><code class="mono">teamIdentityTint</code>에 다른 entity 사용 금지 — team 객체(<code class="mono">members</code>·<code class="mono">solo</code>) 전제. Hackathon은 status-driven wash 사용(§02 ENTITY × COLOR POLICY).</span></div>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 36px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ TAPE SIZE · 카드 크기 비례 단계 (2026-06-01 신설)</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin: 0 0 16px; line-height: 1.65;">
+        tape의 시각 무게는 카드 크기에 비례해야 한다 — 좁은 그리드 카드에서 26px tape가 적정 시각이지만, 440~560px 모달/empty 카드에서는 같은 tape가 점·지문 정도로 묻혀 보임. <strong>4단계 modifier로 비례 보정</strong>: 기본(그리드) · md(중간) · lg(큰 카드/모달) · xl(매우 큰 empty state). modifier가 <code class="mono">--postit-tape-w</code>·<code class="mono">--postit-tape-h</code> 변수를 주입하면 <code class="mono">.jt-postit-card::before</code>가 자동 비례 — 단계 밖 미세 조정은 변수 직접 주입으로 가능.
+      </p>
+
+      <!-- 시각 데모: 4단계 tape 비교 (같은 카드 폭 240px로 통일하여 tape만 비교) -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; padding: 28px 18px 32px; background: var(--c-paper); border-radius: 8px; align-items: end;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+          <div class="jt-postit-card jt-postit-card-static" style="width: 100%; min-height: 100px; padding: 18px 14px; --postit-rot: var(--postit-rot-a); --postit-tint: var(--c-canvas); border-radius: var(--r-xs); display: flex; align-items: center; justify-content: center;">
+            <div style="font-size: 11px; color: var(--c-slate); font-family: var(--font-mono); text-align: center;">기본<br/>26 × 6</div>
+          </div>
+          <div style="font-size: 11px; color: var(--c-muted); font-family: var(--font-mono); text-align: center;">그리드 ~60–220px</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+          <div class="jt-postit-card jt-postit-card-static jt-postit-tape-md" style="width: 100%; min-height: 100px; padding: 18px 14px; --postit-rot: var(--postit-rot-b); --postit-tint: var(--c-canvas); border-radius: var(--r-xs); display: flex; align-items: center; justify-content: center;">
+            <div style="font-size: 11px; color: var(--c-slate); font-family: var(--font-mono); text-align: center;">md<br/>40 × 8</div>
+          </div>
+          <div style="font-size: 11px; color: var(--c-muted); font-family: var(--font-mono); text-align: center;">중간 ~220–400px</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+          <div class="jt-postit-card jt-postit-card-static jt-postit-tape-lg" style="width: 100%; min-height: 100px; padding: 18px 14px; --postit-rot: var(--postit-rot-c); --postit-tint: var(--c-canvas); border-radius: var(--r-xs); display: flex; align-items: center; justify-content: center;">
+            <div style="font-size: 11px; color: var(--c-slate); font-family: var(--font-mono); text-align: center;">lg<br/>56 × 9</div>
+          </div>
+          <div style="font-size: 11px; color: var(--c-muted); font-family: var(--font-mono); text-align: center;">큰/모달 ~400–540px</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+          <div class="jt-postit-card jt-postit-card-static jt-postit-tape-xl" style="width: 100%; min-height: 100px; padding: 18px 14px; --postit-rot: var(--postit-rot-d); --postit-tint: var(--c-canvas); border-radius: var(--r-xs); display: flex; align-items: center; justify-content: center;">
+            <div style="font-size: 11px; color: var(--c-slate); font-family: var(--font-mono); text-align: center;">xl<br/>72 × 11</div>
+          </div>
+          <div style="font-size: 11px; color: var(--c-muted); font-family: var(--font-mono); text-align: center;">매우 큰 ~540px+</div>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: var(--c-muted); margin: 10px 0 0; line-height: 1.5;"><strong>데모 메모</strong>: 위 4 카드는 동일 폭(240px)으로 통일해 tape 사이즈만 비교. 실제 사용 시엔 카드 폭에 맞는 단계 선택 — 비례 일관성이 깨지면 카드가 "기울어 보이는 결함"으로 해석됨.</p>
+
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 14px;">
+        <tr style="border-bottom: 2px solid var(--c-hairline-strong); background: var(--c-stone);">
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 200px; font-family: var(--font-mono);">modifier</th>
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 110px;">크기 (w × h)</th>
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600;">권장 카드 폭 / 사용처</th>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);">
+          <td class="mono" style="padding: 10px;">(기본, 생략)</td>
+          <td class="mono" style="padding: 10px;">26 × 6</td>
+          <td style="padding: 10px; color: var(--c-slate);">~60–220px — B-2 RosterRow 그리드 카드.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);">
+          <td class="mono" style="padding: 10px;">.jt-postit-tape-md</td>
+          <td class="mono" style="padding: 10px;">40 × 8</td>
+          <td style="padding: 10px; color: var(--c-slate);">~220–400px — 중간 카드(향후 ProjectCard·GalleryCard 등 검토).</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);">
+          <td class="mono" style="padding: 10px;">.jt-postit-tape-lg</td>
+          <td class="mono" style="padding: 10px;">56 × 9</td>
+          <td style="padding: 10px; color: var(--c-slate);">~400–540px — <strong>B1Empty(520px) · RosterTeamDetailModal(440px) · TeamPostitV2(440px)</strong>.</td>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);">
+          <td class="mono" style="padding: 10px;">.jt-postit-tape-xl</td>
+          <td class="mono" style="padding: 10px;">72 × 11</td>
+          <td style="padding: 10px; color: var(--c-slate);">~540px+ — <strong>D1GalleryEmpty(560px)</strong>. 매우 큰 단일 empty state.</td>
+        </tr>
+        <tr>
+          <td class="mono" style="padding: 10px;">var 직접 주입</td>
+          <td class="mono" style="padding: 10px;">자유</td>
+          <td style="padding: 10px; color: var(--c-slate);">호출부 style에 <code class="mono">--postit-tape-w</code>·<code class="mono">--postit-tape-h</code> 직접 — 단계 밖 미세 조정용. top은 height 절반에 비례하여 자동 정렬.</td>
+        </tr>
+      </table>
+
+      <div class="rules" style="margin-top: 14px;">
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">카드 폭에 맞는 단계 선택 — 작은 카드 ↔ lg/xl 또는 큰 카드 ↔ 기본은 시각 불균형.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">단계 사이 카드(예: 380px)는 가까운 단계 채택. 단계 밖 정밀 비율이 필요하면 변수 직접 주입.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">tape top은 height 절반에 비례(<code class="mono">calc(var(--postit-tape-h) * -0.5)</code>) — 모든 단계에서 카드 상단 가장자리에 정렬 자동 유지.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">단계 정의 밖 변수만 인라인으로 주입할 때, top까지 따로 수정 금지 — 자동 비례 룰이 깨진다.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">xl 이상(80px+) tape 금지 — 카드가 "테이프 작품"으로 보임. 정보 위계 역전.</span></div>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 36px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ POSTIT MODAL · 포스트잇 모달 어휘 (2026-06-01 신설)</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin: 0 0 16px; line-height: 1.65;">
+        <strong>RosterRow zoom-in 모달</strong>의 시각 어휘. <code class="mono">.jt-postit-card</code> + <code class="mono">.jt-postit-card-static</code> 결합으로 카드 정체성(tape + 정적 회전)은 유지하되 hover 회전·lift는 비활성(모달은 고정 중앙). <strong>paper variant 폐기(§09g)와 동시 신설</strong> — 기존 <code class="mono">RosterTeamDetailModal</code>의 paper 어휘를 포스트잇 어휘로 통일하여 RosterRow ↔ 모달의 시각 일관성 확보. shared.jsx <code class="mono">&lt;ModalSurface variant="postit" /&gt;</code> 자동 주입.
+      </p>
+
+      <!-- 시각 데모: RosterTeamDetailModal mock (440px, 헤더+3 멤버 행+푸터) -->
+      <div style="display: flex; justify-content: center; padding: 28px 20px 40px; background: var(--c-paper); border-radius: 8px; min-height: 360px; align-items: center;">
+        <div class="jt-postit-card jt-postit-card-static jt-postit-tape-lg" style="width: 440px; max-width: 100%; --postit-rot: var(--postit-rot-b); --postit-tint: var(--c-canvas); display: flex; flex-direction: column; border-radius: var(--r-xs);">
+          <!-- 헤더 -->
+          <div style="padding: 24px 28px 18px; border-bottom: 1px solid var(--c-hairline);">
+            <div style="font-size: 20px; font-weight: 700; font-family: var(--font-display); line-height: 1.25;">데이터 파이프라인 크루</div>
+            <div style="font-size: 12px; color: var(--c-slate); margin-top: 4px; font-family: var(--font-mono);">5 / 7 접속 중</div>
+          </div>
+          <!-- 본문 (멤버 3행) -->
+          <div style="padding: 12px 18px 12px; display: flex; flex-direction: column; gap: 2px;">
+            <div class="mono" style="font-size: 10.5px; color: var(--c-muted); letter-spacing: 0.08em; padding: 6px 8px;">팀원 7명</div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px;">
+              <span style="position: relative; width: 28px; height: 28px;">
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--c-helmet); color: #fff; font-size: 11px; font-weight: 700;">민</span>
+                <span style="position: absolute; right: -2px; bottom: -2px; width: 9px; height: 9px; border-radius: 50%; background: var(--c-mint); border: 1.5px solid var(--c-canvas);"></span>
+              </span>
+              <span style="font-size: 13px; color: var(--c-ink); font-weight: 500;">김민준</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px;">
+              <span style="position: relative; width: 28px; height: 28px;">
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--c-blue); color: #fff; font-size: 11px; font-weight: 700;">서</span>
+                <span style="position: absolute; right: -2px; bottom: -2px; width: 9px; height: 9px; border-radius: 50%; background: var(--c-mint); border: 1.5px solid var(--c-canvas);"></span>
+              </span>
+              <span style="font-size: 13px; color: var(--c-ink); font-weight: 500;">이서윤</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; background: rgba(20,19,15,0.025);">
+              <span style="position: relative; width: 28px; height: 28px; opacity: 0.5;">
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: var(--c-mint); color: #fff; font-size: 11px; font-weight: 700;">지</span>
+                <span style="position: absolute; right: -2px; bottom: -2px; width: 9px; height: 9px; border-radius: 50%; background: #c94560; border: 1.5px solid var(--c-canvas);"></span>
+              </span>
+              <span style="font-size: 13px; color: var(--c-muted); font-weight: 500;">박지호</span>
+            </div>
+          </div>
+          <!-- 푸터 범례 -->
+          <div style="padding: 14px 24px 20px; border-top: 1px solid var(--c-hairline); display: flex; gap: 14px; align-items: center;">
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--c-slate); font-family: var(--font-mono);">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--c-mint);"></span>접속
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: var(--c-slate); font-family: var(--font-mono);">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: #c94560;"></span>미접속
+            </span>
+          </div>
+        </div>
+      </div>
+      <p style="font-size: 12px; color: var(--c-muted); margin: 10px 0 0; line-height: 1.5;"><strong>데모 메모</strong>: 위 모달은 정적 회전(<code class="mono">--postit-rot-b</code> ≈ -0.6°) + tape ::before(상단 중앙). 실제 앱은 <code class="mono">postitRotation(team.name)</code> hash로 회전 자세 결정 → RosterRow와 같은 팀명이면 같은 자세 유지(zoom-in 시각 일관).</p>
+
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 14px;">
+        <tr style="border-bottom: 1px solid var(--c-hairline); background: var(--c-stone);">
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 220px;">속성</th>
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600;">값</th>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">variant</td><td style="padding: 8px 10px;"><code class="mono">'postit'</code> — ModalSurface가 <code class="mono">jt-postit-card jt-postit-card-static</code> 자동 결합. background/box-shadow는 jt-postit-card가 담당, 인라인 미주입.</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">--postit-rot (필수)</td><td style="padding: 8px 10px;">호출부 style로 주입. <code class="mono">postitRotation(team.name)</code> 또는 <code class="mono">heroPostitRotation(team.name)</code> hash 사용. 같은 팀명 → 같은 자세(RosterRow와 동기).</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">--postit-tint (선택)</td><td style="padding: 8px 10px;">기본 <code class="mono">var(--c-canvas)</code>(#fff). RosterRow는 §18-27 단일 흰색.</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">width</td><td style="padding: 8px 10px;">440 권장 (RosterTeamDetailModal 기준 — 멤버 행 가독성 확보). 'sm'(420) 사용 가능.</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">borderRadius</td><td style="padding: 8px 10px;">jt-postit-card 자체는 0 — 호출부 style로 <code class="mono">var(--r-xs)</code>(2px) 권장. paper의 불규칙 가장자리(clip-path) 어휘 미사용.</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">overflow</td><td style="padding: 8px 10px;"><strong>visible</strong> — tape ::before가 top:-3px로 카드 위로 튀어나옴. <code class="mono">'hidden'</code> 금지(tape 잘림).</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">headerDivider (§08)</td><td style="padding: 8px 10px;">인터랙션 모달 규칙 유지 — 헤더 아래 <code class="mono">border-bottom: 1px solid var(--c-hairline)</code>. 스크롤 멤버 리스트가 있어 헤더-본문 경계 필요.</td></tr>
+        <tr><td class="mono" style="padding: 8px 10px;">hover/active</td><td style="padding: 8px 10px;"><strong>비활성</strong>(jt-postit-card-static modifier) — 모달은 고정 중앙 정렬. 회전·lift 시 backdrop 안에서 이동 어색.</td></tr>
+      </table>
+
+      <div class="rules" style="margin-top: 14px;">
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text"><strong>RosterRow zoom-in 모달</strong>에 사용 — RosterTeamDetailModal. 같은 팀 hash로 회전 자세 유지 → "RosterRow를 그대로 확대한 듯한" 시각 일관성.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">호출 패턴: <code class="mono">&lt;ModalSurface variant="postit" style=&#123;&#123;'--postit-rot': postitRotation(team.name)&#125;&#125; /&gt;</code>.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text"><strong>headerDivider 유지</strong> — 인터랙션 모달(§08 MODAL VARIANT 규칙) 기준 충족.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text"><strong>다른 모달에 확산 금지</strong> — B2EndModal·B2TutorialStartConfirm·B2SkipTutorialModal 등 단순 confirm 모달은 <code class="mono">variant="default"</code> 유지. 포스트잇 어휘는 RosterRow 가족(그리드 + zoom-in 모달)에만.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text"><strong>paper 어휘 결합 금지</strong> — clip-path 가장자리·접힘선·압정 어떤 요소도 결합 금지. <code class="mono">.jt-paper-*</code> 클래스 전부 deprecated (§09g 참조).</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text"><code class="mono">overflow: hidden</code> 인라인 금지 — tape ::before(top:-3px)가 잘림.</span></div>
+      </div>
+
+      <h3 style="font-size: 14px; margin: 28px 0 12px; letter-spacing: 0.16em; color: var(--c-slate); text-transform: uppercase; font-family: var(--font-mono);">▸ PODIUM · 시상대 1·2·3등 (결산 ranking)</h3>
+      <p style="font-size: 13px; color: var(--c-slate); margin: 0 0 14px; line-height: 1.6;">결산성 화면에서 TOP 3를 시상대 메타포로 강조. 1등을 중앙에 가장 높게, 2등은 좌, 3등은 우. 색은 메달 어휘(gold/silver/bronze)를 디자인 시스템 토큰에 매핑: <code class="mono">--c-helmet</code>(1등) · <code class="mono">--c-stone-2</code>(2등) · <code class="mono">--c-helmet-deep</code>(3등). 4·5등은 별도 행 어휘로 분리해 podium의 시각 무게를 보호. 사용처: B-2 종료 AI 사용량 (operator.jsx <code class="mono">SummaryPodium</code>).</p>
+
+      <!-- Podium 시각 데모 -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: end; padding: 20px; background: var(--c-paper); border-radius: 8px; max-width: 480px;">
+        <!-- 2등 -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0;">
+          <div style="font-size: 12px; font-weight: 700; color: var(--c-ink); letter-spacing: -0.005em; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">undefined</div>
+          <div class="mono" style="font-size: 11.5px; font-weight: 700; color: var(--c-ink);">20.2k</div>
+          <div style="width: 100%; height: 64px; background: var(--c-stone-2); border-top-left-radius: 6px; border-top-right-radius: 6px; display: flex; align-items: flex-start; justify-content: center; padding-top: 6px; font-family: var(--font-display); font-size: 22px; font-weight: 800; color: var(--c-ink); letter-spacing: -0.02em; line-height: 1;">2</div>
+        </div>
+        <!-- 1등 -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0;">
+          <div style="font-size: 12px; font-weight: 700; color: var(--c-ink); letter-spacing: -0.005em; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">세그폴트 어택</div>
+          <div class="mono" style="font-size: 11.5px; font-weight: 700; color: var(--c-ink);">22.4k</div>
+          <div style="width: 100%; height: 92px; background: var(--c-helmet); border-top-left-radius: 6px; border-top-right-radius: 6px; display: flex; align-items: flex-start; justify-content: center; padding-top: 6px; font-family: var(--font-display); font-size: 22px; font-weight: 800; color: var(--c-ink); letter-spacing: -0.02em; line-height: 1; box-shadow: 0 2px 0 rgba(45,42,36,0.10);">1</div>
+        </div>
+        <!-- 3등 -->
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0;">
+          <div style="font-size: 12px; font-weight: 700; color: var(--c-ink); letter-spacing: -0.005em; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">스택 오버플로우</div>
+          <div class="mono" style="font-size: 11.5px; font-weight: 700; color: var(--c-ink);">19.6k</div>
+          <div style="width: 100%; height: 48px; background: var(--c-helmet-deep); border-top-left-radius: 6px; border-top-right-radius: 6px; display: flex; align-items: flex-start; justify-content: center; padding-top: 6px; font-family: var(--font-display); font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.02em; line-height: 1;">3</div>
+        </div>
+      </div>
+
+      <!-- 속성 표 -->
+      <table style="width: 100%; font-size: 13px; border-collapse: collapse; margin-top: 14px;">
+        <tr style="border-bottom: 1px solid var(--c-hairline); background: var(--c-stone);">
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 100px;">순위 (위치)</th>
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 70px;">높이</th>
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600; width: 150px;">배경 토큰</th>
+          <th style="text-align: left; padding: 8px 10px; font-weight: 600;">#N 글자색</th>
+        </tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">#1 (중앙)</td><td class="mono" style="padding: 8px 10px;">92px</td><td class="mono" style="padding: 8px 10px;">--c-helmet</td><td class="mono" style="padding: 8px 10px;">--c-ink</td></tr>
+        <tr style="border-bottom: 1px solid var(--c-hairline);"><td class="mono" style="padding: 8px 10px;">#2 (좌)</td><td class="mono" style="padding: 8px 10px;">64px</td><td class="mono" style="padding: 8px 10px;">--c-stone-2</td><td class="mono" style="padding: 8px 10px;">--c-ink</td></tr>
+        <tr><td class="mono" style="padding: 8px 10px;">#3 (우)</td><td class="mono" style="padding: 8px 10px;">48px</td><td class="mono" style="padding: 8px 10px;">--c-helmet-deep</td><td class="mono" style="padding: 8px 10px;">#fff</td></tr>
+      </table>
+      <p style="font-size: 12px; color: var(--c-slate); margin-top: 10px; line-height: 1.55;">1등 블록 하단에 미세한 <code class="mono">box-shadow: 0 2px 0 rgba(45,42,36,0.10)</code>으로 시상대가 바닥에 닿은 듯한 무게감 추가. 2·3등에는 적용 안 함 — 1등 강조 비대칭.</p>
+
+      <div class="rules" style="margin-top: 14px;">
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text"><strong>TOP 3만 podium</strong> — 4·5등은 별도 작은 행으로 분리 (operator.jsx <code class="mono">SummaryRankRowMini</code>). 5개 모두 podium은 시각 노이즈.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text"><strong>1등을 가운데 + 가장 높게</strong> — 시상대 메타포 그대로. [2등 좌] [1등 중] [3등 우] 순서 고정.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">팀명·값은 시상대 <strong>위</strong>, 큰 #N은 시상대 <strong>안</strong>. 두 정보 영역 분리로 시상대 시각 유지.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text"><strong>색 임의 변경 금지</strong> — gold/silver/bronze 메달 메타포는 토큰으로 고정. 영역 강조 색(tutorial·safety 등)을 시상대 색에 쓰지 말 것.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text"><strong>진행 중 화면 사용 금지</strong> — podium은 <strong>확정된 결산</strong> 어휘. 라이브 변동 데이터는 막대그래프 또는 row 어휘 사용 (b2-started <code class="mono">TokenLeaderZone</code> 패턴).</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text"><strong>동률 임의 표시 금지</strong> — 동률 발생 시 #1 둘 또는 빈 #N 같은 명시적 처리 필요. 미래 정책 확정 전까지는 podium 사용 데이터에 동률이 발생하지 않도록 secondary tiebreaker(예: 댓글 수) 정의.</span></div>
       </div>
     </section>
 
@@ -1857,8 +2647,7 @@
       <div class="spec" style="padding:0; overflow:hidden;">
         <div class="spec-sub" style="padding: 16px 22px 0;">GNB — 단일 행 44px</div>
         <div style="background: var(--c-canvas); border-top: 1px solid var(--c-hairline); border-bottom: 1px solid var(--c-hairline); padding: 8px 24px; display: flex; align-items: center; gap: 18px; min-height: 44px;">
-          <svg width="22" height="19" viewBox="0 0 48 40"><path d="M 6 22 C 6 11 13 5 24 5 C 35 5 42 11 42 22 L 42 24 L 6 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 3 24 L 45 24 Q 47 24 47 26 L 47 28 Q 47 30 45 30 L 3 30 Q 1 30 1 28 L 1 26 Q 1 24 3 24 Z" fill="#ffce2b" stroke="#14130f" stroke-width="2"/><path d="M 8 36 C 11 33 14 33 17 34 C 20 35 22 36 24 36 C 26 36 28 35 31 34 C 34 33 37 33 40 36 C 37 38 34 38 31 37 C 28 37 26 37 24 37 C 22 37 20 37 17 37 C 14 38 11 38 8 36 Z" fill="#14130f"/></svg>
-          <span style="font-family: var(--font-display); font-size: 16px; font-weight: 800; letter-spacing: -0.04em;">짓다</span>
+          <div id="jitda-gnb" style="display: inline-flex; align-items: center;"></div>
           <div style="width: 1px; height: 14px; background: var(--c-hairline-strong);"></div>
           <span style="font-size: 13px; color: var(--c-slate);">해커톤</span>
           <span style="color: var(--c-muted);">›</span>
@@ -1936,5 +2725,28 @@
       <span>2026-05-21</span>
     </footer>
   </main>
+
+  <!-- 브랜드 마크 렌더 — shared.jsx의 JitdaIcon/JitdaMark를 그대로 마운트 (단일 진실원천) -->
+  <script type="text/babel" data-presets="react">
+    const mountReact = (id, node) => {
+      const el = document.getElementById(id);
+      if (el) ReactDOM.createRoot(el).render(node);
+    };
+    // 상단 3-up: 큰 아이콘 (PRIMARY / DARK BG / 노란 배경)
+    mountReact('jitda-brand-primary',
+      <><JitdaIcon size={104} /><span className="logo-tag">PRIMARY · LIGHT BG</span></>
+    );
+    mountReact('jitda-brand-dark',
+      <><JitdaIcon size={104} mono /><span className="logo-tag">DARK BG · MONO INK</span></>
+    );
+    mountReact('jitda-brand-helmet',
+      <><JitdaIcon size={104} /><span className="logo-tag" style={{ color: 'rgba(20,19,15,0.55)' }}>HELMET BG · BRAND BG</span></>
+    );
+    // 하단 시그니처
+    mountReact('jitda-sig-a', <JitdaMark size={22} />);
+    mountReact('jitda-sig-b', <JitdaMark size={13} />);
+    // GNB 예시
+    mountReact('jitda-gnb',  <JitdaMark size={13} />);
+  </script>
 </body>
 </html>

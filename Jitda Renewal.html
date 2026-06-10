@@ -4,11 +4,14 @@
   <meta charset="utf-8" />
   <title>짓다 · 디자인 리뉴얼 Hi-fi</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- dev-only: 브라우저 캐시 무력화 (2026-06-01 §19-4) -->
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css" />
 
   <!-- 단일 소스: tokens.css 직접 로드 (2026-05-27 전환). 아래 인라인 <style>은 renewal-specific override만 유지. -->
-  <link rel="stylesheet" href="tokens.css" />
+  <link rel="stylesheet" href="tokens.css?v=20260601i" />
 
   <style>
 
@@ -56,9 +59,10 @@
   --c-coral: var(--c-helmet);
   --c-coral-soft: var(--c-helmet-soft);
 
-  --font-display: 'Wanted Sans Variable', 'Wanted Sans', system-ui, sans-serif;
+  /* 2026-06-02: 메인 폰트 Pretendard 단일화. */
+  --font-display: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
   --font-body: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'IBM Plex Mono', ui-monospace, 'Menlo', monospace;
+  --font-mono: 'D2Coding', 'IBM Plex Mono', ui-monospace, 'Menlo', monospace;
 
   /* Sharper radii — industrial */
   --r-xs: 2px;
@@ -143,7 +147,7 @@
 .jt-pill-pending { background: var(--c-stone); color: var(--c-ink-3); }
 .jt-pill-tutorial { background: var(--c-tutorial-soft); color: var(--c-tutorial); }
 .jt-pill-started { background: var(--c-mint-soft); color: var(--c-mint); }
-.jt-pill-paused { background: var(--c-amber-soft); color: var(--c-amber); }
+/* .jt-pill-paused 폐기 (2026-05-29): 일시정지 기능 제거 */
 .jt-pill-ended { background: #ebebec; color: var(--c-ink-3); }
 .jt-pill-danger { background: var(--c-rose-soft); color: var(--c-rose); }
 .jt-pill-info { background: var(--c-blue-soft); color: var(--c-blue); }
@@ -151,10 +155,10 @@
 /* 5상태 모델 — 단계는 색계열, 진행도는 명도로 이중 인코딩 (2026-05-26: tutorial_ended 폐기) */
 .jt-pill-tutorial-waiting { background: #ebebec; color: #4a473e; border: 1px solid #d9d6cc; }
 .jt-pill-tutorial-running { background: #e1e0fa; color: #2e2c8a; }
-.jt-pill-hack-waiting     { background: #ebebec; color: #4a473e; border: 1px solid #d9d6cc; }
+.jt-pill-hack-waiting     { background: #fff4c2; color: #6b4d00; border: 1px solid #f1e07a; }
 .jt-pill-hack-running     { background: var(--c-mint-soft); color: var(--c-mint); }
 .jt-pill-hack-ended       { background: #ffe1de; color: #882019; }
-.jt-pill-tutorial-ended   { background: #ebebec; color: #4a473e; border: 1px solid #d9d6cc; } /* legacy alias → hack-waiting과 동일 시각 */
+.jt-pill-tutorial-ended   { background: #ebebec; color: #4a473e; border: 1px solid #d9d6cc; } /* legacy alias (폐기됨) */
 
 /* Buttons — Size-locked height (2026-05-27 한 단계 축소): 52px 바 안에서 8px 여유. */
 .jt-btn {
@@ -308,10 +312,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
   background: var(--c-stone);
   color: var(--c-ink);
   flex-shrink: 0;
@@ -562,7 +566,7 @@
                   <div style={{ opacity: 0.55, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', marginTop: 10, marginBottom: 3 }}>B — 운영자 (11)</div>
                   <div>B-1 해커톤 목록 · B-2 5상태 대시보드 + 모달 3종</div>
                   <div style={{ opacity: 0.55, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', marginTop: 10, marginBottom: 3 }}>C — 참가자 (7)</div>
-                  <div>C-1 팀 대기실 3종 (① 시작 전 · ② 튜토리얼 후 · ③ 종료) · 진입 버튼 없이 자동 전환<br/>C-2 셀프 튜토리얼 · C-3 1인 캔버스 · C-4 다인 캔버스 · 일시정지 오버레이</div>
+                  <div>C-1 팀 대기실 3종 (① 시작 전 · ② 튜토리얼 후 · ③ 종료) · 진입 버튼 없이 자동 전환<br/>C-2 셀프 튜토리얼 · C-3 1인 캔버스 · C-4 다인 캔버스</div>
                   <div style={{ opacity: 0.55, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', marginTop: 10, marginBottom: 3 }}>D — 갤러리 (10)</div>
                   <div>D-1 목록 (진행/종료/빈/로딩) · D-2 상세 (기본/댓글/댓글빈/로딩/내것/마지막)</div>
                   <div style={{ opacity: 0.55, fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.06em', marginTop: 10, marginBottom: 3 }}>E — 다이얼로그 (5)</div>
@@ -585,7 +589,7 @@
 
                 <div style={{ flex: 1 }} />
                 <div style={{ marginTop: 24, fontFamily: 'var(--font-mono)', fontSize: 10.5, opacity: 0.5 }}>
-                  Wanted Sans · Pretendard · JetBrains Mono<br/>
+                  Pretendard · D2Coding<br/>
                   ink #17171c · helmet yellow · concrete paper
                 </div>
               </div>
@@ -626,6 +630,10 @@
             <DCArtboard id="a3-failed" label="A-3 · 인증 실패 + 5초 카운트다운" width={1280} height={820}>
               <div className="jt-art"><A3OAuthFailed /></div>
             </DCArtboard>
+
+            <DCArtboard id="a4" label="A-4 · 운영자 회원가입 (이메일 + 약관 동의)" width={1280} height={1000}>
+              <div className="jt-art"><A4OperatorSignup /></div>
+            </DCArtboard>
           </DCSection>
 
           <DCSection
@@ -657,9 +665,7 @@
               <div className="jt-art"><B2DashboardStarted /></div>
             </DCArtboard>
 
-            <DCArtboard id="b2-paused" label="B-2 · 일시정지 (② 또는 ⑤ 위 오버레이)" width={1280} height={920}>
-              <div className="jt-art"><B2DashboardPaused /></div>
-            </DCArtboard>
+            {/* b2-paused 폐기 (2026-05-29): 일시정지 기능 제거 */}
 
             <DCArtboard id="b2-ended" label="B-2 · ⑥ 해커톤 종료 — 결과 요약 + 갤러리" width={1280} height={920}>
               <div className="jt-art"><B2DashboardEnded /></div>
@@ -669,7 +675,7 @@
               <div className="jt-art"><B2SkipTutorialModal /></div>
             </DCArtboard>
 
-            <DCArtboard id="b2-end" label="B-2 모달 · 종료 1단계 (이름 타이핑)" width={1280} height={820}>
+            <DCArtboard id="b2-end" label="B-2 모달 · 종료 1단계 (&quot;종료&quot; 입력)" width={1280} height={820}>
               <div className="jt-art"><B2EndModal /></div>
             </DCArtboard>
 
@@ -699,24 +705,45 @@
             title="C. 참가자 핵심 흐름"
             subtitle="팀 대기실 3종 (시작 전 · 튜토리얼 후 · 종료) → 셀프 튜토리얼 → 캔버스 코딩 (1인팀 · 다인팀) · 단계 진입 버튼 없이 자동 전환 (참가자-로그인 v8)"
           >
-            <DCArtboard id="c1" label="C-1 · 대기실 ① 시작 전 대기 (tutorial_waiting / 튜토리얼 없는 hackathon_waiting)" width={1280} height={820}>
-              <div className="jt-art"><C1RoomBefore /></div>
+            {/* C-1 v1 폐기 (2026-05-29) — V2를 canonical c1으로 채택 */}
+            <DCArtboard id="c1" label="C-1 · 대기실 ① 시작 전 (tutorial_waiting · 좌측 메시지 + 우측 paper 팀 패널)" width={1280} height={820}>
+              <div className="jt-art"><C1RoomBeforeV2 /></div>
             </DCArtboard>
 
-            <DCArtboard id="c1-after-tutorial" label="C-1 · 대기실 ② 튜토리얼 후 대기 (hackathon_waiting · 튜토리얼 후)" width={1280} height={820}>
-              <div className="jt-art"><C1RoomAfterTutorial /></div>
+            <DCArtboard id="c1-after-tutorial" label="C-1 · 대기실 ② 튜토리얼 후 (hackathon_waiting)" width={1280} height={820}>
+              <div className="jt-art"><C1RoomAfterTutorialV2 /></div>
             </DCArtboard>
 
-            <DCArtboard id="c1-ended" label="C-1 · 대기실 ③ 해커톤 종료 안내 (hackathon_ended)" width={1280} height={820}>
-              <div className="jt-art"><C1RoomEnded /></div>
+            <DCArtboard id="c1-ended" label="C-1 · 대기실 ③ 해커톤 종료 (hackathon_ended · 갤러리 CTA)" width={1280} height={820}>
+              <div className="jt-art"><C1RoomEndedV2 /></div>
             </DCArtboard>
 
-            <DCArtboard id="c2" label="C-2 · 셀프 튜토리얼 (상단 접이식 가이드 카드)" width={1280} height={820}>
-              <div className="jt-art"><C2Tutorial /></div>
+            <DCArtboard id="c2" label="C-2 · 셀프 튜토리얼 · Step 1 기획" width={1280} height={820}>
+              <div className="jt-art"><C2Tutorial step={1} /></div>
             </DCArtboard>
 
-            <DCArtboard id="c3" label="C-3 · 1인팀 캔버스 (OpenCode 임베드)" width={1280} height={820}>
+            <DCArtboard id="c2-step2" label="C-2 · 셀프 튜토리얼 · Step 2 만들기" width={1280} height={820}>
+              <div className="jt-art"><C2Tutorial step={2} /></div>
+            </DCArtboard>
+
+            <DCArtboard id="c2-step3" label="C-2 · 셀프 튜토리얼 · Step 3 바꾸기" width={1280} height={820}>
+              <div className="jt-art"><C2Tutorial step={3} /></div>
+            </DCArtboard>
+
+            <DCArtboard id="c2-step4" label="C-2 · 셀프 튜토리얼 · Step 4 내 손으로" width={1280} height={820}>
+              <div className="jt-art"><C2Tutorial step={4} /></div>
+            </DCArtboard>
+
+            <DCArtboard id="c3" label="C-3 · 1인팀 캔버스 (미리보기 완성)" width={1280} height={820}>
               <div className="jt-art"><C3PersonalCoding /></div>
+            </DCArtboard>
+
+            <DCArtboard id="c3-preview-empty" label="C-3 · 1인팀 캔버스 (미리보기 미준비)" width={1280} height={820}>
+              <div className="jt-art"><C3PersonalCodingEmpty /></div>
+            </DCArtboard>
+
+            <DCArtboard id="c3-spawning" label="C-3 · 1인팀 캔버스 (서버 기동 중)" width={1280} height={820}>
+              <div className="jt-art"><C3PersonalCodingSpawning /></div>
             </DCArtboard>
 
             <DCArtboard id="c4" label="C-4 · 다인팀 캔버스 (커서 + 전송 요청)" width={1280} height={820}>
@@ -737,6 +764,10 @@
               <div className="jt-art"><D1GalleryListEnded /></div>
             </DCArtboard>
 
+            <DCArtboard id="d1-ended-operator" label="D-1 · 갤러리 목록 (종료 후 · 운영자 시점 — 대시보드 복귀 버튼)" width={1280} height={920}>
+              <div className="jt-art"><D1GalleryListEnded role="operator" /></div>
+            </DCArtboard>
+
             <DCArtboard id="d1-empty" label="D-1 · 빈 상태 (아직 공개된 작품 없음)" width={1280} height={820}>
               <div className="jt-art"><D1GalleryEmpty /></div>
             </DCArtboard>
@@ -749,8 +780,17 @@
               <div className="jt-art"><D2GalleryDetail /></div>
             </DCArtboard>
 
-            <DCArtboard id="d2-comments" label="D-2 · 댓글 탭 (댓글 4건)" width={1280} height={920}>
+            <DCArtboard id="d2-comments" label="D-2 · 댓글 탭 (통합 액션 · 답글 요약 줄)" width={1280} height={920}>
               <div className="jt-art"><D2GalleryDetailComments /></div>
+            </DCArtboard>
+
+
+            <DCArtboard id="d2-comments-thread" label="D-2 · 댓글 스레드 (답글 풀펼침)" width={1280} height={920}>
+              <div className="jt-art"><D2GalleryDetailCommentsThread /></div>
+            </DCArtboard>
+
+            <DCArtboard id="d2-comments-thread-compose" label="D-2 · 댓글 스레드 + 답글 작성 폼" width={1280} height={920}>
+              <div className="jt-art"><D2GalleryDetailCommentsThreadCompose /></div>
             </DCArtboard>
 
             <DCArtboard id="d2-comments-empty" label="D-2 · 댓글 빈 상태 (첫 댓글 작성 유도)" width={1280} height={920}>
@@ -795,13 +835,7 @@
               <div className="jt-art"><E1UnsavedCloseConfirm /></div>
             </DCArtboard>
 
-            <DCArtboard id="e4" label="E-4 · 합의 투표 (15초 카운트다운 · 만장일치)" width={1280} height={820}>
-              <div className="jt-art"><E4ConsensusVote stateVariant="voting" /></div>
-            </DCArtboard>
-
-            <DCArtboard id="e4-waiting" label="E-4 · 응답 대기 (본인 동의 후 · 팀원 응답 대기)" width={1280} height={820}>
-              <div className="jt-art"><E4ConsensusVote stateVariant="waiting" /></div>
-            </DCArtboard>
+            {/* E-4 v1 (e4 · e4-waiting · e4-rejected) 폐기 2026-06-01 — v2(거대 ring)만 정본 */}
 
             <DCArtboard id="e4-v2" label="E-4 v2 · 합의 투표 (매치 수락 어휘 · 거대 ring)" width={1280} height={820}>
               <div className="jt-art"><E4ConsensusVote stateVariant="voting-v2" /></div>
@@ -811,17 +845,27 @@
               <div className="jt-art"><E4ConsensusVote stateVariant="waiting-v2" /></div>
             </DCArtboard>
 
-            <DCArtboard id="e4-rejected" label="E-4 · 합의 무산 (캔버스 복귀 CTA)" width={1280} height={820}>
-              <div className="jt-art"><E4ConsensusVote stateVariant="rejected" /></div>
+            <DCArtboard id="e4-rejected-v2" label="E-4 v2 · 합의 무산 (4인)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVote stateVariant="rejected-v2" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4-v2-large" label="E-4 v2 · 합의 투표 (10인)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVote stateVariant="voting-v2" teamSize="large" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4-waiting-v2-large" label="E-4 v2 · 응답 대기 (10인)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVote stateVariant="waiting-v2" teamSize="large" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4-rejected-v2-large" label="E-4 v2 · 합의 무산 (10인)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVote stateVariant="rejected-v2" teamSize="large" /></div>
             </DCArtboard>
 
             <DCArtboard id="e5" label="E-5 · AI 선택지 투표 (3안 + 기타)" width={1280} height={820}>
               <div className="jt-art"><E5AIChoiceVote /></div>
             </DCArtboard>
 
-            <DCArtboard id="e6-paused" label="E-6 · 일시정지 오버레이 (바이브코딩 화면 위 백드롭)" width={1280} height={820}>
-              <div className="jt-art"><E6Paused /></div>
-            </DCArtboard>
+            {/* e6-paused 폐기 (2026-05-29): 일시정지 기능 제거 */}
           </DCSection>
 
           <DCSection

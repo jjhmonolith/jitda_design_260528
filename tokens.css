@@ -2,7 +2,6 @@
    Lifted from src/styles/cohere.css for visual continuity */
 
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
-@import url('https://cdn.jsdelivr.net/gh/wanteddev/wanted-sans@v1.0.3/packages/wanted-sans/fonts/webfonts/variable/split/WantedSansVariable.min.css');
 @import url('https://cdn.jsdelivr.net/gh/naver/d2codingfont@master/D2Coding-Ver1.3.2-20180524-all.css');
 
 :root {
@@ -25,8 +24,16 @@
   --c-amber-soft: #fbeacf;
   --c-mint: #096c4d;
   --c-mint-soft: #d6f1de;
+  --c-mint-wash: #eaf3ec;   /* paper-tinted mint — soft 보다 ~60% 채도 낮음. 큰 면적 fill 용 */
   --c-tutorial: #2e2c8a;
   --c-tutorial-soft: #e1e0fa;
+  --c-tutorial-wash: #eeedf7;   /* paper-tinted purple — soft 대비 ~60% 채도 낮음 */
+  --c-stone-wash: #f1efea;       /* paper-tinted stone — neutral/cold "대기 전" 단계 */
+  --c-helmet-wash: #fbf6df;     /* paper-tinted helmet — "anticipation" 단계 (hackathon_waiting) */
+
+  /* 팀 포스트잇 색 (§18-27, 2026-05-29 최종):
+     전체 팀 카드 단일 흰색 → `--c-canvas` (#ffffff). 다인/1인팀 무관. RosterRow + 카드별 모달 공통.
+     이전 정책(§18-15 3톤 / §18-17 mono / §18-20 2색 / §18-25 노랑 / §18-26 white·green A/B): 모두 폐기. */
 
   /* Helmet & stache — 짓다 공사장 브랜드 정체성. */
   --c-helmet:       #ffce2b;
@@ -37,6 +44,7 @@
   /* Safety orange — 위험/비가역 액션의 단일 컬러. 공사장 안전 테이프 컬러. */
   --c-safety:       #ff6b1f;
   --c-safety-soft:  #ffe0cf;
+  --c-safety-wash:  #faebe1;  /* paper-tinted safety — soft 보다 ~60% 채도 낮음. 큰 면적 fill 용 (post-it 카드 등) */
   --c-safety-deep:  #cc4a0a;
 
   /* Rebar — 철근 구릿빛. 보조 강조용 (현재 미사용, 향후 활용). */
@@ -99,7 +107,7 @@
   /* ============================================================
      Backdrop / Scrim — 3단 강도, z-index 스케일
      ------------------------------------------------------------ */
-  --c-backdrop:        rgba(20, 19, 15, 0.40);  /* 기본 (E-4 투표·E-6 일시정지) */
+  --c-backdrop:        rgba(20, 19, 15, 0.40);  /* 기본 (E-4 투표) */
   --c-backdrop-strong: rgba(20, 19, 15, 0.55);  /* 위험 (B 종료 모달) */
   --c-backdrop-soft:   rgba(20, 19, 15, 0.25);  /* 가벼움 (E-5 AI 선택지) */
   --backdrop-blur:     2px;
@@ -127,9 +135,11 @@
   --modal-w-lg: 720px;   /* 풍부한 컨텐츠 (E-5 AI 선택지) */
   --modal-w-xl: 920px;   /* 데이터 dense (B 종료 카운트다운) */
 
-  --font-display: 'Wanted Sans Variable', 'Wanted Sans', system-ui, sans-serif;
+  /* 2026-06-02: 메인 폰트 Pretendard 단일화. Wanted Sans 폐기 (display=body 동일 폰트).
+     mono fallback에서 JetBrains Mono 제거 — 한국어 등폭은 D2Coding, 영문은 IBM Plex Mono. */
+  --font-display: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
   --font-body: 'Pretendard Variable', 'Pretendard', system-ui, sans-serif;
-  --font-mono: 'D2Coding', 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
+  --font-mono: 'D2Coding', 'IBM Plex Mono', ui-monospace, monospace;
 
   --r-xs: 4px;
   --r-sm: 8px;
@@ -140,6 +150,29 @@
   --shadow-sm: 0 1px 2px rgba(15, 15, 20, 0.04);
   --shadow-md: 0 6px 22px rgba(15, 15, 20, 0.06), 0 1px 2px rgba(15, 15, 20, 0.04);
   --shadow-lg: 0 16px 40px rgba(15, 15, 20, 0.10);
+
+  /* ============================================================
+     Post-it — B-2 RosterRow 카드 (대기 화면 팀 목록, 2026-05-29)
+     §10 "그라데이션·입체 효과 금지" 룰의 경계선이므로 모두 절제값:
+       · rotation ±1.4° 이내 (4-variant deterministic by team name hash · 2026-06-01 §19-4 토큰 ±2.0°→±1.4° 축소: 디자인시스템 §09e 표 표기와 정합)
+       · tape는 단색 ink alpha 0.10 — 그라데이션 금지
+       · shadow는 shadow-hover 계열의 비대칭 변형 — 위로 들리는 느낌만
+     사용처: operator.jsx RosterRow · gallery.jsx GalleryCard 전용. 다른 카드에 확산 금지(60카드 GPU 부담 검증 전).
+     ------------------------------------------------------------ */
+  --postit-rot-a: -1.4deg;
+  --postit-rot-b: -0.6deg;
+  --postit-rot-c:  0.6deg;
+  --postit-rot-d:  1.4deg;
+  /* RosterRow tint 정책 변경 (2026-05-29 §18-15):
+     anyOff 2색(data-driven) → 팀명 hash 3색(identity-driven). 폐기된 토큰 `--postit-tint-on/-off`.
+     팀 identity tint는 `--c-helmet-wash` 단일 참조 (§18-21). 미접속 신호는 카운트 색·weight로 분리(§18-18). */
+  --postit-shadow-rest: 0 1px 1px rgba(20, 19, 15, 0.04), 0 6px 14px rgba(20, 19, 15, 0.06);
+  --postit-shadow-lift: 0 4px 8px rgba(20, 19, 15, 0.08), 0 14px 28px rgba(20, 19, 15, 0.10);
+  /* 큰 포스트잇 모달 (§18-19) — postit-lift의 ~2배 깊이. 모달 표준 shadow-modal(30/80 어두움) 대신
+     "들린 종이" 어휘 유지. 백드롭 dim과 함께 충분한 경계감. */
+  --postit-shadow-modal: 0 8px 18px rgba(20, 19, 15, 0.12), 0 28px 56px rgba(20, 19, 15, 0.10);
+  /* tape — helmet 노란 톤 (2026-06-01 §postit anatomy 정렬, 기존 ink-alpha → helmet-alpha) */
+  --postit-tape: rgba(20, 19, 15, 0.10);
 }
 
 /* Reset within artboards */
@@ -203,7 +236,7 @@
 .jt-pill-pending { background: var(--c-stone); color: var(--c-ink-3); }
 .jt-pill-tutorial { background: var(--c-tutorial-soft); color: var(--c-tutorial); }
 .jt-pill-started { background: var(--c-mint-soft); color: var(--c-mint); }
-.jt-pill-paused { background: var(--c-amber-soft); color: var(--c-amber); }
+/* .jt-pill-paused 폐기 (2026-05-29): 일시정지 기능 제거 */
 .jt-pill-ended { background: #ebebec; color: var(--c-ink-3); }
 .jt-pill-danger { background: var(--c-rose-soft); color: var(--c-rose); }
 .jt-pill-info { background: var(--c-blue-soft); color: var(--c-blue); }
@@ -277,6 +310,64 @@
 /* Filled — lift 메타포 */
 .jt-btn-danger { background: var(--c-safety); color: #fff; box-shadow: var(--shadow-sm); }
 .jt-btn-danger:hover { background: var(--c-safety-deep); box-shadow: var(--shadow-md); }
+
+/* ============================================================
+   Like Button — 좋아요 컴팩트 버튼 (2026-06-01 신설)
+   ----------------------------------------------------------
+   사용처: D-2 LikeActionInline (상단 헤더 우측).
+   기본은 안 누른 상태: canvas + 1.5px stache border + 검정 하트(outline) + 검정 카운트.
+   .is-active(누른): helmet 노란 fill + helmet-deep border + 검정 채워진 하트 + lift shadow.
+   hover(양쪽 공통): helmet-soft 채움 + 노랑 그림자.
+   disabled: cursor not-allowed + opacity 낮춤 (mine 본인 프로젝트 등).
+   ============================================================ */
+.jt-like-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 12px;
+  background: var(--c-canvas);
+  border: 1.5px solid var(--c-stache);
+  border-radius: var(--r-pill);
+  color: var(--c-stache);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 120ms ease, box-shadow 160ms ease, border-color 120ms ease;
+}
+.jt-like-btn:hover:not([disabled]) {
+  background: var(--c-helmet-soft);
+  box-shadow: 0 3px 10px rgba(255,206,43,0.40);
+}
+.jt-like-btn.is-active {
+  background: var(--c-helmet);
+  border-color: var(--c-helmet-deep);
+  box-shadow: 0 3px 10px rgba(255,206,43,0.50), 0 1px 0 rgba(255,255,255,0.4) inset;
+}
+.jt-like-btn.is-active:hover:not([disabled]) {
+  /* 누른 상태 hover — fill을 helmet-soft로 풀어 "취소될 것" 미리보기.
+     border는 helmet-deep 유지, shadow는 살짝 줄여 lift 해제 시그널. */
+  background: var(--c-helmet-soft);
+  border-color: var(--c-helmet-deep);
+  box-shadow: 0 2px 6px rgba(255,206,43,0.30);
+}
+.jt-like-btn:disabled,
+.jt-like-btn[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+.jt-like-btn:focus-visible {
+  outline: 2px solid var(--c-helmet);
+  outline-offset: 2px;
+}
+.jt-like-count {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  font-weight: 800;
+  letter-spacing: -0.005em;
+  color: var(--c-stache);
+}
 
 /* Danger Outlined — 비가역 액션 중 강조 낮춰 실수 방지가 목적인 위치(예: B-2 헤더 [종료]).
    default: transparent + safety 텍스트 + safety-soft border (옅은 윤곽).
@@ -404,6 +495,268 @@
   outline: var(--focus-ring-width) solid var(--focus-ring-color);
   outline-offset: 2px;
 }
+
+/* Post-it card — RosterRow 전용 (b2-tutorial-waiting · b2-hack-waiting).
+   .jt-card-interactive 의 hover 어휘를 회전·tape로 대체. 4가지 회전·tint 변형은
+   인라인 `style={{ '--postit-rot': '...', '--postit-tint': '...' }}` 로 카드별 부여.
+   ⚠️ 다른 곳에 확산 금지 — §10 그라데이션 금지 룰의 경계선이며 60카드 GPU 검증 미흡. */
+@keyframes jt-postit-settle {
+  /* 카드 마운트(필터 토글로 grid wrapper key 변경 시) 진입 어휘. 위에서 -6px + scale 0.97 → 안착.
+     회전은 정지 상태 `--postit-rot`을 유지 — keyframe이 transform 전체를 덮어쓰므로 명시. */
+  0%   { opacity: 0; transform: rotate(var(--postit-rot, 0deg)) translateY(-6px) scale(0.97); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: rotate(var(--postit-rot, 0deg)) translateY(0)    scale(1);    }
+}
+.jt-postit-card {
+  position: relative;
+  cursor: pointer;
+  /* 2026-06-01 §19-4: 회전축을 tape 박힌 위치(상단 중앙)로 이동.
+     이전 50% 100%(밑변)는 "위로 들리는" 어휘였으나 tape이 상단에 박힌 현재 어휘와 어긋남.
+     새 origin 50% 0%: 정적 회전이 "tape 점에 매달려 흔들"·hover rotate(0)이 "tape이 잡아 펴짐". */
+  transform-origin: 50% 0%;
+  transform: rotate(var(--postit-rot, 0deg));
+  box-shadow: var(--postit-shadow-rest);
+  background: var(--postit-tint, var(--c-canvas));
+  transition: transform var(--dur-base) var(--ease-spring),
+              box-shadow var(--dur-base) var(--ease-decelerate),
+              background-color var(--dur-fast) var(--ease-standard);
+  animation: jt-postit-settle 280ms var(--ease-spring) backwards;
+}
+/* Pseudo-stagger by position — 4 phase, 25/30ms 간격. 60카드도 max ~85ms 안에 모두 정착 */
+.jt-postit-card:nth-child(4n+2) { animation-delay: 25ms; }
+.jt-postit-card:nth-child(4n+3) { animation-delay: 55ms; }
+.jt-postit-card:nth-child(4n)   { animation-delay: 85ms; }
+/* RosterDetail 모달의 블러 백드롭 내부 — 모달 열릴 때 settle 재실행 시각 노이즈 차단 (§18-12). */
+.jt-roster-backdrop .jt-postit-card { animation: none !important; }
+.jt-postit-card::before {
+  /* tape — 상단 중앙 단색 ink-alpha. 데이터 가치 없음(aria-hidden 자동).
+     2026-06-01: 카드 크기 단계별 비례 — width/height 변수화 + top은 height에 비례.
+     단계: 기본 26×6 (그리드) · md 40×8 · lg 56×9 · xl 72×11 (§09e ▸ TAPE SIZE). */
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: var(--postit-tape-w, 26px);
+  height: var(--postit-tape-h, 6px);
+  top: calc(var(--postit-tape-h, 6px) * -0.5);
+  transform: translateX(-50%) rotate(-2deg);
+  background: var(--postit-tape);
+  border-radius: 1px;
+  pointer-events: none;
+  opacity: 0.85;
+  transition: opacity var(--dur-fast) var(--ease-standard),
+              transform var(--dur-base) var(--ease-spring);
+}
+/* Tape size tiers — 카드 폭 단계별 권장 (디자인시스템 §09e ▸ TAPE SIZE):
+   - 기본 (modifier 없음): 26×6 — 그리드 카드 ~60~220px (RosterRow 등)
+   - .jt-postit-tape-md:    40×8 — 중간 카드 ~220~400px
+   - .jt-postit-tape-lg:    56×9 — 큰 카드/모달 ~400~540px (B1Empty·RosterTeamDetailModal·TeamPostitV2)
+   - .jt-postit-tape-xl:    72×11 — 매우 큰 ~540px+ (D1GalleryEmpty)
+   변수 직접 주입(--postit-tape-w/--postit-tape-h)도 가능 — 단계 밖 미세 조정용. */
+.jt-postit-card.jt-postit-tape-md { --postit-tape-w: 40px; --postit-tape-h: 8px; }
+.jt-postit-card.jt-postit-tape-lg { --postit-tape-w: 56px; --postit-tape-h: 9px; }
+.jt-postit-card.jt-postit-tape-xl { --postit-tape-w: 72px; --postit-tape-h: 11px; }
+/* hover/active: translateY 제거 (2026-06-01 §19-4 후속) — tape 박힌 점이 진짜 화면 고정.
+   origin 50% 0% 회전축이 layout 이동(translateY)으로 덩달아 움직이던 모순 해소.
+   시각 신호: 회전 펴짐(rotate 0°) + box-shadow lift만으로 "조사 모드 진입" 표현. */
+.jt-postit-card:hover {
+  transform: rotate(0deg) !important;
+  box-shadow: var(--postit-shadow-lift) !important;
+}
+.jt-postit-card:hover::before {
+  transform: translateX(-50%) rotate(0deg);
+  opacity: 1;
+}
+.jt-postit-card:active {
+  transform: rotate(0deg) scale(0.985) !important;
+  transition-duration: var(--dur-fast);
+}
+.jt-postit-card:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 3px;
+}
+
+/* `.jt-postit-card-static` — hover 회전·lift·active 비활성 modifier (2026-06-01 신설).
+   사용처:
+   · D-1 갤러리 빈 상태 (CTA 버튼 클릭과 카드 호버 충돌 회피)
+   · 포스트잇 모달 (RosterTeamDetailModal — 모달은 고정 중앙 정렬, hover 이동 부적합)
+   정적 회전(`--postit-rot`)·tape·shadow-rest는 그대로 유지 — 카드 정체성 보존. */
+.jt-postit-card.jt-postit-card-static {
+  cursor: default;
+}
+.jt-postit-card.jt-postit-card-static:hover {
+  transform: rotate(var(--postit-rot, 0deg)) !important;
+  box-shadow: var(--postit-shadow-rest) !important;
+}
+.jt-postit-card.jt-postit-card-static:hover::before {
+  transform: translateX(-50%) rotate(-2deg);
+  opacity: 0.85;
+}
+.jt-postit-card.jt-postit-card-static:active {
+  transform: rotate(var(--postit-rot, 0deg)) !important;
+}
+
+/* `.jt-modal-surface.jt-postit-card` — 포스트잇 모달 결합 룰 (2026-06-01 신설).
+   .jt-modal-surface(L1092)의 absolute + translate(-50%,-50%) + radius lg + shadow-modal + overflow:hidden 기본을
+   포스트잇 어휘에 맞게 무효화 — 외곽 wrapper가 위치/중앙정렬 담당, 카드는 정적 회전 + tape ::before 노출.
+   - position: relative — wrapper에 absolute 양도
+   - transform: rotate(--postit-rot) — translate(-50%,-50%) 제거, 정적 회전만 유지
+   - border-radius: r-xs — modal lg radius 회피, 포스트잇 미세 둥글기
+   - overflow: visible — tape ::before(top:-3px) 잘림 방지
+   - background/box-shadow: 무효화 안 함 — .jt-postit-card 자체 background(--postit-tint) + shadow-rest 그대로 적용 */
+.jt-modal-surface.jt-postit-card {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  transform: rotate(var(--postit-rot, 0deg)) !important;
+  border-radius: var(--r-xs) !important;
+  overflow: visible !important;
+}
+
+/* Switch — 2-state 토글 (on/off). 사용처:
+   · dialogs.jsx E-1 갤러리 공개 토글 (인라인이었음, 2026-05-29 정식 등록 후 교체 대상)
+   · operator.jsx RosterView "미접속만 보기" 필터 토글
+   ARIA: role="switch" + aria-checked. button 요소 + type="button" 권장 (form submit 회피).
+   색 variant: 기본 ink / `.is-safety` (위험·미접속 필터 강조) / `.is-mint` (성공·공개 상태). */
+.jt-switch {
+  --switch-w: 44px;
+  --switch-h: 24px;
+  --switch-thumb: 18px;
+  --switch-pad: 3px;
+  width: var(--switch-w);
+  height: var(--switch-h);
+  background: var(--c-hairline-strong);
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  padding: 0;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.jt-switch::after {
+  content: "";
+  position: absolute;
+  top: var(--switch-pad);
+  left: var(--switch-pad);
+  width: var(--switch-thumb);
+  height: var(--switch-thumb);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  transition: left var(--dur-fast) var(--ease-standard);
+}
+.jt-switch[aria-checked="true"]         { background: var(--c-ink); }
+.jt-switch.is-safety[aria-checked="true"] { background: var(--c-safety); }
+.jt-switch.is-mint[aria-checked="true"]   { background: var(--c-mint); }
+.jt-switch[aria-checked="true"]::after {
+  left: calc(var(--switch-w) - var(--switch-thumb) - var(--switch-pad));
+}
+.jt-switch:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+.jt-switch:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.jt-switch.is-sm {
+  --switch-w: 36px;
+  --switch-h: 20px;
+  --switch-thumb: 14px;
+  --switch-pad: 3px;
+}
+
+/* Checkbox — agreement·multi-select primitive (2-state with optional indeterminate). 사용처:
+   · auth.jsx A-4 운영자 회원가입 약관 동의 (필수 약관 3종 + 전체 동의 1종)
+   ARIA: role="checkbox" + aria-checked="true|false|mixed". button 요소 권장 (form submit 회피).
+   .jt-switch 와 의미 분리: switch=기능 on/off 상태, checkbox=선택·동의 행위.
+   variant: 기본 (20px) / `.is-sm` (16px) / `.is-lg` (24px — 강조 동의 행).
+   indeterminate(`-`)는 일부 하위 항목만 체크된 "전체 동의" 행에서 사용. */
+.jt-checkbox {
+  --cb-size: 20px;
+  --cb-radius: 5px;
+  width: var(--cb-size);
+  height: var(--cb-size);
+  border-radius: var(--cb-radius);
+  background: var(--c-canvas);
+  border: 1.5px solid var(--c-hairline-strong);
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  transition: background var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard),
+              color var(--dur-fast) var(--ease-standard);
+}
+.jt-checkbox:hover:not(:disabled) { border-color: var(--c-ink-3); }
+.jt-checkbox[aria-checked="true"],
+.jt-checkbox[aria-checked="mixed"] {
+  background: var(--c-ink);
+  border-color: var(--c-ink);
+  color: #fff;
+}
+.jt-checkbox:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+.jt-checkbox:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.jt-checkbox.is-sm { --cb-size: 16px; --cb-radius: 4px; }
+.jt-checkbox.is-lg { --cb-size: 24px; --cb-radius: 6px; }
+/* 색 variant: 위험·강조 동의(예: 약관 거부 시 가입 불가)는 helmet, 일반은 ink */
+.jt-checkbox.is-helmet[aria-checked="true"] {
+  background: var(--c-helmet-deep);
+  border-color: var(--c-helmet-deep);
+  color: var(--c-ink);
+}
+
+/* Checkbox row — 라벨·필수 표식·"내용 보기" 링크를 묶는 1행 컨테이너. 사용처: A-4 약관 동의 리스트 */
+.jt-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  font-size: 13.5px;
+  color: var(--c-ink);
+  cursor: pointer;
+}
+.jt-checkbox-row + .jt-checkbox-row { border-top: 1px solid var(--c-hairline); }
+.jt-checkbox-row .jt-checkbox-label { flex: 1; line-height: 1.45; }
+.jt-checkbox-row .jt-checkbox-required {
+  color: var(--c-safety);
+  font-weight: 600;
+  margin-left: 4px;
+  font-size: 12.5px;
+}
+.jt-checkbox-row .jt-checkbox-link {
+  font-size: 12.5px;
+  color: var(--c-slate);
+  text-decoration: none;
+}
+.jt-checkbox-row .jt-checkbox-link:hover { color: var(--c-ink); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Checkbox banner — "전체 항목에 동의합니다" 강조 행 (그룹 헤더) */
+.jt-checkbox-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--c-blue-soft);
+  border: 1px solid #c8d4e3;
+  border-radius: var(--r-sm);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--c-blueprint);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-standard);
+}
+.jt-checkbox-banner:hover { background: #dfe7f1; }
 
 /* Inputs */
 .jt-input {
@@ -657,6 +1010,18 @@
   50%      { filter: drop-shadow(0 0 22px rgba(255,206,43,0.85)) drop-shadow(0 0 50px rgba(255,206,43,0.52)); }
 }
 
+/* Gauge flash-in — waiting-v2 mount 시 한 번 번쩍 → 풀 게이지 fade-in.
+   voting 의 부분 노출 → waiting 의 풀 노출 점프를 자연스럽게 흡수. */
+.jt-gauge-flash-in {
+  animation: jt-gauge-flash-in 0.75s var(--ease-decelerate) forwards;
+  pointer-events: none;
+}
+@keyframes jt-gauge-flash-in {
+  0%   { opacity: 1; }
+  18%  { opacity: 0.95; }
+  100% { opacity: 0; }
+}
+
 /* shine sweep — "한 화면 단일 핵심 액션" 룰에 따라 선별 사용 (위 주석 참고). */
 .jt-btn-critical {
   position: relative;
@@ -772,6 +1137,209 @@
   animation: jt-status-pulse 1.8s var(--ease-decelerate) infinite;
 }
 
+/* ============================================================
+   OpenCode 임베드 — 미리보기 로더 (participant.jsx C-3/C-4 미준비 상태)
+   레퍼런스: enk-opencode codle-preview-loader (86×70, 5블록 staggered)
+   ------------------------------------------------------------ */
+@keyframes oc-block-pulse {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  50%      { opacity: 1;    transform: translateY(-2px); }
+}
+.oc-block-pulse { animation: oc-block-pulse 1.4s var(--ease-standard) infinite; }
+
+/* ============================================================
+   OpenCode 임베드 — 인터랙션 모션 (composer·타임라인·미리보기)
+   디자인 시스템 모션 토큰(--trans-*·--dur-*·--ease-*·focus-ring) 준수.
+   ⚠ 인라인 background/color 는 :hover 를 specificity 로 가리므로
+     상호작용 요소는 인라인 대신 이 클래스로 칠한다.
+   ------------------------------------------------------------ */
+/* 액션바 아이콘 버튼 (그림 토글 제거 후: 실행취소·다시실행·크게보기·새로고침) */
+.oc-icon-btn {
+  width: 30px; height: 30px; border-radius: 6px; border: none; background: transparent;
+  color: var(--c-ink-3); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--trans-hover), var(--trans-press);
+}
+.oc-icon-btn:hover:not(:disabled) { background: var(--c-stone); color: var(--c-ink); }
+.oc-icon-btn:active:not(:disabled) { transform: scale(0.92); }
+.oc-icon-btn:disabled { opacity: 0.4; cursor: default; }
+.oc-icon-btn.is-on { background: var(--c-stone); color: var(--c-ink); }
+.oc-icon-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); }
+
+/* 이미지 추가 — 라벨 pill (secondary 어휘) */
+.oc-image-btn {
+  display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 11px;
+  background: transparent; border: 1px solid var(--c-hairline-strong); border-radius: 999px;
+  color: var(--c-ink-3); font-family: var(--font-body); font-size: 11.5px; font-weight: 600; cursor: pointer;
+  transition: var(--trans-hover), var(--trans-press);
+}
+.oc-image-btn:hover { background: var(--c-stone); border-color: var(--c-ink-3); color: var(--c-ink); }
+.oc-image-btn:active { transform: scale(0.97); }
+.oc-image-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); }
+
+/* 전송 — ink filled, hover 톤 점프 + elevation (jt-btn-primary 규칙 동형) */
+.oc-send-btn {
+  width: 32px; height: 32px; border-radius: 8px; border: none;
+  background: var(--c-stache); color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-sm);
+  transition: var(--trans-hover), var(--trans-press), var(--trans-elev);
+}
+.oc-send-btn:hover { background: #000; box-shadow: var(--shadow-md); }
+.oc-send-btn:active { transform: scale(0.92); }
+.oc-send-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); }
+.oc-send-btn.is-label { width: auto; height: 32px; padding: 0 14px; border-radius: 999px; gap: 6px; font-family: var(--font-body); font-size: 12.5px; font-weight: 700; }
+
+/* composer 카드 — 입력 포커스 시 ink 테두리 + helmet 소프트 링 (jt-input 어휘) */
+.oc-composer { transition: border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard); }
+.oc-composer:focus-within { border-color: var(--c-ink); box-shadow: var(--focus-ring-soft); }
+
+/* 참조 블록 — hover 테두리 강조 */
+.oc-ref-block { transition: var(--trans-hover); }
+.oc-ref-block:hover { border-color: var(--c-ink-3); }
+
+/* 작은 ghost 버튼 (발화 복사·참조 제거) */
+.oc-mini-btn {
+  background: transparent; border: none; cursor: pointer; color: var(--c-muted);
+  padding: 2px; display: flex; border-radius: 5px;
+  transition: var(--trans-hover), var(--trans-press);
+}
+.oc-mini-btn:hover { color: var(--c-ink); background: var(--c-stone); }
+.oc-mini-btn:active { transform: scale(0.9); }
+.oc-mini-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 1px; }
+
+/* 접이식 행 (도구호출 그룹·diff 헤더·diff 파일행) — hover 배경 */
+.oc-row-interactive { cursor: pointer; transition: var(--trans-hover); border-radius: 6px; }
+.oc-row-interactive:hover { background: var(--c-stone-wash); }
+
+/* 미리보기 앱 카드 — hover lift (jt-card-interactive 어휘) */
+.oc-preview-card { transition: var(--trans-hover), var(--trans-press), var(--trans-elev); cursor: pointer; }
+.oc-preview-card:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(110, 72, 20, 0.14); }
+.oc-preview-card:active { transform: translateY(0) scale(0.997); }
+
+/* 튜토리얼 포스트잇 열기/접기 진입 — wrapper만 애니메이트(내부 postit rotation 보존) */
+@keyframes oc-postit-in {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+.oc-postit-wrap { animation: oc-postit-in var(--dur-base) var(--ease-spring); }
+
+/* 다음 단계 준비됨 — tutorial 보라 glow pulse */
+@keyframes oc-next-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(46, 44, 138, 0); }
+  50%      { box-shadow: 0 0 0 4px rgba(46, 44, 138, 0.20); }
+}
+.oc-next-ready { animation: oc-next-glow 1.8s var(--ease-standard) infinite; }
+
+/* 기획 노하우 칩 — 전문 바이브코더 노하우 한 줄 (tutorial 틴트) */
+.oc-knowhow-chip {
+  display: block; font-size: 11px; line-height: 1.4;
+  background: var(--c-canvas); color: var(--c-tutorial);
+  border: 1px solid rgba(46, 44, 138, 0.22);
+  border-radius: var(--r-sm); padding: 6px 9px; font-weight: 600;
+}
+
+/* '예시 보기' 토글 (compose 단계) */
+.oc-examples-toggle {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  width: 100%; padding: 7px 10px;
+  background: var(--c-canvas); border: 1px dashed var(--c-hairline-strong);
+  border-radius: var(--r-sm); cursor: pointer;
+  color: var(--c-ink-2); font-family: var(--font-body); font-size: 11.5px; font-weight: 600;
+  transition: var(--trans-hover), var(--trans-press);
+}
+.oc-examples-toggle:hover { background: var(--c-stone); border-color: var(--c-ink-3); }
+.oc-examples-toggle:active { transform: scale(0.99); }
+.oc-examples-toggle:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 2px; }
+
+/* 예시/다듬기 한 줄 — 클릭 복사 폴백 */
+.oc-example-row {
+  display: flex; align-items: center; gap: 7px;
+  width: 100%; padding: 7px 10px; text-align: left;
+  background: var(--c-canvas); border: 1px solid var(--c-hairline);
+  border-radius: var(--r-sm); cursor: pointer;
+  color: var(--c-ink-2); font-family: var(--font-mono); font-size: 11px; line-height: 1.4;
+  transition: var(--trans-hover), var(--trans-press);
+}
+.oc-example-row:hover { border-color: var(--c-ink-3); background: var(--c-stone-wash); }
+.oc-example-row:active { transform: scale(0.99); }
+.oc-example-row:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 1px; }
+
+/* 바꾸기 선택지 칩 */
+.oc-option-chip {
+  display: inline-flex; align-items: center;
+  font-size: 11px; font-weight: 700; font-family: var(--font-mono);
+  color: var(--c-tutorial); background: var(--c-canvas);
+  border: 1px solid rgba(46, 44, 138, 0.32);
+  border-radius: 999px; padding: 2px 9px;
+}
+
+/* 튜토리얼 프롬프트 예시 복사 버튼 (ink, 입력행 우측 붙음) — 고정폭(복사완료 2줄이어도 사이즈 유지) */
+.oc-paste-copy {
+  width: 62px; flex-shrink: 0;
+  background: var(--c-ink); color: #fff; border: none;
+  padding: 0 6px; cursor: pointer;
+  font-family: var(--font-body); font-size: 12px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  transition: var(--trans-hover), var(--trans-press);
+}
+.oc-copy-label { line-height: 1.05; text-align: center; }
+.oc-paste-copy:hover { background: var(--c-ink-3); }
+.oc-paste-copy:active { transform: scale(0.97); }
+.oc-paste-copy.is-copied { background: var(--c-mint); cursor: default; }
+.oc-paste-copy.is-copied:hover { background: var(--c-mint); }
+.oc-paste-copy:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: -2px; }
+
+/* 튜토리얼 단계 스텝퍼 — 현재 단계 노드 (tutorial 링 강조) */
+.oc-step-node { transition: var(--trans-hover), var(--trans-press); }
+.oc-step-btn { background: transparent; border: none; cursor: pointer; padding: 0; display: inline-flex; align-items: center; gap: 7px; }
+.oc-step-btn:active .oc-step-node { transform: scale(0.92); }
+.oc-step-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: 2px; border-radius: 6px; }
+
+/* OpenCode 대화 영역 격자 배경 — 다른 화면(jt-blueprint-studio-bg)과 동일 24px 그리드를
+   paper 톤으로. 실제 opencode codle-session 캔버스 그리드(24px)와도 정합. */
+.oc-canvas-grid {
+  background-color: var(--c-paper);
+  background-image:
+    linear-gradient(rgba(20, 19, 15, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 19, 15, 0.035) 1px, transparent 1px);
+  background-size: 24px 24px, 24px 24px;
+}
+
+/* composer 상단 리사이즈 핸들 (prompt-doc-resize-handle) — 높이 조절 grab 바 */
+.oc-resize-handle {
+  height: 11px; flex: 0 0 auto; cursor: ns-resize; touch-action: none;
+  display: flex; align-items: center; justify-content: center;
+}
+.oc-resize-bar {
+  width: 72px; height: 2px; border-radius: 999px;
+  background: var(--c-hairline-strong);
+  transition: background-color var(--dur-fast) var(--ease-standard), width var(--dur-fast) var(--ease-standard);
+}
+.oc-resize-handle:hover .oc-resize-bar { background: var(--c-ink-3); width: 88px; }
+.oc-resize-handle:active .oc-resize-bar,
+.oc-resize-handle.is-dragging .oc-resize-bar { background: var(--c-ink); width: 96px; }
+
+/* Kanban card 진입 — B-2 튜토리얼 진행 칸반.
+   실시간 갱신으로 팀이 다음 step 컬럼으로 이동할 때 destination에서 mount되며 재생.
+   wrapper에 적용하여 inner RosterRow의 rotation·tape 변환과 합성된다.
+   초기 마운트 시에는 wrapper에 클래스 미부여 → 애니메이션 없음.
+   key가 step 포함이라 팀이 이동할 때마다 wrapper가 remount되어 keyframe 재생. */
+@keyframes jt-kanban-card-enter {
+  0%   { opacity: 0; transform: translateX(-32px) scale(0.94); }
+  100% { opacity: 1; transform: translateX(0)    scale(1);    }
+}
+.jt-kanban-card-enter {
+  animation: jt-kanban-card-enter 0.6s var(--ease-decelerate) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  @keyframes jt-kanban-card-enter {
+    0%   { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  .jt-kanban-card-enter { animation-duration: 0.3s; }
+}
+
 /* Modal entrance — backdrop fade + surface pop */
 @keyframes jt-backdrop-in {
   from { opacity: 0; }
@@ -789,7 +1357,6 @@
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0);    }
 }
-
 /* Modal primitives — dialogs.jsx · operator.jsx 모달 표준 */
 .jt-modal-backdrop {
   position: absolute;
@@ -844,6 +1411,31 @@
   z-index: var(--z-popover);
   animation: jt-modal-fade-in var(--dur-fast) var(--ease-decelerate);
   box-shadow: var(--shadow-popover);
+}
+
+/* Phase hover popover — B-2 dashboard StatusPill 호버 시 5단계 stepper 노출 (2026-05-28) */
+.jt-phase-hover {
+  position: relative;
+  display: inline-flex;
+}
+.jt-phase-popover {
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity var(--dur-fast) var(--ease-standard),
+              transform var(--dur-fast) var(--ease-standard),
+              visibility 0s linear var(--dur-fast);
+  pointer-events: none;
+}
+.jt-phase-hover:hover .jt-phase-popover,
+.jt-phase-hover:focus-within .jt-phase-popover {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity var(--dur-fast) var(--ease-standard),
+              transform var(--dur-fast) var(--ease-standard),
+              visibility 0s linear 0s;
+  pointer-events: auto;
 }
 
 /* Tab underline slide — D-2 정보·댓글 탭 */
@@ -929,6 +1521,169 @@
   color: #fff;
 }
 
+/* ============================================================
+   §618g Paper Surface — 양피지 질감 (2026-05-29)  ⚠️ DEPRECATED (2026-06-01)
+   ============================================================
+   ⚠️ DEPRECATED — paper 어휘는 더 이상 사용하지 않습니다.
+   모든 사용처(B1Empty · RosterTeamDetailModal · TeamPostitV2 · D1GalleryEmpty)는
+   .jt-postit-card 어휘로 통일됨. 신규 작업에서 사용 금지.
+   룰셋은 디자인 시스템 §09g deprecated 보존(역사·결정 흔적)과 정합으로 남겨둡니다.
+   (실 화면 사용 0건 — viewer.html 검증 완료)
+   ────────────────────────────────────────────────────────────
+   원본 사용 위계 (참고용):
+   - 큰 카드(>=320px) · 모달 · empty state 등 "단일 정보 표면"에 사용
+   - 작은 카드·dense 리스트는 .jt-postit-card / .jt-card 사용 (paper는 가장자리·접힘이 과해 보임)
+   - 어두운 backdrop 위에서는 가장자리가 사라지므로 회피
+   조합:
+   .jt-paper-surface-wrap   (filter drop-shadow — clip-path된 자식에 그림자)
+     └ .jt-paper-surface    (clip-path 종이 가장자리 + ::before 접힘 + ::after 안쪽 도장)
+   ModalSurface와 함께 사용 시 className으로 `jt-paper-surface` 추가하면 borderRadius/shadow 자동 무효화.
+   ============================================================ */
+.jt-paper-surface-wrap {
+  filter:
+    drop-shadow(0 18px 24px rgba(20, 19, 15, .16))
+    drop-shadow(0 2px 1px rgba(20, 19, 15, .08));
+}
+.jt-paper-surface {
+  position: relative;
+  background: #ffffff;
+  border-radius: 0;
+  box-shadow: none;
+  clip-path: polygon(
+    1.2% 1.4%, 10% .6%, 22% 1.2%, 34% .5%, 49% 1.1%,
+    63% .4%, 78% 1.3%, 91% .6%, 98.8% 1.8%,
+    99.2% 12%, 98.4% 24%, 99.4% 38%, 98.2% 52%,
+    99% 66%, 98.4% 80%, 97.7% 98.6%,
+    85% 99.2%, 71% 98.5%, 57% 99.4%, 43% 98.6%,
+    29% 99.3%, 14% 98.4%, 2.2% 98.8%,
+    .8% 84%, 1.6% 70%, .7% 56%, 1.5% 42%, .6% 28%, 1.2% 14%
+  );
+}
+.jt-paper-surface::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* 2026-05-29 update: fold stripe들이 카드 중앙을 가로지르는 문제 → 모두 가장자리(≤6% / ≥92%)로 이동. */
+  background:
+    linear-gradient(104deg, transparent 4%,  rgba(20,19,15,.02) 5%,  transparent 7%),
+    linear-gradient(31deg,  transparent 92%, rgba(255,255,255,.18) 93%, transparent 95%),
+    linear-gradient(154deg, transparent 92%, rgba(20,19,15,.02) 93%, transparent 95%);
+  mix-blend-mode: multiply;
+  opacity: .55;
+  z-index: 0;
+}
+.jt-paper-surface::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  pointer-events: none;
+  box-shadow:
+    inset 8px 0 14px rgba(20, 19, 15, .04),
+    inset -6px 0 12px rgba(255, 255, 255, .30),
+    inset 0 7px 14px rgba(255, 255, 255, .35),
+    inset 0 -8px 14px rgba(20, 19, 15, .05);
+  z-index: 0;
+}
+/* ModalSurface 인라인 우선 — borderRadius/shadow 인라인이 있어도 0으로 강제.
+   wrap이 중앙정렬을 담당하므로 modal-surface 자체의 absolute + translate(-50%,-50%)는 해제 */
+.jt-modal-surface.jt-paper-surface {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ── Paper Pinned — 압정으로 박힌 종이 (paper의 표준 사용 패턴) ──────────────
+ *   .jt-paper-pinned > .jt-paper-surface-wrap > .jt-paper-surface
+ *   원칙:
+ *     - paper는 항상 압정이 상단 중앙 (모달 등 예외 케이스에서만 압정 생략).
+ *     - hover/focus-within: 압정을 축으로 살짝 회전 (~2°) — "벽에 박힌 종이가 흔들" 어휘.
+ *     - 압정 = 노란 I-shape (helmet 어휘) — 캡·몸통·바닥 플랜지.
+ *     - tape·rotation 어휘는 .jt-postit-card 전용 — paper에 동시 적용 금지. */
+.jt-paper-pinned {
+  position: relative;
+  padding-top: 14px;
+  display: inline-block;
+}
+.jt-paper-pinned::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  width: 30px;
+  height: 28px;
+  margin-left: -15px;
+  /* 검정 돔 압정 (head only, no needle). 그림자(좌하)는 종이 위에 떨어지는 캐스트. */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 28'><defs><radialGradient id='c' cx='0.32' cy='0.28' r='0.7'><stop offset='0' stop-color='%23545454'/><stop offset='0.45' stop-color='%23222222'/><stop offset='1' stop-color='%23000000'/></radialGradient></defs><ellipse cx='17' cy='22' rx='10' ry='2.6' fill='%23000000' fill-opacity='0.32'/><ellipse cx='15' cy='13' rx='10.5' ry='9.5' fill='url(%23c)'/><ellipse cx='11' cy='8.5' rx='3.2' ry='2.1' fill='%23ffffff' fill-opacity='0.55'/><ellipse cx='10' cy='7.5' rx='1.4' ry='0.9' fill='%23ffffff' fill-opacity='0.75'/></svg>");
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: center top;
+  z-index: 3;
+  pointer-events: none;
+}
+.jt-paper-pinned .jt-paper-surface-wrap {
+  transform-origin: 50% 0%;
+  /* 기본 -1.5°: 압정 축으로 살짝 기울어진 자연스러운 자세 (절제) */
+  transform: rotate(-1.5deg);
+  transition: transform var(--dur-base) var(--ease-spring),
+              filter var(--dur-base) var(--ease-standard);
+}
+.jt-paper-pinned:not(.jt-paper-pinned-static):hover .jt-paper-surface-wrap,
+.jt-paper-pinned:not(.jt-paper-pinned-static):focus-within .jt-paper-surface-wrap {
+  /* 호버: 수평으로 펴짐 (-1.5° → 0°). 압정 축으로 종이가 반듯해지는 어휘. */
+  transform: rotate(0deg);
+  filter:
+    drop-shadow(0 26px 34px rgba(20, 19, 15, .22))
+    drop-shadow(0 3px 2px rgba(20, 19, 15, .10));
+}
+/* `.jt-paper-pinned-static` — 내부에 버튼·링크 등 인터랙션 요소가 있어
+   카드 자체 호버 회전이 어색할 때 (예: D-1 갤러리 빈 상태 CTA). 압정만 적용. */
+
+/* ── Paper Pinned Tall — 클래식 thumbtack (돔 + 가시적 cylindrical 목) ──────
+ *   사용: 코르크보드/메모보드 메타포 강조 시 (실제 압정처럼 몸통이 종이에 박혀 보임).
+ *   기본 `.jt-paper-pinned`(돔 only) 위에 modifier로 적용 — `.jt-paper-pinned.jt-paper-pinned-tall`.
+ *   ::before SVG만 교체, 회전/hover/padding-top(14px)는 부모 룰 그대로 상속.
+ *   배치 계산 (컨테이너 padding-top 14px 상속, top: -16):
+ *   - 돔(SVG y 0~22) → 컨테이너 -16~+6 → 종이 표면(+14)보다 위 → 완전 노출
+ *   - 목 윗부분(SVG y 22~30) → 컨테이너 +6~+14 → 종이 가장자리 위에 살짝 걸침
+ *   - 목 아래(SVG y 30~38) + 캐스트 그림자(38~42) → 컨테이너 +14~+26 → 종이 표면 12px 덮음 = "박혀 들어간" 환상 (z-index:3) */
+.jt-paper-pinned-tall::before {
+  top: -16px;
+  width: 32px;
+  height: 42px;
+  margin-left: -16px;
+  /* 검정 압정: 돔(head) + cylindrical 목(shaft)이 종이로 박혀 들어가는 형태.
+     - radial gradient 돔 + 좌상단 specular highlight
+     - 좌→우 linear gradient cylindrical 몸통 (왼쪽이 밝아 입체감)
+     - 돔 아래 어두운 ring으로 dome-shaft 경계
+     - 종이 위 캐스트 그림자(아래쪽) */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 42'><defs><radialGradient id='d' cx='0.32' cy='0.28' r='0.72'><stop offset='0' stop-color='%235a5a5a'/><stop offset='0.45' stop-color='%23222222'/><stop offset='1' stop-color='%23000000'/></radialGradient><linearGradient id='n' x1='0' y1='0' x2='1' y2='0'><stop offset='0' stop-color='%23262626'/><stop offset='0.4' stop-color='%23121212'/><stop offset='1' stop-color='%23000000'/></linearGradient></defs><ellipse cx='18' cy='38' rx='10.5' ry='2.2' fill='%23000000' fill-opacity='0.34'/><path d='M 11 21 Q 11 18.5 13 18.5 L 17 18.5 Q 19 18.5 19 21 L 19 38 L 11 38 Z' fill='url(%23n)'/><ellipse cx='15' cy='19' rx='4.2' ry='1' fill='%23000000' fill-opacity='0.7'/><ellipse cx='15' cy='11' rx='11' ry='10' fill='url(%23d)'/><ellipse cx='10.5' cy='7.5' rx='3.5' ry='2.3' fill='%23ffffff' fill-opacity='0.55'/><ellipse cx='9.5' cy='6.5' rx='1.4' ry='0.9' fill='%23ffffff' fill-opacity='0.78'/></svg>");
+}
+
+/* Legacy `.jt-paper-interactive` — 압정 없는 paper에서 hover lift만 필요할 때 (드문 케이스). */
+.jt-paper-surface-wrap.jt-paper-interactive {
+  cursor: pointer;
+  transition: filter var(--dur-base) var(--ease-standard);
+}
+.jt-paper-surface-wrap.jt-paper-interactive .jt-paper-surface {
+  transition: transform var(--dur-base) var(--ease-spring);
+}
+.jt-paper-surface-wrap.jt-paper-interactive:hover {
+  filter:
+    drop-shadow(0 26px 34px rgba(20, 19, 15, .22))
+    drop-shadow(0 3px 2px rgba(20, 19, 15, .10));
+}
+.jt-paper-surface-wrap.jt-paper-interactive:hover .jt-paper-surface {
+  transform: translateY(-3px);
+}
+.jt-paper-surface-wrap.jt-paper-interactive:active .jt-paper-surface {
+  transform: translateY(-1px) scale(0.99);
+  transition-duration: var(--dur-fast);
+}
+
 /* prefers-reduced-motion — 모션 감소 환경 추가 */
 @media (prefers-reduced-motion: reduce) {
   .jt-spin, .jt-spin-once, .jt-spin-slow,
@@ -939,8 +1694,23 @@
   }
   .jt-btn:active,
   .jt-icon-btn:active,
-  .jt-card-interactive:active {
+  .jt-card-interactive:active,
+  .jt-postit-card:active {
     transform: none !important;
   }
+  .jt-postit-card,
+  .jt-postit-card:hover {
+    transform: none !important;
+    animation: none !important;
+    transition: background-color var(--dur-fast) var(--ease-standard),
+                box-shadow var(--dur-fast) var(--ease-standard) !important;
+  }
+  .jt-postit-card::before {
+    transform: translateX(-50%) !important;
+    transition: none !important;
+  }
+  .jt-switch,
+  .jt-switch::after { transition: none !important; }
+  .jt-checkbox { transition: none !important; }
   .jt-tab-underline { transition: none !important; }
 }

@@ -38,13 +38,13 @@ function AuthShell({ children, variant = 'site', leftHeadline, leftTag, leftBody
                 gap: 8,
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10.5,
-                letterSpacing: '0.22em',
+                letterSpacing: '0.18em',
                 color: 'var(--c-stache)',
-                textTransform: 'uppercase',
                 border: '1.5px solid var(--c-stache)',
                 padding: '5px 12px',
                 marginBottom: 20,
-                background: 'rgba(255, 255, 255, 0.45)'
+                background: 'rgba(255, 255, 255, 0.45)',
+                transform: 'rotate(-1.5deg)'
               }}>
                 <span style={{
                   width: 7, height: 7, borderRadius: '50%',
@@ -95,9 +95,8 @@ function AuthShell({ children, variant = 'site', leftHeadline, leftTag, leftBody
                 alignSelf: 'flex-start',
                 fontFamily: 'var(--font-mono)',
                 fontSize: 10.5,
-                letterSpacing: '0.2em',
+                letterSpacing: '0.18em',
                 color: 'var(--c-helmet)',
-                textTransform: 'uppercase',
                 border: '1.5px solid var(--c-helmet)',
                 padding: '4px 10px',
                 marginBottom: 18,
@@ -153,7 +152,7 @@ function A1CodeLogin() {
   return (
     <AuthShell
       variant="site"
-      leftTag="PARTICIPANT · 참가자"
+      leftTag="참가자"
       leftHeadline={<>AI 해커톤에<br />오신 것을 환영합니다.</>}
       leftBody="미리 안내한 6자리 참여 코드를 입력하세요.">
       
@@ -168,14 +167,10 @@ function A1CodeLogin() {
           <h2 style={{ fontSize: 26, lineHeight: 1.2, margin: 0 }}>참여 코드를 입력해 주세요</h2>
         </div>
 
-        <label className="jt-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: 6 }}>NAME
-
-        </label>
+        <label className="jt-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--c-muted)', marginBottom: 6 }}>이름</label>
         <input className="jt-input" defaultValue="최지유" style={{ marginBottom: 18 }} />
 
-        <label className="jt-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: 8 }}>CODE
-
-        </label>
+        <label className="jt-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--c-muted)', marginBottom: 8 }}>코드</label>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 28 }}>
           {code.map((c, i) =>
           <div key={i} style={{
@@ -226,7 +221,7 @@ function A1CodeInvalid() {
   return (
     <AuthShell
       variant="site"
-      leftTag="PARTICIPANT · 참가자"
+      leftTag="참가자"
       leftHeadline={<>코드가 일치하지<br/>않습니다</>}
       leftBody="6자리 영문 대문자·숫자를 다시 확인해 주세요.">
 
@@ -241,10 +236,10 @@ function A1CodeInvalid() {
           <span className="jt-tape-block">⚠ 코드 오류</span>
         </div>
 
-        <label className="jt-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: 6 }}>NAME</label>
+        <label className="jt-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--c-muted)', marginBottom: 6 }}>이름</label>
         <input className="jt-input" defaultValue="최지유" style={{ marginBottom: 18 }} />
 
-        <label className="jt-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--c-safety)', textTransform: 'uppercase', marginBottom: 8 }}>CODE · 오류</label>
+        <label className="jt-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--c-safety)', marginBottom: 8 }}>코드 · 오류</label>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 28 }}>
           {code.map((c, i) =>
           <div key={i} style={{
@@ -282,12 +277,12 @@ function A1NotStarted() {
   return (
     <AuthShell
       variant="site"
-      leftTag="PARTICIPANT · 참가자"
+      leftTag="참가자"
       leftHeadline={<>아직 행사가<br/>시작되지 않았어요</>}
       leftBody={<>안내된 시작 시각에 다시 접속해 주세요.<br />운영자가 시작 버튼을 누르면 팀 대기실이 열립니다.</>}>
 
       <div style={{ width: '100%', maxWidth: 440, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-        <div className="jt-stamp" style={{ color: 'var(--c-blue)', marginBottom: 18 }}>HACKATHON · PRE-OPEN</div>
+        <div className="jt-stamp" style={{ color: 'var(--c-blue)', marginBottom: 18 }}>해커톤 · 시작 전</div>
 
         <h2 style={{ fontSize: 26, lineHeight: 1.25, marginBottom: 10 }}>
           코드 확인 완료
@@ -318,7 +313,7 @@ function A1NotStarted() {
           <style>{`@keyframes jt-spin { to { transform: rotate(360deg); } }`}</style>
           <div style={{ flex: 1, lineHeight: 1.5 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-ink)', marginBottom: 2 }}>운영자의 시작을 기다리는 중</div>
-            <div style={{ fontSize: 12, color: 'var(--c-slate)' }}>시작되면 이 화면이 자동으로 팀 대기실로 전환됩니다.</div>
+            <div style={{ fontSize: 12, color: 'var(--c-slate)' }}>접속이 유지되고 있어요.</div>
           </div>
         </div>
 
@@ -340,12 +335,12 @@ function A1Ended() {
   return (
     <AuthShell
       variant="site"
-      leftTag="PARTICIPANT · 참가자"
+      leftTag="참가자"
       leftHeadline={<>이 해커톤은<br/>이미 종료되었어요</>}
       leftBody="팀이 만든 프로젝트는 갤러리에서 계속 볼 수 있습니다.">
 
       <div style={{ width: '100%', maxWidth: 440, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-        <div className="jt-stamp" style={{ color: 'var(--c-slate)', marginBottom: 18 }}>HACKATHON · CLOSED</div>
+        <div className="jt-stamp" style={{ color: 'var(--c-slate)', marginBottom: 18 }}>해커톤 · 종료</div>
 
         <h2 style={{ fontSize: 26, lineHeight: 1.25, marginBottom: 10 }}>
           전북교육청 바이브코딩 캠프<br/>
@@ -399,7 +394,7 @@ function A3OAuthCallback() {
   return (
     <AuthShell
       variant="blueprint"
-      leftTag="OPERATOR · 운영자"
+      leftTag="운영자"
       leftHeadline={<>로그인을<br />처리하고 있어요</>}
       leftBody={<>잠시만 기다리시면 자동으로 다음 화면으로 이동합니다.</>}>
 
@@ -433,7 +428,7 @@ function A2OperatorLogin() {
   return (
     <AuthShell
       variant="blueprint"
-      leftTag="OPERATOR · 운영자"
+      leftTag="운영자"
       leftHeadline={<>운영자 콘솔에<br />로그인합니다</>}
       leftBody="Google 또는 이메일로 로그인하세요.">
 
@@ -460,15 +455,15 @@ function A2OperatorLogin() {
         {/* Divider */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '4px 0 18px' }}>
           <div style={{ flex: 1, height: 1, background: 'var(--c-hairline)' }} />
-          <span className="jt-mono" style={{ fontSize: 10.5, color: 'var(--c-muted)', letterSpacing: '0.16em' }}>OR</span>
+          <span className="jt-mono" style={{ fontSize: 10.5, color: 'var(--c-muted)', letterSpacing: '0.16em' }}>또는</span>
           <div style={{ flex: 1, height: 1, background: 'var(--c-hairline)' }} />
         </div>
 
         {/* Email form */}
-        <label className="jt-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: 6, display: 'block' }}>EMAIL</label>
+        <label className="jt-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--c-muted)', marginBottom: 6, display: 'block' }}>이메일</label>
         <input className="jt-input" defaultValue="park@school.go.kr" style={{ marginBottom: 12 }} />
 
-        <label className="jt-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--c-muted)', textTransform: 'uppercase', marginBottom: 6, display: 'block' }}>PASSWORD</label>
+        <label className="jt-mono" style={{ fontSize: 11, letterSpacing: '0.12em', color: 'var(--c-muted)', marginBottom: 6, display: 'block' }}>비밀번호</label>
         <input className="jt-input" type="password" defaultValue="••••••••••" style={{ marginBottom: 18 }} />
 
         <button data-action="email" className="jt-btn jt-btn-primary" style={{ width: '100%', padding: '13px 16px', fontSize: 14, marginBottom: 14 }}>
@@ -477,7 +472,7 @@ function A2OperatorLogin() {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12.5, color: 'var(--c-slate)' }}>
           <a style={{ color: 'var(--c-slate)', textDecoration: 'underline', textUnderlineOffset: 3 }}>비밀번호 재설정</a>
-          <a style={{ color: 'var(--c-ink)', fontWeight: 600 }}>운영자 회원가입 →</a>
+          <a data-action="signup" style={{ color: 'var(--c-ink)', fontWeight: 600 }}>운영자 회원가입 →</a>
         </div>
 
         <div style={{
@@ -496,15 +491,12 @@ function A2GoogleInFlight() {
   return (
     <AuthShell
       variant="blueprint"
-      leftTag="OPERATOR · 운영자"
-      leftHeadline={<>Google 로그인<br/>창에서<br/>계속해 주세요</>}
+      leftTag="운영자"
+      leftHeadline={<>팝업 창에서<br/>계속해 주세요</>}
       leftBody={<>새 창에서 Google 인증을 마치면 자동으로 돌아옵니다.<br />창이 보이지 않으면 팝업 차단을 확인하세요.</>}>
 
       <div style={{ width: '100%', maxWidth: 440 }}>
-        <h2 style={{ fontSize: 26, lineHeight: 1.2, marginBottom: 6 }}>운영자 로그인</h2>
-        <p style={{ fontSize: 13.5, color: 'var(--c-slate)', marginBottom: 24, lineHeight: 1.55 }}>
-          새 창의 Google 인증을 완료해 주세요.
-        </p>
+        <h2 style={{ fontSize: 26, lineHeight: 1.2, marginBottom: 24 }}>운영자 로그인</h2>
 
         {/* Google 진행 중 버튼 */}
         <button className="jt-btn jt-btn-secondary is-disabled" disabled style={{
@@ -551,7 +543,7 @@ function A2GoogleInFlight() {
         {/* Divider */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '8px 0 18px' }}>
           <div style={{ flex: 1, height: 1, background: 'var(--c-hairline)' }} />
-          <span className="jt-mono" style={{ fontSize: 10.5, color: 'var(--c-muted)', letterSpacing: '0.16em' }}>OR · 이메일</span>
+          <span className="jt-mono" style={{ fontSize: 10.5, color: 'var(--c-muted)', letterSpacing: '0.16em' }}>또는 · 이메일</span>
           <div style={{ flex: 1, height: 1, background: 'var(--c-hairline)' }} />
         </div>
 
@@ -567,7 +559,7 @@ function A2PopupBlocked() {
   return (
     <AuthShell
       variant="blueprint"
-      leftTag="OPERATOR · 운영자"
+      leftTag="운영자"
       leftHeadline={<>팝업이 막혀서<br/>창이 안 열렸어요</>}
       leftBody={<>학교·기관 브라우저는 팝업을 기본 차단하는 경우가 많습니다.<br />두 가지 우회 경로를 안내합니다.</>}>
 
@@ -633,15 +625,14 @@ function A3OAuthFailed() {
   return (
     <AuthShell
       variant="blueprint"
-      leftTag="OPERATOR · 운영자"
+      leftTag="운영자"
       leftHeadline={<>로그인을 마치지<br/>못했어요</>}
       leftBody={<>다시 시도하거나 이메일로 로그인할 수 있어요.</>}>
 
       <div style={{ width: '100%', maxWidth: 420, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-        <span className="jt-tape" style={{ marginBottom: 24 }}>⚠ LOGIN FAILED</span>
+        <span className="jt-tape" style={{ marginBottom: 24 }}>⚠ 로그인 실패</span>
 
-        <h2 style={{ fontSize: 22, lineHeight: 1.3, marginBottom: 8 }}>로그인을 마치지 못했어요</h2>
-        <p style={{ fontSize: 13.5, color: 'var(--c-slate)', lineHeight: 1.6, marginBottom: 24 }}>
+        <p style={{ fontSize: 14, color: 'var(--c-slate)', lineHeight: 1.6, marginBottom: 24 }}>
           잠깐의 문제일 수 있어요.
           <br />
           다시 시도하면 대부분 해결됩니다.
@@ -679,8 +670,125 @@ function A3OAuthFailed() {
 
 }
 
+// ─── A-4 Operator signup (email + 약관 동의) ──────────────
+// 좌측: blueprint variant + "OPERATOR · 운영자" 태그 + 큰 헤드라인
+// 우측: 폼(이름·이메일·비밀번호·확인) + "전체 동의" 배너 + 약관 3종 (.jt-checkbox 신규 primitive)
+// 참고: 디자인 시스템에 체크박스가 없어 .jt-checkbox 정식 등록(2026-05-29 tokens.css §Checkbox).
+//      `.jt-switch`(iOS 토글)는 "기능 on/off 상태", 약관 동의는 "선택·확인 행위"로 의미가 다르므로 분리.
+function A4OperatorSignup() {
+  const required = <span className="jt-checkbox-required">(필수)</span>;
+  const labelStyle = { fontSize: 12.5, color: 'var(--c-ink)', fontWeight: 600, marginBottom: 8, display: 'block' };
+  return (
+    <AuthShell
+      variant="blueprint"
+      leftTag="OPERATOR · 운영자"
+      leftHeadline={<>운영자 계정을<br/>만듭니다</>}
+      leftBody="이메일로 가입하고 직접 해커톤을 운영해 보세요.">
+
+      <div style={{ width: '100%', maxWidth: 460 }}>
+        <h2 style={{ fontSize: 26, lineHeight: 1.2, marginBottom: 6 }}>운영자 회원가입</h2>
+        <p style={{ fontSize: 13.5, color: 'var(--c-slate)', marginBottom: 24, lineHeight: 1.55 }}>
+          가입하면 해커톤을 운영할 수 있어요.
+        </p>
+
+        {/* 이름 */}
+        <label style={labelStyle}>이름 {required}</label>
+        <input className="jt-input" placeholder="박운영" style={{ marginBottom: 18 }} />
+
+        {/* 이메일 */}
+        <label style={labelStyle}>이메일 {required}</label>
+        <input className="jt-input" placeholder="park@school.go.kr" style={{ marginBottom: 18 }} />
+
+        {/* 비밀번호 + 도움말 */}
+        <label style={labelStyle}>비밀번호 {required}</label>
+        <input className="jt-input" type="password" placeholder="8자 이상, 영문·숫자 포함" style={{ marginBottom: 6 }} />
+        <p style={{ fontSize: 12, color: 'var(--c-muted)', marginBottom: 16, lineHeight: 1.5 }}>
+          8자 이상, 영문과 숫자를 포함해 주세요.
+        </p>
+
+        {/* 비밀번호 확인 */}
+        <label style={labelStyle}>비밀번호 확인 {required}</label>
+        <input className="jt-input" type="password" placeholder="비밀번호를 다시 입력" style={{ marginBottom: 20 }} />
+
+        {/* 전체 동의 배너 (그룹 헤더) */}
+        <div className="jt-checkbox-banner" role="button" tabIndex={0}>
+          <button
+            type="button"
+            role="checkbox"
+            aria-checked="false"
+            aria-label="전체 항목에 동의"
+            className="jt-checkbox"
+            data-action="agree-all">
+            {Icon.check(13)}
+          </button>
+          <span>전체 항목에 동의합니다.</span>
+        </div>
+
+        {/* 약관 그룹 라벨 */}
+        <div style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: 10.5,
+          letterSpacing: '0.14em',
+          color: 'var(--c-muted)',
+          margin: '20px 0 0',
+          textTransform: 'uppercase',
+        }}>약관 및 정보 이용 동의</div>
+
+        {/* 개별 약관 3종 */}
+        <div style={{ marginTop: 4 }}>
+          {[
+            { id: 'privacy', label: '개인정보 처리 방침' },
+            { id: 'tos',     label: '서비스 이용 약관' },
+            { id: 'collect', label: '개인정보 수집 동의' },
+          ].map((it) => (
+            <label key={it.id} className="jt-checkbox-row" htmlFor={`agree-${it.id}`}>
+              <button
+                id={`agree-${it.id}`}
+                type="button"
+                role="checkbox"
+                aria-checked="false"
+                className="jt-checkbox"
+                data-action={`agree-${it.id}`}>
+                {Icon.check(12)}
+              </button>
+              <span className="jt-checkbox-label">
+                {it.label} {required}
+              </span>
+              <a className="jt-checkbox-link" data-action={`view-${it.id}`}>
+                내용 보기 ›
+              </a>
+            </label>
+          ))}
+        </div>
+
+        {/* 가입하기 — 미동의 상태 disabled (회색) */}
+        <button
+          data-action="submit"
+          disabled
+          className="jt-btn jt-btn-primary is-disabled"
+          style={{
+            width: '100%', padding: '14px 16px', fontSize: 14,
+            marginTop: 24, marginBottom: 14,
+            opacity: 0.55, cursor: 'not-allowed',
+            background: 'var(--c-ink-3)', borderColor: 'var(--c-ink-3)',
+          }}>
+          가입하기 {Icon.arrowRight(14)}
+        </button>
+
+        <div style={{
+          paddingTop: 16, borderTop: '1px solid var(--c-hairline)',
+          fontSize: 12.5, color: 'var(--c-slate)', textAlign: 'center'
+        }}>
+          이미 계정이 있으신가요? <a data-action="back-to-login" style={{ color: 'var(--c-ink)', fontWeight: 600 }}>로그인 →</a>
+        </div>
+      </div>
+    </AuthShell>);
+
+}
+
 Object.assign(window, {
   A1CodeLogin, A1CodeInvalid, A1NotStarted, A1Ended,
   A2OperatorLogin, A2GoogleInFlight, A2PopupBlocked,
   A3OAuthCallback, A3OAuthFailed,
+  A4OperatorSignup,
 });

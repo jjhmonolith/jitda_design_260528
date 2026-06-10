@@ -38,42 +38,85 @@ function JitdaLogo({ size = 36 }) {
   );
 }
 
-function JitdaMark({ size = 22, mono = false, hideText = false }) {
+function JitdaIcon({ size = 36, mono = false }) {
+  // 캐릭터(병아리) 단독. viewBox는 원본 SVG에서 캐릭터 영역만 잘라낸 박스.
+  // mono=true → 다크 디테일(눈·콧수염)만 흰색 스왑. 노란 몸체·악센트는 브랜드 식별 위해 어두운 배경에서도 유지.
+  const ink = mono ? '#ffffff' : '#3f3934';
+  const body = '#ffce2c';
+  const bodyAccent = '#e9ad03';
+  const VB_W = 230, VB_H = 200;
   return (
-    <div style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: 10,
-      fontFamily: 'var(--font-display)',
-    }}>
-      <JitdaLogo size={size + 8} />
-      {!hideText && (
-        <>
-          <span style={{
-            fontSize: size,
-            fontWeight: 800,
-            letterSpacing: '-0.04em',
-            color: mono ? '#fff' : 'var(--c-stache)',
-            lineHeight: 1,
-          }}>짓다</span>
-          <span style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: size * 0.36,
-            letterSpacing: '0.22em',
-            color: mono ? 'rgba(255,255,255,0.5)' : 'var(--c-muted)',
-            textTransform: 'uppercase',
-            paddingTop: 3,
-          }}>Jitda</span>
-        </>
-      )}
-    </div>
+    <svg
+      width={size * VB_W / VB_H}
+      height={size}
+      viewBox={`0 47 ${VB_W} ${VB_H}`}
+      xmlns="http://www.w3.org/2000/svg"
+      role="img"
+      aria-label="짓다"
+      style={{ display: 'inline-block', verticalAlign: 'middle', flexShrink: 0 }}
+    >
+      {/* 패스 순서는 원본 jitda_logo.svg와 동일 — 본디 노란 몸체가 마지막에 그려져 눈 위쪽 일부를 자연스럽게 가린다. 순서 바꾸면 "눈이 모자 밖으로 튀어나옴" 버그. */}
+      <circle fill={ink} cx="165.56" cy="196.37" r="15.27"/>
+      <circle fill={ink} cx="63.8" cy="196.37" r="15.27"/>
+      <path fill={ink} d="M123.33,205.18c-1.15-1.53-2.93-2.41-4.84-2.41h-7.94c-1.91,0-3.69.88-4.84,2.41-5.24,6.95-20.94,27.08-33.19,35.44-1.65,1.13-.91,3.69,1.09,3.69h20.6l20.31-22.73,20.31,22.73h20.6c2,0,2.74-2.56,1.09-3.69-12.24-8.36-27.95-28.49-33.18-35.44Z"/>
+      <path fill={bodyAccent} d="M142.5,104.68c1.37.13,3.05-.71,3.21-2.2.88-8.38,1.95-16.54,3.84-24.79,1.49-6.54,3.04-12.91,5.53-19.03-3.22-1.59-6.54-2.97-10.04-4.21-1.76-.62-3.39-1.27-5.36-1.54l-.05,49.34c0,1.51,1.65,2.31,2.87,2.43Z"/>
+      <path fill={bodyAccent} d="M76.28,65.06c.02.07.04.15.06.23.02.08.03.16.04.25.04.25.07.52.17.75.09.23-.2.59.08.69l.31.5c.59,2.13,1.14,4.27,1.66,6.41.17.72.34,1.43.5,2.15.33,1.43.63,2.87.93,4.31.15.72.29,1.44.43,2.17.26,1.35.5,2.7.72,4.05.03.19.06.39.1.58.22,1.36.44,2.72.63,4.09.52,3.65.94,7.32,1.27,11.01.02.19.05.37.11.54.03.09.06.17.1.25.07.16.16.31.27.45.1.14.22.27.35.39.13.12.27.22.42.32.22.14.46.25.71.34.08.03.17.05.25.07.25.07.51.1.76.11.09,0,.19,0,.28,0,.29-.02.57-.06.85-.14.18-.05.36-.12.53-.19.51-.23.95-.59,1.22-1.06.18-.31.28-.68.28-1.1l.02-37.92-.03-11.38c-5.34,1.43-10.35,3.39-15.25,5.68l.74,2.16,1.49,4.31Z"/>
+      <path fill={body} d="M224.15,164.76c-1.59-7.38-5.45-15.08-13.34-17.77l-.14-11.8c-.07-1.17-.16-2.34-.26-3.5-.63-7.16-1.88-14.19-4.15-21.1-.2-.6-.4-1.19-.61-1.79-3.49-9.84-8.73-18.96-15.46-27.2-6.66-8.16-14.67-15.01-23.92-20.53l-6.5-3.63c-1.35-.75-4.04-.28-4.65,1.23-2.49,6.12-4.04,12.49-5.53,19.03-1.88,8.25-2.96,16.41-3.84,24.79-.16,1.49-1.84,2.33-3.21,2.2-1.22-.12-2.87-.92-2.87-2.43l.05-49.34-.03-2.21c-.06-4.79-6.91-7.09-11.82-8.06-4.41-.88-8.89-1.31-13.36-1.3-4.36,0-8.72.43-13.03,1.27-5.18,1-11.57,3.06-12.02,8.1-.07.79-.13,1.56-.12,2.2l.03,11.37-.02,37.92c0,.42-.11.79-.28,1.1-.27.47-.71.82-1.23,1.06-.17.08-.35.14-.53.19-.28.08-.56.12-.85.14-.09,0-.19,0-.28,0-.25,0-.51-.04-.76-.11-.08-.02-.17-.05-.25-.07-.25-.09-.49-.2-.71-.34-.15-.09-.29-.2-.42-.32s-.25-.25-.35-.38c-.1-.14-.19-.29-.27-.45-.04-.08-.07-.16-.1-.25-.06-.17-.09-.35-.11-.54-.11-1.3-.31-2.58-.45-3.87-.07-.89-.16-1.81-.29-2.81-.09-.74-.19-1.41-.28-2.12-.1-.74-.15-1.48-.25-2.21-.2-1.36-.41-2.73-.63-4.09-.03-.15-.05-.31-.08-.46-2.97-18.93-6.45-26.61-7.08-27.89l-.07-.21c-1.06-1.32-2.73-1.83-4.6-1.21-14.3,7.21-26.49,17.59-35.2,30.36-3.38,4.95-6.23,9.92-8.54,15.36-1.11,2.61-2.12,5.23-3,7.87-1.78,5.33-3.04,10.76-3.56,16.4l-.42,4.62-.37,4-.1,10.99c-8.13,2.82-12.33,11.19-13.53,18.91-.3,1.94.67,3.88,2.43,4.97,2.81,1.74,5.8,2.93,9,4.2,3.52,1.4,7.07,2.7,10.67,3.92,9.8,3.31,19.86,5.93,30.08,7.94,16.75,3.3,33.92,4.94,50.99,5.21h6.58s6.44,0,6.44,0c15.64-.37,31.15-1.6,46.56-4.37,1.3-.23,2.6-.48,3.9-.73,10.06-1.96,19.93-4.47,29.57-7.62,3.28-1.07,6.55-2.22,9.78-3.44l9.99-4.39c2.91-1.28,4.02-3.94,3.4-6.82Z"/>
+    </svg>
+  );
+}
+
+function JitdaWordmark({ size = 26, mono = false }) {
+  // 한글 "짓다" 워드마크. size = 글자 캐릭터 높이(px) 근사값.
+  // 기존 jitda SVG 자리에 들어가므로 fontFamily/weight/letter-spacing은 원본 디자인 시스템 어휘 유지.
+  const ink = mono ? '#ffffff' : '#3f3934';
+  return (
+    <span
+      role="img"
+      aria-label="짓다"
+      style={{
+        display: 'inline-block',
+        verticalAlign: 'middle',
+        flexShrink: 0,
+        fontFamily: 'var(--font-display)',
+        fontWeight: 800,
+        fontSize: size * 1.18,
+        letterSpacing: '-0.045em',
+        color: ink,
+        lineHeight: 1,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      짓다
+    </span>
+  );
+}
+
+function JitdaMark({ size = 26, mono = false, iconSize, gap }) {
+  // size = "jitda" 워드마크 높이(px). iconSize 미지정 시 size*1.55(아이콘이 한 단계 크게).
+  // gap = 워드마크/아이콘 간 간격(px). 미지정 시 size*0.32.
+  const icon = iconSize ?? Math.round(size * 1.55);
+  const innerGap = gap ?? Math.round(size * 0.32);
+  return (
+    <span
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: innerGap,
+        verticalAlign: 'middle',
+      }}
+      aria-label="짓다 Jitda"
+    >
+      <JitdaIcon size={icon} mono={mono} />
+      <JitdaWordmark size={size} mono={mono} />
+    </span>
   );
 }
 
 // ── Status pill ─────────────────────────────────────────────────────
-// 5상태 + 일시정지 (2026-05-20 페이지 정의서 v23848e86 · 2026-05-26 ③ tutorial_ended 폐기)
+// 5상태 단방향 (2026-05-26 ③ tutorial_ended 폐기 · 2026-05-29 일시정지 폐기)
 // 단계(튜토리얼/해커톤)는 색 계열, 진행도(대기/진행/종료)는 명도·아이콘으로 이중 인코딩
-function StatusPill({ status, paused, size = 'md' }) {
+function StatusPill({ status, size = 'md' }) {
   const map = {
     // 5상태 단방향 — tutorial_ended는 hackathon_waiting으로 통합됨(2026-05-26)
     tutorial_waiting: { label: '튜토리얼 대기', cls: 'jt-pill-tutorial-waiting', icon: '◔' },
@@ -87,7 +130,6 @@ function StatusPill({ status, paused, size = 'md' }) {
     pending:  { label: '튜토리얼 대기', cls: 'jt-pill-tutorial-waiting', icon: '◔' },
     tutorial: { label: '튜토리얼 진행', cls: 'jt-pill-tutorial-running', icon: '◐' },
     started:  { label: '해커톤 진행',   cls: 'jt-pill-hack-running',     icon: '●' },
-    paused:   { label: '일시정지',     cls: 'jt-pill-paused',           icon: '⏸' },
     ended:    { label: '해커톤 종료',   cls: 'jt-pill-hack-ended',       icon: '■' },
   };
   const m = map[status] || map.tutorial_waiting;
@@ -98,12 +140,6 @@ function StatusPill({ status, paused, size = 'md' }) {
         <span style={{ fontSize: big ? 11 : 9.5, lineHeight: 1, opacity: 0.85 }}>{m.icon}</span>
         {m.label}
       </span>
-      {paused && (status === 'tutorial_running' || status === 'hackathon_running' || status === 'started' || status === 'tutorial') && (
-        <span className="jt-pill jt-pill-paused" style={big ? { fontSize: 12.5, padding: '5px 12px' } : {}}>
-          <span style={{ fontSize: big ? 11 : 9.5, lineHeight: 1 }}>⏸</span>
-          일시정지
-        </span>
-      )}
     </span>
   );
 }
@@ -225,7 +261,7 @@ function AppHeader({ breadcrumb, user, actions }) {
       minHeight: 44,
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <JitdaMark size={18} />
+        <JitdaMark size={13} />
         {breadcrumb && (
           <>
             <div style={{ width: 1, height: 14, background: 'var(--c-hairline-strong)' }} />
@@ -387,11 +423,33 @@ const Icon = {
   moreH: (s = 14) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>
   ),
+  // 손들기 — 2026-06-01 신설. B-2 진행 화면 / C-2 바이브코딩 손들기 신호.
+  // lucide Hand 단순화: 4-finger silhouette. 24x24, default stroke 2.
+  hand: (s = 14) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v5"/><path d="M14 10V4a2 2 0 0 0-4 0v6"/><path d="M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg>
+  ),
+  // 시계 — 진행 시간·경과 시간 표시. lucide Clock simplified.
+  clock: (s = 14) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  ),
+  // 칩 아이콘 (sparkline 보조) — lucide Activity.
+  activity: (s = 14) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+  ),
 };
 
+// 디자인 시스템 — 아바타 라벨: 한글 이름 뒤 2글자 ("김민준" → "민준", "최유나" → "유나").
+// 1글자 등록 fallback. 모든 아바타 (참가자·운영자·rejected outcomes 등) 공통 사용.
+// 2026-05-29: 기존 첫 글자(성씨) 노출 폐기 — 동성 다인 팀 식별 불가 문제 + 친근감 향상.
+function avatarLabel(name) {
+  if (!name) return '';
+  return name.length >= 2 ? name.slice(-2) : name;
+}
+
 Object.assign(window, {
-  JitdaLogo, JitdaMark, StatusPill, BrowserChrome, PhoneFrame,
+  JitdaLogo, JitdaIcon, JitdaWordmark, JitdaMark, StatusPill, BrowserChrome, PhoneFrame,
   AppHeader, SpecNote, StatusBar, Icon,
+  avatarLabel,
   ProjectCard, BouncingDots,
 });
 
@@ -591,9 +649,9 @@ function RosterMemberRow({ name, color, state, isMe }) {
           width: 28, height: 28, borderRadius: '50%',
           background: color, color: '#fff',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700,
+          fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 700, letterSpacing: '-0.04em',
           opacity: on ? 1 : 0.5
-        }}>{name[0]}</div>
+        }}>{name.length >= 2 ? name.slice(-2) : name}</div>
         {/* 인디케이터: 아바타 우하단 9px 도트, 흰 외곽 ring으로 분리.
             UI 2상태: on=mint(접속) / 그 외=#c94560(비접속 — `--c-rose` 토큰은 safety orange alias라 인라인 hex). */}
         <span style={{
@@ -678,6 +736,10 @@ Object.assign(window, { RosterMemberRow, RosterLegend, ModalSurface });
 //   · topStrip     — null | 'ink'(plain ink 12px) | 'caution'(애니메이션 사선) | 'caution-static'(고정 사선)
 //   · entrance     — 'pop' | 'fade' | 'slide' (§09e 표준 3종, 기본 pop)
 //   · role         — 'dialog' (기본) | 'alertdialog' (비가역 액션)
+//   · variant      — 'default' (기본 — canvas + radius 10 + shadow-modal)
+//                  | 'postit'  (.jt-postit-card + .jt-postit-card-static 결합 — tape + 정적 회전)
+//                    ※ 'paper' variant 의도적 미지원 — 2026-06-01 deprecated.
+//                    postit variant 사용 시 호출부 style로 `--postit-rot`(필수)·`--postit-tint`(선택 — 기본 canvas) 주입.
 //   · ariaLabel    / ariaLabelledBy — A11Y
 //   · style        — 인라인 추가 스타일 override
 //   · children     — 모달 본문
@@ -689,6 +751,8 @@ function ModalSurface({
   role = 'dialog',
   ariaLabel,
   ariaLabelledBy,
+  variant = 'default',
+  className = '',
   style = {}
 }) {
   const widthMap = { sm: 420, md: 560, lg: 720, xl: 920 };
@@ -699,23 +763,32 @@ function ModalSurface({
     'caution-static': 'jt-caution-strip-static'
   }[topStrip];
   const entranceMod = { pop: '', fade: 'is-fade', slide: 'is-slide' }[entrance] || '';
+  // variant === 'postit': .jt-postit-card 어휘로 background·shadow·tape ::before 자동 주입.
+  // .jt-postit-card-static로 hover 회전·lift·active 비활성 (모달은 고정 중앙 정렬).
+  // overflow:visible — tape ::before가 top:-3px로 카드 위에 튀어나오므로 hidden 금지.
+  const isPostit = variant === 'postit';
+  const variantClass = isPostit ? 'jt-postit-card jt-postit-card-static' : '';
+  const baseStyle = isPostit ? {
+    width: W,
+    overflow: 'visible',
+    display: 'flex', flexDirection: 'column'
+  } : {
+    width: W,
+    background: 'var(--c-canvas)',
+    borderRadius: 10,
+    boxShadow: 'var(--shadow-modal)',
+    // border 없음(2026-05-27 사용자 결정) — backdrop dim + shadow로 경계 충분
+    overflow: 'hidden',
+    display: 'flex', flexDirection: 'column'
+  };
   return (
     <div
       role={role}
       aria-modal="true"
       aria-label={ariaLabel}
       aria-labelledby={ariaLabelledBy}
-      className={`jt-modal-surface ${entranceMod}`.trim()}
-      style={{
-        width: W,
-        background: 'var(--c-canvas)',
-        borderRadius: 10,
-        boxShadow: 'var(--shadow-modal)',
-        // border 없음(2026-05-27 사용자 결정) — backdrop dim + shadow로 경계 충분
-        overflow: 'hidden',
-        display: 'flex', flexDirection: 'column',
-        ...style
-      }}>
+      className={`jt-modal-surface ${entranceMod} ${variantClass} ${className}`.replace(/\s+/g, ' ').trim()}
+      style={{ ...baseStyle, ...style }}>
       {stripClass && <div className={stripClass} style={{ flex: '0 0 auto' }} aria-hidden="true" />}
       {children}
     </div>);

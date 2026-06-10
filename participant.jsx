@@ -11,11 +11,10 @@
 //
 //   roomBefore        대기실 ① 시작 전 대기      tutorial_waiting / 튜토리얼 미사용 hackathon_waiting
 //   roomAfterTutorial 대기실 ② 튜토리얼 후 대기   튜토리얼 거친 hackathon_waiting (2026-05-26: tutorial_ended 폐기, hackathon_waiting으로 통합)
-//   roomEnded         대기실 ③ 해커톤 종료 안내   hackathon_ended  → [결과 보기]·[갤러리]
+//   roomEnded         대기실 ③ 해커톤 종료 안내   hackathon_ended  → [갤러리]만 (결과 보기 폐기 2026-05-29)
 //
-// 일시정지는 대기실에서는 발생하지 않는다(운영자는 hackathon_running 상태에서만
-// pause 가능). 일시정지 오버레이는 E-6(e6-paused) — 바이브코딩 화면(C-3·C-4)
-// 위에 백드롭으로 덮인다. C 영역엔 paused 별도 화면이 더 이상 없다.
+// 일시정지/재시작은 2026-05-29 폐기 — 진행 중 휴식은 운영자 구두 안내로 처리한다.
+// C·E 영역 모두 일시정지 관련 화면 없음.
 //
 // 이전 버전의 [튜토리얼 시작하기]·[해커톤 입장하기] 클릭 진입은 **제거**.
 // tutorial_running / hackathon_running 시점에는 대기실이 아닌 C-2 / C-3·C-4 화면이 떠 있어
@@ -59,255 +58,370 @@ const MOCK_TEAM_MANY_MEMBERS = {
   me: '최지유',
 };
 
-function C1TeamRoom({ state = 'roomBefore', team = MOCK_TEAM_STANDARD }) {
+// ─── C-1 · 운영자 b2-tutorial-waiting 디자인 어휘 이식 (2026-05-29 v2 채택, v1 폐기) ─────────
+//
+// 출처: operator.jsx DashboardShell + RosterTeamDetailModal + PhaseHover + LiveStatus 어휘를 참가자 단일팀 컨텍스트로 재구성.
+//   · grain background (24px grid) — operator.jsx L440
+//   · sticky meta row (52px) with hackathon name · PhaseHover · LiveStatus — operator.jsx L446
+//   · 세로형 포스트잇 (단일 흰색 §18-27 + tape + rotation) — operator.jsx RosterTeamDetailModal L1648
+//   · RosterMemberRow 전체 이름 행 (shared.jsx, 운영자 모달과 동일 어휘) — 미니 아바타 폐기
+//
+// 2026-05-29 리비전: 옆으로 긴 hero postit 폐기 → 좌측 메시지 + 우측 세로형 포스트잇 두-컬럼 레이아웃.
+// 사용자 결정: "대기실에선 팀 하나만 보이니까 이름 전체 다 보이게" + "옆으로 긴 거 말고" + 포스트잇 정책 §18-27 단일 흰색 반영.
 
-  // 상태별 카피 — 시작 단계 진입 버튼([튜토리얼 시작하기]·[해커톤 입장하기])은 제거됨
-  // (운영자가 단계를 전이시키면 참가자 화면이 자동으로 다음 화면으로 넘어감)
-  const stateCopy = {
-    roomBefore: {
-      eyebrow: '대기실 ① · 시작 전 대기',
-      headline: <>곧 시작됩니다.<br/>잠시만 기다려주세요.</>,
-      body: '운영자가 해커톤을 시작하면 자동으로 다음 단계로 넘어가요. \n자리를 비워도 괜찮아요 — 화면만 켜두세요.',
-      hint: '시작을 기다리는 중',
-      illustration: 'idle',
-    },
-    roomAfterTutorial: {
-      eyebrow: '대기실 ② · 튜토리얼 후 대기',
-      headline: <>튜토리얼이 끝났습니다.<br/>해커톤이 곧 시작됩니다.</>,
-      body: '운영자가 해커톤을 시작하면 코딩 환경이 자동으로 열려요. \n튜토리얼 작업물은 연습용으로 남고, 본행사는 새 프로젝트에서 시작해요.',
-      hint: '해커톤 시작을 기다리는 중',
-      illustration: 'tutorialDone',
-    },
-    roomEnded: {
-      eyebrow: '대기실 ③ · 해커톤 종료',
-      headline: <>수고하셨어요.<br/>다른 팀의 작품도 둘러보세요.</>,
-      body: '오늘 만든 작품들이 갤러리에 모두 공개됐어요. \n마음에 드는 작품엔 ❤️ 로 응원을 남겨주세요.',
-      actions: [
-        { label: '결과 보기', kind: 'secondary' },
-        { label: '갤러리로 가기 →', kind: 'critical' },
-      ],
-      illustration: 'ended',
-    },
-  };
-  const s = stateCopy[state] ?? stateCopy.roomBefore;
+// 5단계 phase — operator.jsx PHASE_STAGES와 동일 (참가자도 같은 stepper popover 사용)
+const PARTICIPANT_PHASE_STAGES = [
+  { id: 'tutorial_waiting',  label: '튜토리얼 대기', bg: '#ebebec',            fg: '#2a2823' },
+  { id: 'tutorial_running',  label: '튜토리얼 진행', bg: '#e1e0fa',            fg: '#2e2c8a' },
+  { id: 'hackathon_waiting', label: '해커톤 대기',   bg: '#ebebec',            fg: '#2a2823' },
+  { id: 'hackathon_running', label: '해커톤 진행',   bg: 'var(--c-mint-soft)', fg: 'var(--c-mint)' },
+  { id: 'hackathon_ended',   label: '해커톤 종료',   bg: '#ffe1de',            fg: '#882019' },
+];
 
-  // 참가자 시점 status 매핑 (대기실 3상태 → StatusPill)
-  const c1StatusMap = {
-    roomBefore:        { status: 'tutorial_waiting',  paused: false },
-    roomAfterTutorial: { status: 'hackathon_waiting', paused: false },
-    roomEnded:         { status: 'hackathon_ended',   paused: false },
-  };
-  const c1Status = c1StatusMap[state] ?? c1StatusMap.roomBefore;
-
+// 운영자 PhaseHover 포팅 — 참가자 시점. StatusPill 호버 시 5단계 stepper popover.
+function ParticipantPhaseHover({ currentStatus }) {
+  const currentIdx = PARTICIPANT_PHASE_STAGES.findIndex((s) => s.id === currentStatus);
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--c-paper)', position: 'relative' }}>
-        {/* GNB — 참가자 통합 JitdaToolbar. C-1은 액션 없음 (대기실은 클릭할 게 없음) */}
-        <JitdaToolbar status={c1Status.status} paused={c1Status.paused} />
-
-        {/* 본문 — 두 컬럼: 좌측 메시지·액션 / 우측 팀원 목록 */}
-        <main style={{
-          flex: 1, minHeight: 0,
-          display: 'grid', gridTemplateColumns: '1fr 360px',
-          gap: 0,
-        }}>
-          {/* 좌측: 일러스트 + 메시지 + 액션 */}
-          <section style={{
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            padding: '40px 56px',
-            gap: 20,
-            textAlign: 'center',
-            position: 'relative',
-            overflow: 'hidden',
-          }}>
-            <WaitingIllustration kind={s.illustration} />
-
-            <div className="jt-eyebrow" style={{ color: state === 'roomEnded' ? 'var(--c-mint)' : state === 'roomAfterTutorial' ? 'var(--c-tutorial)' : state === 'paused' ? 'var(--c-amber)' : 'var(--c-slate)', marginTop: 12 }}>
-              {s.eyebrow}
-            </div>
-            <h1 style={{ fontSize: 38, lineHeight: 1.15, maxWidth: 520, letterSpacing: '-0.02em' }}>
-              {s.headline}
-            </h1>
-            <p style={{ fontSize: 14, color: 'var(--c-slate)', maxWidth: 460, lineHeight: 1.65, whiteSpace: 'pre-line' }}>
-              {s.body}
-            </p>
-
-            {/* 액션 — 대기실 ③만 실제 버튼. ①·②·paused 는 텍스트 힌트 + 펄스만 표시. */}
-            {s.actions ? (
-              <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-                {s.actions.map((a, i) => (
-                  <button key={i} className={`jt-btn ${a.kind === 'critical' ? 'jt-btn-critical' : a.kind === 'primary' ? 'jt-btn-primary' : 'jt-btn-secondary'}`} style={{ padding: '12px 22px', fontSize: 14 }}>
-                    {a.label}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div style={{
-                marginTop: 8,
-                fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--c-muted)',
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                background: 'var(--c-stone)', padding: '7px 14px', borderRadius: 999,
-              }}>
-                <span style={{
-                  width: 7, height: 7, borderRadius: '50%',
-                  background: state === 'paused' ? 'var(--c-amber)' : state === 'roomAfterTutorial' ? 'var(--c-tutorial)' : 'var(--c-helmet)',
-                  animation: 'pulse 1.6s infinite', display: 'inline-block',
-                }} />
-                {s.hint}
-              </div>
-            )}
-          </section>
-
-          {/* 우측: 팀 정보 (참가자 정보 + 팀원 목록) */}
-          <aside style={{
-            background: 'var(--c-canvas)',
-            borderLeft: '1px solid var(--c-hairline)',
-            display: 'flex', flexDirection: 'column',
-            minHeight: 0,
-          }}>
-            <div style={{ padding: '20px 24px 14px', borderBottom: '1px solid var(--c-hairline)' }}>
-              <div className="jt-eyebrow" style={{ fontSize: 10.5, marginBottom: 6 }}>내 팀</div>
-              <div style={{
-                fontSize: 20, fontWeight: 700, lineHeight: 1.25, fontFamily: 'var(--font-display)',
-                wordBreak: 'keep-all',
-                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-              }}>
-                {team.name}
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--c-slate)', marginTop: 4, fontFamily: 'var(--font-mono)' }}>
-                {team.members.filter(m => m.online === 'connected').length} / {team.members.length} 접속 중
-              </div>
-            </div>
-
-            <div style={{ flex: 1, overflow: 'auto', padding: '12px 14px' }}>
-              <div className="jt-mono" style={{ fontSize: 10.5, color: 'var(--c-muted)', letterSpacing: '0.08em', padding: '4px 8px 8px' }}>
-                팀원 {team.members.length}명
-              </div>
-              {team.members.map((m, i) => {
-                // C-1 online: 'connected'|'offline'|'idle' → RosterMemberRow state: 'on'|'off'|'pending'
-                const state = m.online === 'connected' ? 'on' : m.online === 'offline' ? 'off' : 'pending';
-                return (
-                  <RosterMemberRow
-                    key={i}
-                    name={m.name}
-                    color={m.color}
-                    state={state}
-                    isMe={m.name === team.me} />
-
-                );
-              })}
-            </div>
-
-            <div style={{
-              padding: '12px 18px',
-              borderTop: '1px solid var(--c-hairline)',
-              background: 'var(--c-paper)'
+    <span className="jt-phase-hover" tabIndex={0} aria-haspopup="true" aria-label="단계 진행도 보기">
+      <StatusPill status={currentStatus} />
+      <div className="jt-phase-popover" role="tooltip" style={{
+        position: 'absolute',
+        top: 'calc(100% + 10px)', left: 0,
+        zIndex: 'var(--z-popover)',
+        background: 'var(--c-canvas)',
+        border: '1px solid var(--c-hairline-strong)',
+        borderRadius: 'var(--r-md)',
+        boxShadow: 'var(--shadow-popover)',
+        padding: '10px 12px',
+        minWidth: 220,
+        display: 'flex', flexDirection: 'column', gap: 4,
+      }}>
+        <div style={{ fontSize: 10, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--c-muted)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>PHASE</div>
+        {PARTICIPANT_PHASE_STAGES.map((s, i) => {
+          const isCurrent = i === currentIdx;
+          const isPast = i < currentIdx;
+          return (
+            <div key={s.id} style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '5px 9px',
+              borderRadius: 6,
+              fontSize: 12,
+              fontFamily: 'var(--font-body)',
+              background: isCurrent ? s.bg : 'transparent',
+              color: isCurrent ? s.fg : isPast ? 'var(--c-slate)' : 'var(--c-muted)',
+              fontWeight: isCurrent ? 700 : 500,
+              border: isCurrent ? `1px solid ${s.fg}` : '1px solid transparent',
+              opacity: isPast ? 0.65 : 1,
             }}>
-              <RosterLegend states={['on', 'off']} />
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.6, minWidth: 16 }}>{String(i + 1).padStart(2, '0')}</span>
+              <span style={{ flex: 1 }}>{s.label}</span>
+              {isCurrent && <span style={{ fontSize: 10, fontFamily: 'var(--font-mono)', opacity: 0.7 }}>← 현재</span>}
             </div>
-          </aside>
-        </main>
+          );
+        })}
       </div>
-  );
-}
-
-// 상태별 배지 — 참가자 대기실 3종 (일시정지는 e6-paused 오버레이로 분리)
-function ParticipantStatusBadge({ state }) {
-  const map = {
-    roomBefore:        { label: '대기 중',        cls: 'jt-pill-pending' },
-    roomAfterTutorial: { label: '튜토리얼 완료 · 대기', cls: 'jt-pill-pending' },
-    roomEnded:         { label: '해커톤 종료',    cls: 'jt-pill-ended' },
-  };
-  const m = map[state] ?? map.roomBefore;
-  return (
-    <span className={`jt-pill ${m.cls}`}>
-      <span className="dot" />
-      {m.label}
     </span>
   );
 }
 
-// PresenceDot — 폐기됨(2026-05-27): shared.jsx의 공용 RosterMemberRow가 아바타 우하단 인디케이터로 통합.
-// 호출처 0 확인 후 삭제.
-
-// 대기 상태 일러스트 — SVG 단순 도형, 텍스처/그림 X
-function WaitingIllustration({ kind }) {
-  const common = {
-    width: 180, height: 120,
-  };
-  if (kind === 'tutorialDone') {
-    return (
-      <svg {...common} viewBox="0 0 180 120">
-        <rect x="20" y="30" width="140" height="80" rx="6" fill="var(--c-tutorial-soft)" stroke="var(--c-tutorial)" strokeWidth="1.5" />
-        <rect x="32" y="44" width="60" height="6" rx="3" fill="var(--c-tutorial)" opacity="0.35" />
-        <rect x="32" y="58" width="100" height="6" rx="3" fill="var(--c-tutorial)" opacity="0.25" />
-        <rect x="32" y="72" width="80" height="6" rx="3" fill="var(--c-tutorial)" opacity="0.25" />
-        <circle cx="148" cy="44" r="10" fill="var(--c-mint)" />
-        <path d="M 143 44 L 147 48 L 153 41" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-  if (kind === 'tutorial') {
-    return (
-      <div style={{ position: 'relative', width: 180, height: 120 }}>
-        <svg {...common} viewBox="0 0 180 120">
-          <rect x="20" y="30" width="140" height="80" rx="6" fill="var(--c-tutorial-soft)" stroke="var(--c-tutorial)" strokeWidth="1.5" />
-          <rect x="32" y="44" width="60" height="6" rx="3" fill="var(--c-tutorial)" opacity="0.5" />
-          <rect x="32" y="58" width="100" height="6" rx="3" fill="var(--c-tutorial)" opacity="0.3" />
-          <rect x="32" y="72" width="80" height="6" rx="3" fill="var(--c-tutorial)" opacity="0.3" />
-          <circle cx="148" cy="44" r="8" fill="var(--c-tutorial)" />
-          <text x="148" y="48" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="700" fontFamily="var(--font-mono)">1</text>
-        </svg>
-      </div>
-    );
-  }
-  if (kind === 'go') {
-    return (
-      <svg {...common} viewBox="0 0 180 120">
-        <circle cx="90" cy="60" r="44" fill="var(--c-helmet-soft)" stroke="var(--c-helmet-deep)" strokeWidth="1.5" />
-        <path d="M 75 50 L 75 70 L 110 60 Z" fill="var(--c-ink)" />
-      </svg>
-    );
-  }
-  if (kind === 'ended') {
-    return (
-      <svg {...common} viewBox="0 0 180 120">
-        <rect x="40" y="40" width="100" height="60" rx="4" fill="var(--c-mint-soft)" stroke="var(--c-mint)" strokeWidth="1.5" />
-        <path d="M 70 70 L 85 84 L 115 56" stroke="var(--c-mint)" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    );
-  }
-  if (kind === 'paused') {
-    return (
-      <svg {...common} viewBox="0 0 180 120">
-        <circle cx="90" cy="60" r="40" fill="var(--c-amber-soft)" stroke="var(--c-amber)" strokeWidth="1.5" />
-        <rect x="78" y="44" width="8" height="32" rx="2" fill="var(--c-amber)" />
-        <rect x="94" y="44" width="8" height="32" rx="2" fill="var(--c-amber)" />
-      </svg>
-    );
-  }
-  // idle (default waiting)
+// 운영자 LiveStatus 포팅 — 참가자 시점. 실시간 연결 mint pulse + 새로고침 버튼.
+function ParticipantLiveStatus() {
   return (
-    <svg {...common} viewBox="0 0 180 120">
-      <circle cx="90" cy="60" r="30" fill="none" stroke="var(--c-hairline-strong)" strokeWidth="1.5" strokeDasharray="4 4">
-        <animateTransform attributeName="transform" type="rotate" from="0 90 60" to="360 90 60" dur="8s" repeatCount="indefinite" />
-      </circle>
-      <circle cx="90" cy="60" r="6" fill="var(--c-helmet)" />
-      <circle cx="90" cy="36" r="3" fill="var(--c-helmet)" opacity="0.6" />
-      <circle cx="114" cy="60" r="3" fill="var(--c-blue)" opacity="0.6" />
-      <circle cx="90" cy="84" r="3" fill="var(--c-mint)" opacity="0.6" />
-      <circle cx="66" cy="60" r="3" fill="var(--c-amber)" opacity="0.6" />
-    </svg>
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }} title="실시간 연결됨 · 방금 갱신">
+      <span style={{ position: 'relative', display: 'inline-block', width: 14, height: 14, flexShrink: 0 }}>
+        <span className="jt-status-pulse" style={{
+          position: 'absolute', inset: 2,
+          background: 'var(--c-mint)', borderRadius: '50%',
+        }} />
+        <span style={{
+          position: 'absolute', inset: 4,
+          background: 'var(--c-mint)', borderRadius: '50%',
+        }} />
+      </span>
+      <span className="jt-mono" style={{ fontSize: 11, color: 'var(--c-muted)', letterSpacing: '0.04em' }}>LIVE</span>
+    </span>
   );
 }
 
-// 호환 alias — 새 대기실 모델 (대기실 ①·②·③). 일시정지는 e6-paused로 이동.
-function C1RoomBefore() { return <C1TeamRoom state="roomBefore" />; }
-function C1RoomAfterTutorial() { return <C1TeamRoom state="roomAfterTutorial" />; }
-function C1RoomEnded() { return <C1TeamRoom state="roomEnded" />; }
-// 과거 명칭 호환 — 대기실 ①로 폴백 (튜토리얼/해커톤 진입 버튼은 제거됨)
-function C1Waiting() { return <C1RoomBefore />; }
-function C1Ended() { return <C1RoomEnded />; }
+// 팀명 hash 기반 결정적 회전 — 같은 팀은 어느 화면에서나 같은 자세 (operator.jsx postitRotation 동일 알고리즘).
+function heroPostitRotation(name) {
+  const rotations = ['var(--postit-rot-a)', 'var(--postit-rot-b)', 'var(--postit-rot-c)', 'var(--postit-rot-d)'];
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h + name.charCodeAt(i)) | 0;
+  return rotations[((h % 4) + 4) % 4];
+}
+
+// 성씨 기반 아바타 색 — operator.jsx rosterAvatarColor와 동일 팔레트. RosterMemberRow에 주입.
+const PARTICIPANT_AVATAR_PALETTE = [
+  'var(--c-helmet)', 'var(--c-blue)', 'var(--c-mint)', 'var(--c-amber)',
+  'var(--c-helmet-deep)', 'var(--c-safety)',
+];
+function participantAvatarColor(name) {
+  return PARTICIPANT_AVATAR_PALETTE[name.charCodeAt(0) % PARTICIPANT_AVATAR_PALETTE.length];
+}
+
+// 세로형 팀 포스트잇 — 운영자 RosterTeamDetailModal과 동일 어휘 (포스트잇 모달 zoom-in).
+//   · 단일 흰색 (§18-27): var(--c-canvas)
+//   · 폭 440px (사용자 결정 유지) · 세로 auto
+//   · tape — .jt-postit-card ::before 자동 주입 (상단 중앙, ink-alpha)
+//   · 카드 전체에 deterministic 회전 (heroPostitRotation) — postit 손맛
+//   · 본문: 공용 RosterMemberRow (shared.jsx) — 전체 이름 + 28px 아바타 + 우하단 인디케이터 도트 + 본인 강조
+//   · 푸터: 공용 RosterLegend
+function TeamPostitV2({ team, ended }) {
+  const onCount = team.members.filter((m) => m.online === 'connected').length;
+  const total = team.members.length;
+  // 2026-06-01 paper 폐기 (§19 deprecated) → .jt-postit-card 어휘 복귀.
+  // 인터랙션이 없는 단일 패널이라 hover 회전·lift 불필요 → jt-postit-card-static 결합.
+  const rot = heroPostitRotation(team.name);
+  return (
+    <div
+      className="jt-postit-card jt-postit-card-static jt-postit-tape-lg"
+      tabIndex={0}
+      style={{
+        width: 440, flexShrink: 0,
+        display: 'flex', flexDirection: 'column',
+        borderRadius: 'var(--r-xs)',
+        opacity: ended ? 0.92 : 1,
+        '--postit-rot': rot,
+        '--postit-tint': 'var(--c-canvas)',
+      }}>
+      {/* 헤더 — 포스트잇 어휘는 paper safe area 불필요 → padding 36→24 축소. tape ::before와는 top -3px라 본문 padding과 충돌 없음. */}
+      <div style={{
+        flex: '0 0 auto',
+        padding: '24px 28px 18px',
+        borderBottom: '1px solid var(--c-hairline)',
+      }}>
+        <div title={team.name} style={{
+          fontSize: 22, fontWeight: 700, lineHeight: 1.25,
+          fontFamily: 'var(--font-display)', letterSpacing: '-0.02em',
+          color: ended ? 'var(--c-ink-2)' : 'var(--c-ink)',
+          wordBreak: 'keep-all',
+        }}>{team.name}</div>
+        <div style={{
+          fontSize: 12, color: 'var(--c-slate)', marginTop: 4,
+          fontFamily: 'var(--font-mono)', letterSpacing: '0.02em',
+        }}>
+          {ended ? `${total}명 참여 · 종료됨` : `${onCount} / ${total} 접속 중`}
+        </div>
+      </div>
+
+      {/* 본문 — 공용 RosterMemberRow. team.me로 본인 강조. idle은 'pending'으로 매핑. */}
+      <div style={{
+        flex: '1 1 auto', minHeight: 0,
+        padding: '12px 20px 10px',
+        display: 'flex', flexDirection: 'column', gap: 2,
+        overflow: 'auto',
+      }}>
+        <div className="jt-mono" style={{
+          fontSize: 10.5, color: 'var(--c-muted)',
+          letterSpacing: '0.08em', padding: '4px 8px 6px',
+          flexShrink: 0,
+        }}>
+          팀원 {total}명
+        </div>
+        {team.members.map((m, i) => {
+          const memberState = m.online === 'connected' ? 'on' : m.online === 'idle' ? 'pending' : 'off';
+          return (
+            <RosterMemberRow
+              key={i}
+              name={m.name}
+              color={m.color || participantAvatarColor(m.name)}
+              state={memberState}
+              isMe={m.name === team.me}
+            />
+          );
+        })}
+      </div>
+
+      {/* 푸터 — 공용 RosterLegend + 팀 변경 요청 힌트. */}
+      <div style={{
+        flex: '0 0 auto',
+        padding: '14px 24px 20px',
+        borderTop: '1px solid var(--c-hairline)',
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <RosterLegend states={['on', 'off']} />
+        <span style={{ flex: 1 }} />
+        <span title="해커톤이 시작되면 팀을 변경할 수 없습니다.&#10;변경이 필요하면 운영자에게 알려주세요." style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          fontSize: 10.5, fontFamily: 'var(--font-mono)',
+          color: 'var(--c-muted)', cursor: 'help', opacity: 0.8,
+        }}>
+          {Icon.info(11)}
+          <span>팀 변경</span>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ── C-1 v2 메인 ─────────────────────────────────────────────
+// state: 'roomBefore' | 'roomAfterTutorial' | 'roomEnded'
+// team: MOCK_TEAM_STANDARD 등.
+function C1TeamRoomV2({ state = 'roomBefore', team = MOCK_TEAM_STANDARD }) {
+  const stateMap = {
+    roomBefore: {
+      status: 'tutorial_waiting',
+      eyebrow: '곧 시작됩니다',
+      headline: <>잠시만 기다려주세요.<br />화면만 켜두면 자동으로 시작돼요.</>,
+      body: '운영자가 튜토리얼을 시작하면 다음 단계로 자동 전환됩니다. 자리를 비워도 괜찮아요.',
+      hintLabel: '시작을 기다리는 중',
+      hintColor: 'var(--c-helmet)',
+      actions: null,
+      ended: false,
+    },
+    roomAfterTutorial: {
+      status: 'hackathon_waiting',
+      eyebrow: '튜토리얼 완료',
+      headline: <>튜토리얼이 끝났습니다.<br />해커톤이 곧 시작됩니다.</>,
+      body: '운영자가 해커톤을 시작하면 코딩 환경이 자동으로 열려요. 본행사는 새 프로젝트에서 시작합니다.',
+      hintLabel: '해커톤 시작을 기다리는 중',
+      hintColor: 'var(--c-tutorial)',
+      actions: null,
+      ended: false,
+    },
+    roomEnded: {
+      status: 'hackathon_ended',
+      eyebrow: '해커톤 종료',
+      headline: <>수고하셨어요.<br />다른 팀의 작품도 둘러보세요.</>,
+      body: '오늘 만든 작품들이 갤러리에 모두 공개됐어요. 마음에 드는 작품엔 ❤️ 로 응원을 남겨주세요.',
+      hintLabel: null,
+      actions: [{ label: '갤러리로 가기', kind: 'critical', icon: Icon.gallery(13), action: 'open-gallery' }],
+      ended: true,
+    },
+  };
+  const s = stateMap[state] ?? stateMap.roomBefore;
+
+  return (
+    <div style={{
+      height: '100%',
+      display: 'flex', flexDirection: 'column',
+      // 운영자 b2-tutorial-waiting과 동일 grain — 24px grid (operator.jsx L440).
+      background: 'linear-gradient(rgba(45,42,36,0.04) 1px, transparent 1px) 0 0 / 24px 24px, linear-gradient(90deg, rgba(45,42,36,0.04) 1px, transparent 1px) 0 0 / 24px 24px, var(--c-paper)',
+    }}>
+      {/* GNB — AppHeader 어휘 (운영자와 동일) 차용. 우측은 참가자 정보 (이름·팀명·아바타). */}
+      <AppHeader
+        user={null}
+        actions={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10,
+            paddingRight: 12, borderRight: '1px solid var(--c-hairline)',
+          }}>
+            <span className="jt-mono" style={{ fontSize: 11, color: 'var(--c-muted)' }}>
+              {DEFAULT_PARTICIPANT_USER.name} · {DEFAULT_PARTICIPANT_USER.team}
+            </span>
+            <div className="jt-avatar" style={{
+              background: DEFAULT_PARTICIPANT_USER.color, color: '#fff',
+              width: 26, height: 26, fontSize: 10,
+              fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: '-0.04em',
+            }}>{DEFAULT_PARTICIPANT_USER.name.slice(-2)}</div>
+          </div>
+        }
+      />
+
+      {/* Sticky meta row — 운영자 DashboardShell sticky header 동일 구조 (52px).
+          해커톤명 | divider | PhaseHover | (flex) | LiveStatus */}
+      <div style={{
+        flex: '0 0 auto',
+        background: 'var(--c-canvas)',
+        borderBottom: '1px solid var(--c-hairline)',
+        padding: '0 32px',
+        display: 'flex', alignItems: 'center', gap: 14,
+        height: 52,
+      }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0, lineHeight: 1.2, whiteSpace: 'nowrap' }}>2026 봄 ENK 해커톤</h2>
+        <div style={{
+          paddingLeft: 14, marginLeft: 2,
+          borderLeft: '1px solid var(--c-hairline)',
+          alignSelf: 'stretch',
+          display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <ParticipantPhaseHover currentStatus={s.status} />
+        </div>
+        <div style={{ flex: 1 }} />
+        {!s.ended && <ParticipantLiveStatus />}
+      </div>
+
+      {/* 본문 — 3:2 컬럼: 좌측 메시지 / 우측 세로형 팀 포스트잇.
+          "좌측은 멘트, 우측은 포스트잇" + "3:2 정도" 사용자 결정. 메시지 좌측 hugs, 포스트잇 컬럼 중앙. */}
+      <main style={{
+        flex: 1, minHeight: 0,
+        display: 'grid',
+        gridTemplateColumns: '3fr 2fr',
+        gap: 32,
+        padding: '40px 56px 40px 80px',
+        alignItems: 'center',
+        overflow: 'auto',
+      }}>
+        {/* 좌측: 메시지 + hint/CTA. 좌측 정렬 + 좌측 컬럼 시작점에 hugs. */}
+        <section style={{
+          display: 'flex', flexDirection: 'column', gap: 18,
+          textAlign: 'left', maxWidth: 560,
+          justifySelf: 'start',
+        }}>
+          <div className="jt-eyebrow" style={{
+            fontSize: 11, letterSpacing: '0.16em',
+            color: s.ended ? 'var(--c-safety-deep)' :
+                   state === 'roomAfterTutorial' ? 'var(--c-tutorial)' :
+                   'var(--c-helmet-deep)',
+          }}>{s.eyebrow}</div>
+          <h1 style={{
+            fontSize: 38, lineHeight: 1.18, letterSpacing: '-0.025em',
+            fontFamily: 'var(--font-display)', fontWeight: 800,
+            color: 'var(--c-ink)',
+            margin: 0,
+          }}>{s.headline}</h1>
+          <p style={{
+            fontSize: 14, color: 'var(--c-slate)', lineHeight: 1.65,
+            margin: 0,
+          }}>{s.body}</p>
+
+          {/* Hint pulse 또는 CTA 버튼 — 메시지 바로 아래 (단일 좌측 컬럼 안) */}
+          {s.actions ? (
+            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+              {s.actions.map((a, i) => (
+                <button
+                  key={i}
+                  data-action={a.action}
+                  className={`jt-btn ${a.kind === 'critical' ? 'jt-btn-critical' : a.kind === 'primary' ? 'jt-btn-primary' : 'jt-btn-secondary'}`}
+                  style={{ padding: '12px 22px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  {a.icon}
+                  {a.label}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              alignSelf: 'flex-start', marginTop: 6,
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              background: 'var(--c-canvas)',
+              border: '1px solid var(--c-hairline)',
+              padding: '8px 16px', borderRadius: 999,
+              fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--c-slate)',
+              boxShadow: '0 1px 2px rgba(20,19,15,0.04)',
+            }}>
+              <span style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: s.hintColor,
+                animation: 'pulse 1.6s infinite', display: 'inline-block',
+              }} />
+              {s.hintLabel}
+            </div>
+          )}
+        </section>
+
+        {/* 우측: 세로형 팀 포스트잇 — 컬럼 좌측 정렬(2026-05-29 사용자 결정 "너무 오른쪽 치우침"). */}
+        <div style={{ justifySelf: 'start' }}>
+          <TeamPostitV2 team={team} ended={s.ended} />
+        </div>
+      </main>
+    </div>
+  );
+}
+
+// v2 alias — 3상태 (운영자 b2-tutorial-waiting 디자인 어휘 이식)
+function C1RoomBeforeV2() { return <C1TeamRoomV2 state="roomBefore" />; }
+function C1RoomAfterTutorialV2() { return <C1TeamRoomV2 state="roomAfterTutorial" />; }
+function C1RoomEndedV2() { return <C1TeamRoomV2 state="roomEnded" />; }
 
 
 
@@ -320,7 +434,7 @@ function C1Ended() { return <C1RoomEnded />; }
 //  · 팀원 아바타 묶음·"팀·N명" pill·남은시간·서버재시작 모두 제거 (사용자 결정 2026-05-26)
 //  · 우측 계정정보는 모든 화면 공통 (기본값 = 최지유 · 터미널 사파리)
 //  · 액션 버튼은 화면별로 prop 주입: C-1·C-2(없음), C-3·C-4·E-4·E-5([내 프로젝트][갤러리 보기])
-function JitdaToolbar({ status, paused, actions, user = DEFAULT_PARTICIPANT_USER }) {
+function JitdaToolbar({ status, actions, user = DEFAULT_PARTICIPANT_USER }) {
   return (
     <header style={{
       flex: '0 0 auto',
@@ -331,10 +445,10 @@ function JitdaToolbar({ status, paused, actions, user = DEFAULT_PARTICIPANT_USER
       display: 'flex', alignItems: 'center', gap: 14,
       fontSize: 13,
     }}>
-      <JitdaMark size={18} />
+      <JitdaMark size={13} />
       <div style={{ width: 1, background: 'var(--c-hairline-strong)', height: 14 }} />
       <span style={{ fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>2026 봄 ENK 해커톤</span>
-      {status && <StatusPill status={status} paused={paused} />}
+      {status && <StatusPill status={status} />}
       <div style={{ flex: 1 }} />
       {actions}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -343,8 +457,9 @@ function JitdaToolbar({ status, paused, actions, user = DEFAULT_PARTICIPANT_USER
         </span>
         <div className="jt-avatar" style={{
           background: user.color, color: '#fff',
-          width: 26, height: 26, fontSize: 12,
-        }}>{user.name[0]}</div>
+          width: 26, height: 26, fontSize: 10,
+          fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: '-0.04em',
+        }}>{user.name.length >= 2 ? user.name.slice(-2) : user.name}</div>
       </div>
     </header>
   );
@@ -372,249 +487,799 @@ function ParticipantCanvasActions() {
 }
 
 
-// ─── OpenCode 셸 ─────────────────────────────────────────────
-// opencode 의 실제 웹 UI (다크 모드 SaaS 스타일) 를 그대로 임베드.
-// 짓다 가 자유롭게 바꿀 수 있는 부분: 액센트 색·상태바 라벨 정도.
-// 본문 카드·프롬프트 박스·상단 바 구조는 opencode 원본 그대로.
+// ─── OpenCode 임베드 셸 (minimal embed · 하이파이 재설계 2026-06-08) ──────────
+// 참가자가 보는 OpenCode = enk-opencode MINIMAL_MODE: 헤더·파일/검토/컨텍스트 탭·
+// 터미널·모델 선택기 전부 숨김. 좌(대화 타임라인 + composer) · 우(라이브 미리보기 iframe).
+// composer 는 BlockSuite doc 에디터(참조 블록·드로잉·첨부)를 짓다 토큰으로 재현.
+// ⚠ 모델명 노출 금지 (운영 빌드 sonnet 4.6 고정·가림 정합).
+// 근거: enk-opencode feature/add-context-ux2 — components/blocksuite/·doc-submit/·prompt-input/.
+//
+// Props (전부 optional · 하위호환):
+//   promptCard    사용자 발화 (paper-edge 메시지). title 은 임베드라 미표시.
+//   body          AI 응답 본문 (없으면 기본 샘플 — 도구호출·문단·diff)
+//   draft|promptInput  composer 초안 텍스트 (draft 우선)
+//   composerRef   composer 안 참조 블록 노드 (OcReferenceBlock)
+//   dock          composer 위 동적 dock 노드 (질문/권한/Todo 등)
+//   sendAction    전송 버튼 data-action (1인팀 즉시전송=없음 / 다인팀 합의=‘request-send’). 버튼 디자인은 공용 단일.
+//   preview       우측 미리보기 노드 (지정 시 previewState 무시)
+//   previewState  'ready' | 'empty' | 'spawning' (기본 ready)
+//   previewUrl    미리보기 슬림 헤더 주소 pill
+//   leftWidth     좌측 대화 컬럼 폭 (기본 460)
+//   overlay       셸 위 absolute 오버레이 (팀 커서·코치마크 등)
 function OpenCodeShell({
-  title = 'Drink recommender app',
-  serverHost = '127.0.0.1:4096',
-  mcpCount = 7,
-  mode = 'Build',
-  model = 'Claude Opus 4.5',
-  agent = 'Default',
+  title,
   promptCard,
   body,
+  draft,
   promptInput,
+  composerRef,
+  dock,
+  sendAction,
+  onSend,
+  preview,
+  previewState = 'ready',
+  previewUrl = 'sapari.jitda.run',
+  leftWidth = 460,
   overlay,
 }) {
+  // ── 입력창 높이 UX: 평소 작게(rest) → 포커스(클릭) 시 확장(focus) → 핸들 드래그/확대 토글 ──
+  const DOC_MIN = 44, DOC_MAX = 460, DOC_REST = 54, DOC_FOCUS = 150, DOC_EXPANDED = 392;
+  const [docH, setDocH] = React.useState(DOC_REST);
+  const [expanded, setExpanded] = React.useState(false);
+  const [dragging, setDragging] = React.useState(false);
+  const manualRef = React.useRef(false);   // 핸들 드래그로 직접 조절하면 포커스 자동높이 중단
+  const docHeight = expanded ? DOC_EXPANDED : docH;
+  const onDocFocus = () => {
+    if (manualRef.current || expanded) return;
+    if (docH < DOC_FOCUS) setDocH(DOC_FOCUS);
+  };
+  const onDocBlur = () => {
+    if (manualRef.current || expanded) return;
+    setDocH(DOC_REST);
+  };
+  const onHandleDown = (e) => {
+    e.preventDefault();
+    manualRef.current = true;
+    const startY = e.clientY;
+    const startH = expanded ? DOC_EXPANDED : docH;
+    if (expanded) setExpanded(false);
+    setDragging(true);
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+    const onMove = (ev) => {
+      const next = Math.min(DOC_MAX, Math.max(DOC_MIN, startH - (ev.clientY - startY)));
+      setDocH(next);
+    };
+    const onUp = () => {
+      setDragging(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
   const defaultPromptCard = "코딩 단계마다 어울리는 음료를 추천해주는 한 페이지 앱을 만들어줘. 카드 4개로, 각 카드에 음료 이름과 한 줄 설명.";
   const defaultBody = (
     <>
-      <OcStepsRow text="Show steps · 2m, 04s" />
-      <OcResponseLabel />
+      <OcToolGroup label="탐색됨" summary="1개 읽음 · 3개 검색" />
       <OcParagraph>
         좋아요. 한 페이지 앱으로 음료 카드 4개를 만들었어요. 살구색 배경에 깔끔한 카드 레이아웃, 각 카드에 음료 이름과 한 줄 설명이 들어가요.
       </OcParagraph>
-      <OcFileRow file="src/App.tsx" />
-      <OcFileRow file="src/components/BrewList.tsx" />
-      <OcFileRow file="src/styles.css" />
+      <OcDiffDisclosure
+        label="수정됨"
+        files={[
+          { file: 'src/App.tsx', adds: 18, dels: 4 },
+          { file: 'src/components/BrewList.tsx', adds: 42, dels: 0 },
+          { file: 'src/styles.css', adds: 9, dels: 2 },
+        ]}
+      />
       <OcParagraph muted>
-        미리보기 패널에서 결과를 확인하실 수 있어요. 카드를 누르면 어떤 상황에 어울리는 음료인지 펼쳐서 보여줄까요?
+        오른쪽 미리보기에서 결과를 확인해 주세요. 카드를 누르면 어떤 상황에 어울리는 음료인지 펼쳐서 보여줄까요?
       </OcParagraph>
     </>
+  );
+  const composerDraft = draft ?? promptInput;
+  const previewNode = preview ?? (
+    previewState === 'empty' ? <OcPreviewEmpty />
+    : previewState === 'spawning' ? <OcPreviewSpawning />
+    : <OcDefaultPreview />
   );
 
   return (
     <div style={{
       flex: 1, minHeight: 0,
-      display: 'flex', flexDirection: 'column',
-      background: '#0d0d11',
-      color: '#d4d4dc',
+      display: 'flex', flexDirection: 'row',
+      background: 'var(--c-paper)',
+      color: 'var(--c-ink)',
       fontFamily: 'var(--font-body)',
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* opencode 내부 상단 바 */}
+      {/* ── 좌측: 대화 타임라인 + composer ── */}
       <div style={{
-        flex: '0 0 auto',
-        height: 42,
-        padding: '0 16px',
-        display: 'flex', alignItems: 'center', gap: 14,
-        borderBottom: '1px solid #1c1c22',
-        fontSize: 12.5,
+        flex: '0 0 ' + leftWidth + 'px',
+        minWidth: 0,
+        display: 'flex', flexDirection: 'column',
+        background: 'var(--c-paper)',
+        borderRight: '1px solid var(--c-hairline)',
+        position: 'relative',
       }}>
-        {/* 햄버거 메뉴 */}
-        <button style={{ background: 'none', border: 'none', color: '#8a8a92', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
-        </button>
-
-        {/* 세션 제목 + 드롭다운 */}
-        <button style={{
-          background: 'none', border: 'none', color: '#d4d4dc',
-          cursor: 'pointer', padding: '4px 8px',
-          display: 'flex', alignItems: 'center', gap: 6,
-          fontFamily: 'inherit', fontSize: 12.5,
+        {/* 스레드 스크롤 — 대화 영역 격자 배경 (다른 화면과 동일 24px 그리드) */}
+        <div className="oc-canvas-grid" style={{
+          flex: 1, minHeight: 0,
+          overflowY: 'auto',
+          padding: '22px 20px 10px',
+          display: 'flex', flexDirection: 'column', gap: 16,
         }}>
-          <span>{title}</span>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
-        </button>
+          <OcUserMessage>{promptCard ?? defaultPromptCard}</OcUserMessage>
+          {body ?? defaultBody}
+        </div>
 
-        <div style={{ flex: 1 }} />
+        {/* composer dock (질문/권한/Todo 등 — AI 상태 시 입력창 위로) */}
+        {dock && (
+          <div style={{ flex: '0 0 auto', margin: '0 14px 0' }}>{dock}</div>
+        )}
 
-        {/* 우측 상태 + 패널 토글 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, color: '#8a8a92', fontSize: 11.5 }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80' }} />
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="14" rx="1.5"/><line x1="3" y1="9" x2="21" y2="9"/></svg>
-            <span>{serverHost}</span>
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80' }} />
-            <span>{mcpCount} MCP</span>
-          </span>
-          <div style={{ display: 'flex', gap: 6, color: '#6a6a72' }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="16" rx="1.5"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="16" rx="1.5"/></svg>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+        {/* composer — BlockSuite doc 표면 재현 */}
+        <div className="oc-composer" style={{
+          flex: '0 0 auto',
+          margin: '10px 14px 14px',
+          background: 'var(--c-canvas)',
+          border: '1px solid var(--c-hairline-strong)',
+          borderRadius: 10,
+          display: 'flex', flexDirection: 'column',
+          overflow: 'hidden',
+          boxShadow: '0 6px 22px rgba(15,15,20,0.06), 0 1px 2px rgba(15,15,20,0.04)',
+        }}>
+          {/* 상단 리사이즈 핸들 (prompt-doc-resize-handle) — 드래그로 입력창 높이 조절 */}
+          <div className={'oc-resize-handle' + (dragging ? ' is-dragging' : '')} title="입력창 높이 조절 (드래그)" aria-label="입력창 높이 조절" onMouseDown={onHandleDown}>
+            <span className="oc-resize-bar" />
+          </div>
+          {/* doc 본문 (참조 블록 + 초안) — 클릭/포커스 시 높이 확장, 드래그/확대 토글 적용 */}
+          <div tabIndex={0} onFocus={onDocFocus} onBlur={onDocBlur} style={{
+            padding: '2px 14px 12px',
+            height: docHeight,
+            overflowY: 'auto',
+            display: 'flex', flexDirection: 'column', gap: 9,
+            cursor: 'text', outline: 'none',
+            transition: dragging ? 'none' : 'height var(--dur-base) var(--ease-standard)',
+          }}>
+            {composerRef}
+            <div style={{
+              fontSize: 13.5, lineHeight: 1.55,
+              color: composerDraft ? 'var(--c-ink)' : 'var(--c-muted)',
+              fontFamily: 'var(--font-body)',
+            }}>
+              {composerDraft ?? <span>무엇이든 만들어 달라고 말해보세요… <span style={{ color: 'var(--c-muted)', opacity: 0.7 }}>"이 카드를 두 줄 그리드로 바꿔줘"</span></span>}
+            </div>
+          </div>
+
+          {/* 액션 바 (prompt-draw-actions) — 좌: 이미지·히스토리 / 우: 전송(공용 단일) */}
+          <div style={{
+            height: 44, padding: '0 8px',
+            borderTop: '1px solid var(--c-hairline)',
+            background: 'var(--c-paper)',
+            display: 'flex', alignItems: 'center',
+            justifyContent: 'space-between', gap: 8,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              {/* 이미지 추가 (드래그앤드롭/첨부) */}
+              <button className="oc-image-btn" aria-label="이미지 추가">
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4.5" width="14" height="11" rx="2"/><circle cx="7.3" cy="8.6" r="1.3"/><path d="M4.5 14.5 8.5 10.5l2.5 2.5 2-2 2.5 2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                이미지
+              </button>
+              <span style={{ width: 1, height: 16, background: 'var(--c-hairline)', margin: '0 4px' }} />
+              {/* 실행취소 / 다시실행 (프롬프트 내역) */}
+              <button className="oc-icon-btn" aria-label="실행 취소" disabled>
+                <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M8.33 4.58 2.92 10l5.41 5.42M3.33 10h13.75" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <button className="oc-icon-btn" aria-label="다시 실행" disabled>
+                <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M11.67 4.58 17.08 10l-5.41 5.42M16.67 10H2.92" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <button className={'oc-icon-btn' + (expanded ? ' is-on' : '')} aria-label={expanded ? '작게 보기' : '크게 보기'} aria-expanded={expanded} onClick={() => setExpanded((v) => !v)}>
+                {expanded
+                  ? <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M9.58 14.58v-4h-4M10.42 5.42v4h4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  : <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M4.58 10.42v5h5M10.42 4.58h5v5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+              </button>
+            </div>
+
+            {/* 전송 — 1인팀 즉시전송·다인팀 합의전송 공용 단일 버튼 (data-action 으로 분기) */}
+            <button className="oc-send-btn" aria-label="전송" data-action={sendAction} onClick={onSend}>
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M10 16V4M10 4l5 5M10 4 5 9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* 본문 */}
+      {/* ── 우측: 라이브 미리보기 ── */}
       <div style={{
-        flex: 1, minHeight: 0,
+        flex: 1, minWidth: 0,
         display: 'flex', flexDirection: 'column',
-        overflow: 'auto',
-        padding: '24px 32px 0',
+        background: 'var(--c-canvas)',
       }}>
-        {/* 세션 제목 */}
-        <h2 style={{
-          fontSize: 17, fontWeight: 600,
-          color: '#e8e8ee',
-          margin: '0 0 16px',
-          fontFamily: 'var(--font-body)',
-          letterSpacing: '-0.005em',
-        }}>{title}</h2>
-
-        {/* 사용자 프롬프트 카드 */}
-        <div style={{
-          background: '#1a1a20',
-          border: '1px solid #232329',
-          borderRadius: 4,
-          padding: '14px 18px',
-          fontSize: 13.5, lineHeight: 1.55,
-          color: '#d4d4dc',
-          marginBottom: 18,
-        }}>
-          {promptCard ?? defaultPromptCard}
-        </div>
-
-        {body ?? defaultBody}
-
-        <div style={{ flex: 1 }} />
-      </div>
-
-      {/* 프롬프트 입력 박스 — 하단 고정 */}
-      <div style={{
-        flex: '0 0 auto',
-        margin: '12px 24px 16px',
-        background: '#1a1a20',
-        border: '1px solid #232329',
-        borderRadius: 4,
-        padding: '14px 16px 10px',
-        display: 'flex', flexDirection: 'column', gap: 12,
-      }}>
-        <div style={{
-          fontSize: 13, lineHeight: 1.5,
-          color: promptInput ? '#d4d4dc' : '#5e5e68',
-          minHeight: 36,
-          fontFamily: 'var(--font-body)',
-        }}>
-          {promptInput ?? <span>Ask anything… <span style={{ color: '#4a4a52' }}>"Implement caching for this endpoint"</span></span>}
-        </div>
-
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 14,
-          fontSize: 12, color: '#8a8a92',
-        }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
-            <span style={{ color: '#d4d4dc' }}>{mode}</span>
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
-            <span style={{ color: '#d4d4dc' }}>{model}</span>
-            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
-          </span>
-          <span>{agent}</span>
-          <div style={{ flex: 1 }} />
-          <button style={{ background: 'none', border: 'none', color: '#6a6a72', cursor: 'pointer', padding: 2, display: 'flex', alignItems: 'center' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-          </button>
-          <button style={{
-            background: '#2a2a32', border: 'none', color: '#d4d4dc',
-            cursor: 'pointer', padding: '4px 8px', borderRadius: 3,
-            display: 'flex', alignItems: 'center',
-          }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-          </button>
+        <OcPreviewHeader url={previewUrl} live={previewState === 'ready'} />
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex' }}>
+          {previewNode}
         </div>
       </div>
 
-      {/* 짓다 가 올려놓는 오버레이 (튜토리얼 코치마크, 합의 투표 등) */}
+      {/* 짓다 오버레이 (팀 커서·코치마크·합의 등) */}
       {overlay}
     </div>
   );
 }
 
-// OpenCode 내부에서 쓰이는 UI primitive 들
-function OcStepsRow({ text }) {
+// ─ OpenCode 내부 primitive ─────────────────────────────────────
+
+// 사용자 발화 — 종이 가장자리 polygon clip-path (BlockSuite user-message paper-edge).
+const OC_PAPER_EDGE = 'polygon(1.2% 3.51%, 18.06% 2.84%, 33.6% 3.61%, 49.6% 2.26%, 66.99% 3.48%, 81.87% 3.03%, 99.54% 2.37%, 99.2% 34.59%, 98.4% 65.43%, 99.32% 96.75%, 75.11% 98.01%, 49.32% 97.49%, 25.89% 97%, 1.45% 98.25%, 0.7% 65.72%, 1.6% 35.18%, 0.56% 3.73%)';
+
+function OcUserMessage({ children }) {
   return (
-    <div style={{
-      display: 'inline-flex', alignItems: 'center', gap: 6,
-      color: '#8a8a92', fontSize: 12.5,
-      marginBottom: 12, cursor: 'pointer',
-      fontFamily: 'var(--font-body)',
-    }}>
-      <span>{text}</span>
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+    <div style={{ alignSelf: 'flex-end', maxWidth: '90%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+      <div style={{
+        background: 'var(--c-helmet-wash)',
+        padding: '13px 18px',
+        fontSize: 13.5, lineHeight: 1.55,
+        color: 'var(--c-ink)',
+        clipPath: OC_PAPER_EDGE,
+        WebkitClipPath: OC_PAPER_EDGE,
+        fontFamily: 'var(--font-body)',
+      }}>{children}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingRight: 6 }}>
+        <button className="oc-mini-btn" aria-label="복사">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="7" y="7" width="9" height="9" rx="1.5"/><path d="M13 7V5a1.5 1.5 0 0 0-1.5-1.5H5A1.5 1.5 0 0 0 3.5 5v6.5A1.5 1.5 0 0 0 5 13h2"/></svg>
+        </button>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-muted)' }}>1분 27초</span>
+      </div>
     </div>
   );
 }
 
-function OcResponseLabel() {
+// 도구호출 그룹 헤더 (collapsible) — "탐색됨 · 1개 읽음 3개 검색"
+function OcToolGroup({ label, summary }) {
   return (
-    <div style={{
-      fontSize: 12.5, color: '#8a8a92',
-      marginBottom: 8,
-      fontFamily: 'var(--font-body)',
-    }}>Response</div>
+    <div className="oc-row-interactive" style={{
+      display: 'inline-flex', alignItems: 'center', gap: 8,
+      color: 'var(--c-slate)', fontSize: 12,
+      padding: '3px 7px', margin: '0 -7px',
+      fontFamily: 'var(--font-mono)',
+    }}>
+      <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><polyline points="7 5 12 10 7 15" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      <span style={{ color: 'var(--c-ink-2)', fontWeight: 600 }}>{label}</span>
+      {summary && <span style={{ color: 'var(--c-muted)' }}>· {summary}</span>}
+    </div>
   );
 }
+
+// "Show steps" 행 (C-2/C-4 body 에서 사용) — 하위호환 유지.
+function OcStepsRow({ text }) {
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      color: 'var(--c-slate)', fontSize: 12,
+      cursor: 'pointer', fontFamily: 'var(--font-mono)', padding: '2px 0',
+    }}>
+      <svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><polyline points="7 5 12 10 7 15"/></svg>
+      <span>{text}</span>
+    </div>
+  );
+}
+
+function OcResponseLabel() { return null; }
 
 function OcParagraph({ children, muted }) {
   return (
     <p style={{
       fontSize: 13.5, lineHeight: 1.65,
-      color: muted ? '#a8a8b0' : '#d4d4dc',
-      margin: '0 0 14px',
-      fontFamily: 'var(--font-body)',
+      color: muted ? 'var(--c-slate)' : 'var(--c-ink-2)',
+      margin: 0, fontFamily: 'var(--font-body)',
     }}>{children}</p>
   );
 }
 
-function OcFileRow({ file }) {
-  // file pill — 보라/회색 카드에 청록 png 아이콘
-  const ext = file.split('.').pop();
-  const base = file.replace(/\.[^.]+$/, '');
+// 변경 파일 disclosure — "수정됨 · 3 파일" + 파일별 diff 바(add mint / del safety).
+function OcDiffDisclosure({ label, files }) {
+  const totalAdds = files.reduce((s, f) => s + (f.adds || 0), 0);
+  const totalDels = files.reduce((s, f) => s + (f.dels || 0), 0);
   return (
     <div style={{
-      background: '#1a1a20',
-      border: '1px solid #232329',
-      borderRadius: 4,
-      padding: '10px 14px',
-      marginBottom: 6,
-      display: 'flex', alignItems: 'center', gap: 10,
+      border: '1px solid var(--c-hairline)',
+      borderRadius: 8, overflow: 'hidden',
+      background: 'var(--c-canvas)',
     }}>
-      <div style={{
-        width: 16, height: 16,
-        background: '#2dd4bf',
-        borderRadius: 2,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        color: '#062e29', fontFamily: 'var(--font-mono)', fontSize: 8, fontWeight: 700,
-      }}>{ext.toUpperCase().slice(0, 3)}</div>
-      <span style={{ fontSize: 13, color: '#d4d4dc', fontFamily: 'var(--font-body)' }}>
-        {base}<span style={{ color: '#e8e8ee', fontWeight: 600 }}>.{ext}</span>
-      </span>
-      <div style={{ flex: 1 }} />
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#6a6a72" strokeWidth="2">
-        <polyline points="8 6 14 12 8 18"/>
-        <polyline points="14 6 20 12 14 18" opacity="0.5"/>
-      </svg>
+      <div className="oc-row-interactive" style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: '8px 12px',
+        borderRadius: 0,
+        borderBottom: '1px solid var(--c-hairline)',
+        fontFamily: 'var(--font-mono)', fontSize: 12,
+      }}>
+        <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="var(--c-slate)" strokeWidth="1.7"><polyline points="5 8 10 13 15 8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        <span style={{ color: 'var(--c-ink-2)', fontWeight: 600 }}>{label}</span>
+        <span style={{ color: 'var(--c-muted)' }}>· {files.length} 파일</span>
+        <div style={{ flex: 1 }} />
+        <span style={{ color: 'var(--c-mint)', fontWeight: 700 }}>+{totalAdds}</span>
+        <span style={{ color: 'var(--c-safety)', fontWeight: 700 }}>−{totalDels}</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {files.map((f, i) => (
+          <div key={i} className="oc-row-interactive" style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '7px 12px',
+            borderRadius: 0,
+            borderTop: i ? '1px solid var(--c-hairline)' : 'none',
+          }}>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--c-ink-2)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.file}</span>
+            <div style={{ flex: 1 }} />
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--c-mint)', fontWeight: 700 }}>+{f.adds}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: f.dels ? 'var(--c-safety)' : 'var(--c-muted)', fontWeight: 700 }}>−{f.dels}</span>
+            <OcDiffBar adds={f.adds} dels={f.dels} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
+// 미니 diff 바 — 5칸, add(mint)·del(safety)·미변경(stone) 비율 표시.
+function OcDiffBar({ adds, dels }) {
+  const total = (adds || 0) + (dels || 0);
+  const cells = 5;
+  const addN = total === 0 ? 0 : Math.max(adds > 0 ? 1 : 0, Math.round((adds / total) * cells));
+  const delN = total === 0 ? 0 : Math.min(cells - addN, Math.max(dels > 0 ? 1 : 0, Math.round((dels / total) * cells)));
+  const restN = cells - addN - delN;
+  const seg = (n, color, key) => Array.from({ length: n }).map((_, j) => (
+    <span key={key + j} style={{ width: 5, height: 9, borderRadius: 1.5, background: color }} />
+  ));
+  return (
+    <div style={{ display: 'flex', gap: 2, marginLeft: 2 }}>
+      {seg(addN, 'var(--c-mint)', 'a')}
+      {seg(delN, 'var(--c-safety)', 'd')}
+      {seg(restN, 'var(--c-stone-2)', 'r')}
+    </div>
+  );
+}
+
+// 파일 행 (C-2/C-4 body 에서 사용) — 하위호환 유지.
+function OcFileRow({ file, status }) {
+  const ext = file.split('.').pop();
+  const base = file.replace(/\.[^.]+$/, '');
+  const statusColor = status === 'added' ? 'var(--c-mint)' : status === 'deleted' ? 'var(--c-safety)' : 'var(--c-helmet-deep)';
+  const statusLabel = status === 'added' ? 'A' : status === 'deleted' ? 'D' : 'M';
+  return (
+    <div style={{
+      background: 'var(--c-canvas)', border: '1px solid var(--c-hairline)',
+      borderRadius: 6, padding: '8px 12px',
+      display: 'flex', alignItems: 'center', gap: 10,
+    }}>
+      <div style={{
+        width: 18, height: 18, background: 'var(--c-paper)',
+        border: '1px solid var(--c-hairline-strong)', borderRadius: 3,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: 'var(--c-ink-3)', fontFamily: 'var(--font-mono)', fontSize: 8, fontWeight: 700,
+      }}>{ext.toUpperCase().slice(0, 3)}</div>
+      <span style={{ fontSize: 12.5, color: 'var(--c-ink-2)', fontFamily: 'var(--font-mono)' }}>
+        {base}<span style={{ color: 'var(--c-ink)', fontWeight: 600 }}>.{ext}</span>
+      </span>
+      <div style={{ flex: 1 }} />
+      {status && (
+        <span style={{
+          fontFamily: 'var(--font-mono)', fontSize: 10, color: statusColor, fontWeight: 700,
+          padding: '2px 6px', borderRadius: 3, background: 'var(--c-paper)', border: '1px solid ' + statusColor,
+        }}>{statusLabel}</span>
+      )}
+    </div>
+  );
+}
+
+// composer 안 참조 블록 — 파일/라인 컨텍스트 카드 (context-add).
+function OcReferenceBlock({ name = 'App.tsx', path = 'src/App.tsx', lines, adds, dels }) {
+  return (
+    <div className="oc-ref-block" style={{
+      display: 'flex', alignItems: 'center', gap: 9,
+      background: 'var(--c-paper)',
+      border: '1px solid var(--c-hairline)',
+      borderRadius: 7, padding: '7px 9px',
+      alignSelf: 'flex-start', maxWidth: '100%',
+    }}>
+      <div style={{
+        width: 26, height: 26, flexShrink: 0,
+        background: 'var(--c-canvas)', border: '1px solid var(--c-hairline-strong)',
+        borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: 'var(--c-slate)',
+      }}>
+        <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><polyline points="7 6 3 10 7 14"/><polyline points="13 6 17 10 13 14"/></svg>
+      </div>
+      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--c-ink)', fontFamily: 'var(--font-mono)' }}>{name}</span>
+        <span style={{ fontSize: 10.5, color: 'var(--c-muted)', fontFamily: 'var(--font-mono)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {lines ? lines + ' · ' : ''}{path}
+        </span>
+      </div>
+      {(adds != null || dels != null) && (
+        <div style={{ display: 'flex', gap: 6, marginLeft: 4, flexShrink: 0 }}>
+          {adds != null && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--c-mint)', fontWeight: 700 }}>+{adds}</span>}
+          {dels != null && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--c-safety)', fontWeight: 700 }}>−{dels}</span>}
+        </div>
+      )}
+      <div style={{ flex: 1 }} />
+      <button className="oc-mini-btn" aria-label="참조 제거" style={{ flexShrink: 0 }}>
+        <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M5 5l10 10M15 5L5 15" strokeLinecap="round"/></svg>
+      </button>
+    </div>
+  );
+}
+
+// 아이콘 버튼 공용 스타일 (26×26 ghost).
+function ocIconBtnStyle({ active = false } = {}) {
+  return {
+    background: active ? 'var(--c-stone)' : 'transparent',
+    border: 'none',
+    color: active ? 'var(--c-ink)' : 'var(--c-ink-3)',
+    cursor: 'pointer',
+    width: 26, height: 26, borderRadius: 6,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  };
+}
+
+// composer 액션 바 아이콘 버튼 (prompt-draw-actions, ~30×30 ghost).
+function ocPromptIconBtn({ disabled = false } = {}) {
+  return {
+    background: 'transparent', border: 'none',
+    color: 'var(--c-ink-3)',
+    cursor: disabled ? 'default' : 'pointer',
+    opacity: disabled ? 0.4 : 1,
+    width: 30, height: 30, borderRadius: 6,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+  };
+}
+
+// 우측 미리보기 슬림 헤더 — ●live · 주소 pill · 새로고침.
+function OcPreviewHeader({ url = 'sapari.jitda.run', live = true }) {
+  return (
+    <div style={{
+      flex: '0 0 auto', height: 38,
+      display: 'flex', alignItems: 'center', gap: 10,
+      padding: '0 12px',
+      borderBottom: '1px solid var(--c-hairline)',
+      background: 'var(--c-paper)',
+    }}>
+      <span style={{
+        width: 7, height: 7, borderRadius: '50%',
+        background: live ? 'var(--c-mint)' : 'var(--c-muted)',
+        boxShadow: live ? '0 0 0 3px rgba(9,108,77,0.14)' : 'none',
+        flexShrink: 0,
+      }} />
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 6,
+        background: 'var(--c-canvas)',
+        border: '1px solid var(--c-hairline)',
+        borderRadius: 999, padding: '3px 12px',
+        minWidth: 0, maxWidth: 340,
+      }}>
+        <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="var(--c-muted)" strokeWidth="1.5"><rect x="4" y="8.5" width="12" height="8" rx="1.5"/><path d="M6.5 8.5V6.5a3.5 3.5 0 0 1 7 0v2"/></svg>
+        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--c-slate)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{url}</span>
+      </div>
+      <div style={{ flex: 1 }} />
+      <button className="oc-icon-btn" aria-label="미리보기 새로고침">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M15.5 6.5A6 6 0 1 0 16.5 11" strokeLinecap="round"/><path d="M15.8 3.5v3.2h-3.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      </button>
+    </div>
+  );
+}
+
+// 미리보기 미준비 — codle-preview-loader (86×70, 5블록 staggered) + 안내.
+function OcPreviewEmpty() {
+  const blocks = [0, 1, 2, 3, 4];
+  return (
+    <div style={{
+      flex: 1, minWidth: 0,
+      background: 'var(--c-canvas)',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 18,
+    }}>
+      <div style={{ width: 86, height: 60, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', justifyContent: 'center', color: 'var(--c-ink-3)' }}>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {blocks.slice(0, 3).map((b) => (
+            <span key={b} className="oc-block-pulse" style={{ width: 22, height: 14, borderRadius: 4, background: 'var(--c-stone-2)', animationDelay: (b * 0.15) + 's' }} />
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {blocks.slice(3).map((b) => (
+            <span key={b} className="oc-block-pulse" style={{ width: 22, height: 14, borderRadius: 4, background: 'var(--c-stone-2)', animationDelay: (b * 0.15) + 's' }} />
+          ))}
+        </div>
+      </div>
+      <span style={{ fontSize: 12.5, color: 'var(--c-muted)', fontFamily: 'var(--font-body)' }}>아직 미리보기가 준비되지 않았습니다</span>
+    </div>
+  );
+}
+
+// 미리보기 서버 기동 중 — SpawnLoading (스피너 + 안내).
+function OcPreviewSpawning() {
+  return (
+    <div style={{
+      flex: 1, minWidth: 0,
+      background: 'var(--c-canvas)',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 16,
+    }}>
+      <div className="jt-spin" style={{ width: 30, height: 30, color: 'var(--c-ink-3)' }}>
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.2-8.56" strokeLinecap="round"/></svg>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+        <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--c-ink-2)' }}>작업 환경을 준비하고 있어요</span>
+        <span style={{ fontSize: 11.5, color: 'var(--c-muted)' }}>잠시만 기다려 주세요 · 보통 10초 이내</span>
+      </div>
+    </div>
+  );
+}
+
+// 우측 미리보기 기본 — 음료 추천 앱의 가짜 렌더 (살구색 배경 + 4 카드).
+function OcDefaultPreview() {
+  const cards = [
+    { name: '에스프레소', desc: '집중력이 필요한 디버깅 시간에' },
+    { name: '카페라떼', desc: '느긋한 페어 프로그래밍에' },
+    { name: '아메리카노', desc: '긴 코드 리뷰 마라톤에' },
+    { name: '콜드브루', desc: '여름 오후의 산뜻한 리팩터' },
+  ];
+  return (
+    <div style={{ flex: 1, minWidth: 0, background: '#fdeed7', padding: '32px 40px', overflow: 'auto' }}>
+      <div style={{ maxWidth: 520, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
+        <header style={{ textAlign: 'center', marginBottom: 6 }}>
+          <h3 style={{ fontSize: 22, fontWeight: 700, margin: 0, color: '#3b2a14', letterSpacing: '-0.01em' }}>오늘의 음료</h3>
+          <p style={{ fontSize: 12.5, color: '#7a5d35', margin: '6px 0 0' }}>지금 작업에 어울리는 한 잔을 골라보세요</p>
+        </header>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          {cards.map((c, i) => (
+            <div key={i} className="oc-preview-card" style={{ background: '#fff7e8', border: '1px solid #e8c98b', borderRadius: 10, padding: '14px 14px 12px', boxShadow: '0 1px 2px rgba(110,72,20,0.08)' }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#3b2a14' }}>{c.name}</div>
+              <div style={{ fontSize: 11.5, color: '#7a5d35', marginTop: 4, lineHeight: 1.5 }}>{c.desc}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
+// 튜토리얼 진행 스텝퍼 — 노드는 전부, 라벨은 현재 단계만(4단계 폭 대응). tutorial 현재·mint 완료.
+function C2Stepper({ steps, step }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      {steps.map((s, i) => {
+        const idx = i + 1;
+        const isDone = idx < step;
+        const isCurr = idx === step;
+        return (
+          <React.Fragment key={idx}>
+            <button className="oc-step-btn" title={(s.name || '') + ' — ' + s.title}>
+              <span className="oc-step-node" style={{
+                width: 21, height: 21, borderRadius: '50%',
+                background: isDone ? 'var(--c-mint)' : isCurr ? 'var(--c-tutorial)' : 'var(--c-canvas)',
+                color: isDone || isCurr ? '#fff' : 'var(--c-muted)',
+                border: isDone || isCurr ? 'none' : '1.5px solid var(--c-hairline-strong)',
+                boxShadow: isCurr ? '0 0 0 3px var(--c-tutorial-soft)' : 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 10.5, fontFamily: 'var(--font-mono)', fontWeight: 700,
+              }}>{isDone ? '✓' : idx}</span>
+              {isCurr && (
+                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--c-ink)', whiteSpace: 'nowrap' }}>{s.name}</span>
+              )}
+            </button>
+            {idx < steps.length && (
+              <span style={{ width: 14, height: 2, borderRadius: 2, background: isDone ? 'var(--c-mint)' : 'var(--c-hairline-strong)' }} />
+            )}
+          </React.Fragment>
+        );
+      })}
+    </div>
+  );
+}
+
+// 복사 버튼 — 클릭 시 "복사 완료"(체크) 로 전환 후 1.6초 뒤 복귀.
+function OcCopyButton({ label = '복사', style }) {
+  const [copied, setCopied] = React.useState(false);
+  const timer = React.useRef(null);
+  const onClick = () => {
+    setCopied(true);
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setCopied(false), 1600);
+  };
+  return (
+    <button className={'oc-paste-copy' + (copied ? ' is-copied' : '')} onClick={onClick} style={style} aria-live="polite">
+      {copied
+        ? <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}><polyline points="4 10 8.5 14.5 16 6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        : Icon.copy(11)}
+      <span className="oc-copy-label">{copied ? <>복사<br />완료</> : label}</span>
+    </button>
+  );
+}
+
+// 튜토리얼 가이드 포스트잇 — 우측 상단 열기/접기 (controlled). 상단 배너 대신(2026-06-10).
+// 짓다 postit 어휘(jt-postit-card·tape·rotation, C-1 팀 포스트잇과 연결) + 튜토리얼 보라 틴트.
+// 단계 이동: 이전=항상 / 다음=현재 단계 완료 시 활성+glow(앞 단계 미리보기 차단). 접힘 시 완료 이벤트로 자동 열림.
+// 예시 한 줄 — 클릭 시 복사(체크 플래시). compose '예시 보기'·plan '계획 다듬기' 폴백.
+function OcExampleRow({ text }) {
+  const [c, setC] = React.useState(false);
+  const t = React.useRef(null);
+  const click = () => { setC(true); if (t.current) clearTimeout(t.current); t.current = setTimeout(() => setC(false), 1300); };
+  return (
+    <button className="oc-example-row" onClick={click} title="복사">
+      <span style={{ color: 'var(--c-slate)', flexShrink: 0 }}>›</span>
+      <span style={{ flex: 1, textAlign: 'left', minWidth: 0 }}>{text}</span>
+      {c
+        ? <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="var(--c-mint)" strokeWidth="2.2" style={{ flexShrink: 0 }}><polyline points="4 10 8.5 14.5 16 6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        : <span style={{ flexShrink: 0, color: 'var(--c-muted)', display: 'inline-flex' }}>{Icon.copy(11)}</span>}
+    </button>
+  );
+}
+
+// 단계별 동작 블록 — action(plan/paste/edit/compose)에 따라 다르게.
+function PostitActionBlock({ step }) {
+  const [showEx, setShowEx] = React.useState(false);
+
+  // 직접 작성 — 예시는 '보기' 토글 뒤로(복붙 유도 아님), 첨부·구체적으로 다시 지시 팁.
+  if (step.action === 'compose') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <span style={{ fontSize: 12, color: 'var(--c-ink-2)', lineHeight: 1.5 }}>{step.hint}</span>
+        <button className="oc-examples-toggle" onClick={() => setShowEx((v) => !v)} aria-expanded={showEx}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>💡 막막하면 예시 보기</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ transform: showEx ? 'rotate(180deg)' : 'none', transition: 'transform var(--dur-fast) var(--ease-standard)' }}><polyline points="6 9 12 15 18 9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        {showEx && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {step.examples.map((ex, i) => <OcExampleRow key={i} text={ex} />)}
+          </div>
+        )}
+        <span style={{ fontSize: 10.5, color: 'var(--c-muted)', lineHeight: 1.45 }}>{step.post}</span>
+      </div>
+    );
+  }
+
+  // 기획/만들기/바꾸기 — 제시 프롬프트 + 복사
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {/* 기획 노하우 칩 */}
+      {step.action === 'plan' && step.know && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {step.know.map((k, i) => (
+            <span key={i} className="oc-knowhow-chip">💡 {k}</span>
+          ))}
+        </div>
+      )}
+
+      <span style={{ fontSize: 12, color: 'var(--c-ink-2)', lineHeight: 1.5 }}>{step.hint}</span>
+
+      <div style={{ display: 'flex', alignItems: 'stretch', background: 'var(--c-canvas)', border: '1px solid var(--c-hairline-strong)', borderRadius: 'var(--r-sm)', overflow: 'hidden' }}>
+        <div style={{ flex: 1, padding: '8px 10px', fontFamily: 'var(--font-mono)', fontSize: 11.5, lineHeight: 1.45, color: 'var(--c-ink)', minWidth: 0 }}>
+          <span style={{ color: 'var(--c-tutorial)', fontWeight: 700, marginRight: 4 }}>&rsaquo;</span>{step.prompt}
+        </div>
+        <OcCopyButton style={{ fontSize: 11.5 }} />
+      </div>
+
+      {/* 바꾸기 — 선택지 칩 */}
+      {step.options && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 10.5, color: 'var(--c-slate)', fontFamily: 'var(--font-mono)' }}>밑줄(___) 자리에 넣어볼 것:</span>
+          {step.options.map((o, i) => <span key={i} className="oc-option-chip">{o}</span>)}
+        </div>
+      )}
+
+      {/* 기획 — AI 계획 검토·다듬기 예시 */}
+      {step.action === 'plan' && step.refine && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingTop: 2 }}>
+          <span style={{ fontSize: 10.5, color: 'var(--c-slate)', fontFamily: 'var(--font-mono)' }}>AI가 계획을 보여주면, 이렇게 답해 다듬어요:</span>
+          {step.refine.map((r, i) => <OcExampleRow key={i} text={r} />)}
+        </div>
+      )}
+
+      <span style={{ fontSize: 10.5, color: 'var(--c-muted)', lineHeight: 1.45 }}>{step.post}</span>
+    </div>
+  );
+}
+
+// 튜토리얼 가이드 포스트잇 — 우측 상단 열기/접기 (controlled). v8: 4단계·action별 렌더.
+// 짓다 postit 어휘(jt-postit-card·tape·rotation, C-1 팀 포스트잇과 연결) + 튜토리얼 보라 틴트.
+// 단계 이동: 이전=항상 / 다음=현재 단계 완료 시 활성+glow. 접힘 시 완료 이벤트로 자동 열림.
+function TutorialPostit({ steps, step, done, sending, open, onToggle, onNext, onPrev, canNext }) {
+  const curr = steps[step - 1];
+  const isLast = step >= steps.length;
+  const rightDisabled = isLast ? !done : !canNext;
+  const rightGlow = isLast ? done : canNext;
+
+  // 접힘 — 소형 포스트잇 탭 (현재 단계·상태 요약 / 클릭 시 펼침)
+  if (!open) {
+    const statusText = sending ? 'AI 반영 중' : done ? '완료 ✓' : curr.name;
+    return (
+      <div className="oc-postit-wrap" style={{ position: 'absolute', top: 16, right: 18, zIndex: 'var(--z-overlay)' }}>
+        <button onClick={onToggle} className="jt-postit-card jt-postit-tape-md" title="튜토리얼 가이드 펼치기"
+          style={{
+            width: 196, padding: '12px 14px 13px', border: 'none', textAlign: 'left', cursor: 'pointer',
+            borderRadius: 'var(--r-xs)', display: 'flex', flexDirection: 'column', gap: 5,
+            '--postit-rot': 'var(--postit-rot-b)', '--postit-tint': 'var(--c-tutorial-soft)',
+          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <span className="jt-eyebrow" style={{ color: 'var(--c-tutorial)', fontSize: 9.5 }}>TUTORIAL</span>
+            <div style={{ flex: 1 }} />
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--c-tutorial)', fontWeight: 700 }}>{step}/{steps.length}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: done ? 'var(--c-mint)' : 'var(--c-ink)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              {sending && <BouncingDots size={4} color="var(--c-tutorial)" />}{statusText}
+            </span>
+            <div style={{ flex: 1 }} />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-slate)" strokeWidth="2"><polyline points="6 9 12 15 18 9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+        </button>
+      </div>
+    );
+  }
+
+  // 펼침 — 가이드 포스트잇
+  const statusNode = sending
+    ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--c-tutorial)' }}><BouncingDots size={4} color="var(--c-tutorial)" /> AI가 작업하는 중이에요…</span>
+    : isLast && done ? <span style={{ color: 'var(--c-mint)', fontWeight: 700 }}>🎉 모든 단계 완료! 이제 무엇이든 만들 수 있어요</span>
+    : done ? <span style={{ color: 'var(--c-tutorial)', fontWeight: 700 }}>잘했어요! 다음 단계로 가볼까요?</span>
+    : <span style={{ color: 'var(--c-slate)' }}>입력창에 보내면 다음 단계가 열려요</span>;
+
+  return (
+    <div className="oc-postit-wrap" style={{ position: 'absolute', top: 16, right: 18, zIndex: 'var(--z-overlay)' }}>
+      <div className="jt-postit-card jt-postit-card-static jt-postit-tape-lg"
+        style={{
+          width: 336, maxHeight: 'calc(100% - 32px)', overflowY: 'auto',
+          padding: '15px 18px 16px', borderRadius: 'var(--r-xs)',
+          display: 'flex', flexDirection: 'column', gap: 11,
+          '--postit-rot': 'var(--postit-rot-b)', '--postit-tint': 'var(--c-tutorial-soft)',
+        }}>
+        {/* 헤더 — 라벨 + 접기 (단계는 아래 스텝퍼가 단일 표시) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span className="jt-eyebrow" style={{ color: 'var(--c-tutorial)', fontSize: 10 }}>튜토리얼 가이드</span>
+          <div style={{ flex: 1 }} />
+          <button className="oc-mini-btn" onClick={onToggle} title="가이드 접기" aria-label="가이드 접기">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </button>
+        </div>
+
+        {/* 진행 스텝퍼 (현재 단계 라벨만) */}
+        <C2Stepper steps={steps} step={step} />
+
+        {/* 제목 + 개념 한 줄 */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <h2 style={{ fontSize: 17, lineHeight: 1.25, margin: 0 }}>{curr.title}</h2>
+          <p style={{ fontSize: 12.5, color: 'var(--c-ink-2)', lineHeight: 1.5, margin: 0 }}>{curr.concept}</p>
+        </div>
+
+        {/* 동작 블록 (action별) */}
+        <PostitActionBlock step={curr} />
+
+        {/* 단계 이동 — 이전(항상) / 다음(완료 시 활성+glow). 마지막은 자유 연습으로. */}
+        <div style={{ display: 'flex', gap: 7 }}>
+          <button className="jt-btn jt-btn-secondary jt-btn-sm" onClick={onPrev} disabled={step <= 1} title="이전 단계" style={{ flex: '0 0 auto', justifyContent: 'center' }}>{Icon.arrowLeft(12)}</button>
+          <button
+            className={'jt-btn jt-btn-primary jt-btn-sm' + (rightGlow ? ' oc-next-ready' : '')}
+            onClick={isLast ? onToggle : onNext}
+            disabled={rightDisabled}
+            style={{ flex: 1, justifyContent: 'center' }}>
+            {isLast ? '자유롭게 연습하기' : '다음 단계'} {!isLast && Icon.arrowRight(12)}
+          </button>
+        </div>
+
+        {/* 상태 안내 */}
+        <span style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', textAlign: 'center', lineHeight: 1.4 }}>{statusNode}</span>
+      </div>
+    </div>
+  );
+}
 
 // ─── C-2. 셀프 튜토리얼 ─────────────────────────────────────────
 // 페이지 정의서 v23848e86 컴포넌트 (8):
@@ -623,218 +1288,148 @@ function OcFileRow({ file }) {
 // 4. 프롬프트 예시 + [복사]      5. IDE (OpenCode 임베드)
 // 6. [다음 단계] 버튼           7. 건너뛰기 / 이전 단계
 // 8. 다인팀 동시편집 (가이드 위치는 1인팀과 동일)
-function C2Tutorial({ step = 2 }) {
+function C2Tutorial({ step: initialStep = 2 }) {
+  // v8 커리큘럼 — 4단계 스캐폴딩(기획→만들기→바꾸기→내 손으로). 기획은 단순 복붙이 아니라
+  // 전문 바이브코더의 노하우(계획부터·AI 계획 검토·다듬기)를 체험. 템플릿: 자기소개 페이지.
   const steps = [
     {
-      n: 1, title: '한 문장으로 앱 만들기',
-      eyebrow: 'STEP 1 · 기획',
-      hint: 'AI에게 만들고 싶은 앱을 한 문장으로 말해보세요. 결과가 바로 화면에 뜹니다.',
-      prompt: '간단한 투두 리스트 앱을 만들어줘. 할 일 추가, 완료 체크, 삭제 기능이 있으면 좋겠어.',
+      n: 1, name: '기획', action: 'plan',
+      title: '바로 만들지 말고, 계획부터',
+      concept: '바이브코딩은 코드를 몰라도 돼요. AI에게 말로 부탁하면 AI가 만들어 줍니다. 잘하는 사람들의 비결은, 바로 "만들어줘"가 아니라 "어떻게 만들지 계획부터 세워줘"라고 하는 거예요. 계획은 글이라 고치기 쉽거든요.',
+      know: ['바로 "만들어줘" 하지 말고, "먼저 계획을 세워줘"라고 부탁하기', 'AI가 짠 계획을 그대로 받지 말고, 빼거나 더해 내 것으로 다듬기'],
+      hint: '아래 [복사]를 누른 뒤, 화면 왼쪽 아래 입력창에 붙여넣고 전송(↑) 버튼을 누르세요. AI가 "이렇게 만들면 어때요?" 하고 만들 계획을 글로 보여줘요.',
+      prompt: '내 자기소개 웹페이지를 만들고 싶어. 어떤 내용(섹션)과 디자인이 좋을지, 바로 만들지 말고 먼저 계획을 세워줘. 정해야 할 게 있으면 나한테 물어봐줘.',
+      refine: ['취미 소개는 빼고 시작하자', '연락처에 이메일 주소도 넣어줘', '화려하지 않게, 전체적으로 단순하고 깔끔하게'],
+      post: 'AI가 보여준 계획을 읽어 보고, 빼거나 더하고 싶은 게 있으면 위 예시처럼 말해서 다듬어 보세요. (코드보다 계획을 고치는 게 훨씬 쉬워요.)',
     },
     {
-      n: 2, title: '자연어로 기능 추가',
-      eyebrow: 'STEP 2 · 기능 추가',
-      hint: '만든 앱에 새 기능을 더해봐요. "이런 거 넣어줘" 라고 말해도 돼요.',
-      prompt: '할 일에 우선순위를 표시할 수 있게 해줘. 높음은 빨강, 중간은 노랑, 낮음은 초록으로 보여줘.',
+      n: 2, name: '만들기', action: 'paste',
+      title: '계획대로 진짜 만들기',
+      concept: '계획이 마음에 들면, 이제 "그 계획대로 만들어줘"라고만 하면 돼요. 진짜로 동작하는 웹페이지가 화면 오른쪽에 나타납니다.',
+      hint: '아래 [복사] → 왼쪽 아래 입력창에 붙여넣고 전송(↑). 잠시 기다리면 AI가 페이지를 만들어요.',
+      prompt: '좋아, 방금 그 계획대로 만들어줘. 깔끔하고 보기 좋은 디자인으로.',
+      post: '만들어지면 화면 오른쪽 "미리보기"에서 직접 스크롤하고 눌러 보세요. 방금 말 몇 마디로 진짜 페이지가 생겼어요!',
     },
     {
-      n: 3, title: '마음에 안 드는 부분 다듬기',
-      eyebrow: 'STEP 3 · 다듬기',
-      hint: '디자인이나 UX 가 어색하다면 그것도 말로 고칠 수 있어요.',
-      prompt: '전체적으로 디자인이 좀 심심해. 색감을 더 예쁘게 바꾸고, 완료된 할 일은 취소선으로 표시해줘.',
+      n: 3, name: '바꾸기', action: 'edit',
+      title: '한 군데씩, 내 맘대로 바꾸기',
+      concept: 'AI에게 줄 문장에는 정답이 없어요. 단어 하나만 바꿔도 결과가 달라집니다. 단, 한 번에 한 가지만 바꿔야 무엇이 달라졌는지 알 수 있어요.',
+      hint: '아래 [복사]한 뒤, 입력창에서 밑줄(___) 자리를 아래 보기 중 하나로 직접 바꿔 적고 전송해 보세요.',
+      prompt: '내 이름 글씨를 ___ 느낌으로 꾸며줘.',
+      options: ['네온', '손글씨', '큼직한'],
+      post: '핵심은 정해진 문장을 그대로 보내는 게 아니라, 입력창에서 단어를 직접 바꿔 보는 거예요. 마음에 들 때까지 한 단어씩 바꿔 보세요.',
+    },
+    {
+      n: 4, name: '내 손으로', action: 'compose',
+      title: '이제 내 말로 직접 고치기',
+      concept: '이게 진짜 바이브코딩이에요. 화면 오른쪽 미리보기를 보면서, 마음에 안 드는 곳을 내 말로 직접 고쳐 보세요. 어떻게 바꿀지(코드)는 AI가 알아서 합니다.',
+      hint: '① 미리보기에서 바꾸고 싶은 곳을 한 군데 정하고 ② 왼쪽 아래 입력창에 직접 적어 전송하세요. 뭐라고 쓸지 막막하면 아래 예시를 참고하세요.',
+      examples: ['소개글 글씨가 너무 작아. 더 크고 줄 간격도 넓게 해줘', '프로필 사진 자리를 동그란 모양으로 바꿔줘', '배경색을 연한 파스텔 색으로 바꿔줘'],
+      post: '참고하고 싶은 화면이 있으면 입력창의 [이미지] 버튼으로 사진을 붙일 수 있어요. 결과가 마음에 안 들면 "원래대로"가 아니라, 원하는 모습을 더 구체적으로 다시 말하면 됩니다 — 예: "버튼을 더 연한 파랑으로, 모서리는 둥글게".',
     },
   ];
+  const [step, setStep] = React.useState(initialStep);
+  const [completedThrough, setCompletedThrough] = React.useState(initialStep - 1); // 앞 단계까지 완료된 상태로 진입
+  const [guideOpen, setGuideOpen] = React.useState(true);
+  const [sending, setSending] = React.useState(false);
+  const sendTimer = React.useRef(null);
   const curr = steps[step - 1];
+  const currentDone = completedThrough >= step;
+  const canNext = currentDone && step < steps.length;
+
+  // 전송(입력창 ↑) → AI 반영(프로토타입 지연) → 단계 완료. 접혀 있었다면 자동으로 펴짐(완료 이벤트 자동 열림).
+  const handleSend = () => {
+    if (currentDone || sending) return;
+    setSending(true);
+    if (sendTimer.current) clearTimeout(sendTimer.current);
+    sendTimer.current = setTimeout(() => {
+      setSending(false);
+      setCompletedThrough((c) => Math.max(c, step));
+      setGuideOpen(true);
+    }, 1500);
+  };
+  const goNext = () => { if (currentDone && step < steps.length) { setStep(step + 1); setGuideOpen(true); } };
+  const goPrev = () => { if (step > 1) { setStep(step - 1); setGuideOpen(true); } };
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--c-paper)' }}>
-        {/* C-2 튜토리얼: 액션 버튼 없음 (사용자 결정 — 튜토리얼 중 메뉴 접근 차단) */}
+        {/* C-2 튜토리얼: 액션 버튼 없음 (튜토리얼 중 메뉴 접근 차단) */}
         <JitdaToolbar status="tutorial_running" />
 
-        {/* 가이드 패널 — 캔버스 상단 접이식 카드 (전폭, 1인팀·다인팀 공통 위치) */}
-        <section style={{
-          flex: '0 0 auto',
-          background: 'var(--c-canvas)',
-          borderBottom: '1px solid var(--c-hairline)',
-          padding: '16px 28px 14px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-        }}>
-          {/* 상단 줄: 프로그레스 + 단계 라벨 + 액션 */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <span style={{
-              fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.14em',
-              background: 'var(--c-tutorial)', color: '#fff',
-              padding: '3px 8px', borderRadius: 3,
-            }}>TUTORIAL</span>
-
-            {/* 프로그레스 스텝퍼 — Step 1/3, 2/3, 3/3 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {steps.map((s, i) => {
-                const idx = i + 1;
-                const isDone = idx < step;
-                const isCurr = idx === step;
-                return (
-                  <React.Fragment key={idx}>
-                    <button title={s.title} style={{
-                      display: 'flex', alignItems: 'center', gap: 6,
-                      background: 'transparent', border: 'none',
-                      cursor: 'pointer', padding: 0,
-                    }}>
-                      <span style={{
-                        width: 22, height: 22, borderRadius: '50%',
-                        background: isDone ? 'var(--c-mint)' : isCurr ? 'var(--c-tutorial)' : 'transparent',
-                        color: isDone || isCurr ? '#fff' : 'var(--c-muted)',
-                        border: !isDone && !isCurr ? '1.5px solid var(--c-hairline-strong)' : 'none',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 700,
-                      }}>{isDone ? '✓' : idx}</span>
-                      <span style={{
-                        fontSize: 11.5, fontWeight: isCurr ? 700 : 500,
-                        color: isCurr ? 'var(--c-ink)' : isDone ? 'var(--c-slate)' : 'var(--c-muted)',
-                        fontFamily: 'var(--font-mono)', letterSpacing: '0.02em',
-                      }}>STEP {idx}</span>
-                    </button>
-                    {idx < steps.length && (
-                      <span style={{
-                        width: 18, height: 1,
-                        background: isDone ? 'var(--c-mint)' : 'var(--c-hairline)',
-                      }} />
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </div>
-
-            <div style={{ flex: 1 }} />
-
-            <button className="jt-btn jt-btn-ghost jt-btn-sm" style={{ padding: '4px 10px', fontSize: 11.5 }}>
-              건너뛰기
-            </button>
-            <button className="jt-btn jt-btn-ghost jt-btn-sm" title="가이드 접기" style={{ padding: '4px 8px' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="18 15 12 9 6 15"/></svg>
-            </button>
-          </div>
-
-          {/* 가이드 본문 — 좌(설명·프롬프트) + 우(다음 단계 액션) */}
-          <div style={{
-            display: 'grid', gridTemplateColumns: '1fr auto',
-            gap: 16, alignItems: 'stretch',
-          }}>
-            <div style={{
-              padding: '14px 16px',
-              background: 'var(--c-tutorial-soft)',
-              borderLeft: '3px solid var(--c-tutorial)',
-              borderRadius: 4,
-              display: 'flex', flexDirection: 'column', gap: 8,
-            }}>
-              <div className="jt-eyebrow" style={{ color: 'var(--c-tutorial)', fontSize: 10 }}>{curr.eyebrow}</div>
-              <h2 style={{ fontSize: 18, lineHeight: 1.25 }}>
-                {curr.title}
-              </h2>
-              <p style={{ fontSize: 12.5, color: 'var(--c-ink-2)', lineHeight: 1.55, margin: 0 }}>
-                {curr.hint}
-              </p>
-
-              {/* 프롬프트 예시 + 복사 — 핵심 컴포넌트 */}
-              <div style={{
-                display: 'flex', gap: 8, alignItems: 'stretch',
-                background: 'var(--c-canvas)',
-                border: '1px solid var(--c-hairline-strong)',
-                borderRadius: 4,
-                marginTop: 4,
-              }}>
-                <div style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  fontFamily: 'var(--font-mono)', fontSize: 12, lineHeight: 1.5,
-                  color: 'var(--c-ink)',
-                  minWidth: 0,
-                }}>
-                  <span style={{ color: 'var(--c-tutorial)', fontWeight: 700 }}>›</span> {curr.prompt}
-                </div>
-                <button style={{
-                  background: 'var(--c-ink)', color: '#fff',
-                  border: 'none', padding: '0 14px',
-                  cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 600,
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  borderRadius: '0 3px 3px 0',
-                  flexShrink: 0,
-                }}>
-                  {Icon.copy(11)} 복사
-                </button>
-              </div>
-              <span style={{ fontSize: 11, color: 'var(--c-slate)' }}>
-                ← 아래 캔버스에 붙여넣고 [전송] 을 눌러보세요.
-              </span>
-            </div>
-
-            {/* 단계 이동 */}
-            <div style={{
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'stretch', gap: 6,
-              padding: '4px 0',
-              minWidth: 200,
-            }}>
-              <button className="jt-btn jt-btn-ghost jt-btn-sm" style={{ fontSize: 12, padding: '7px 10px', justifyContent: 'flex-start' }} disabled={step <= 1}>
-                {Icon.arrowLeft(11)} 이전 단계 다시 보기
-              </button>
-              <button className="jt-btn jt-btn-primary" style={{ fontSize: 13, padding: '10px 14px', justifyContent: 'center' }}>
-                다음 단계 {Icon.arrowRight(12)}
-              </button>
-              <span style={{
-                fontSize: 10.5, color: 'var(--c-muted)',
-                textAlign: 'center', fontFamily: 'var(--font-mono)',
-              }}>다인팀: 팀원 누구나 클릭 가능</span>
-            </div>
-          </div>
-        </section>
-
-        {/* OpenCode iframe — 가이드 카드 바로 아래 (전폭) */}
-        <OpenCodeShell
-          title="자기소개 웹페이지 만들기"
-          promptCard="내 자기소개 웹페이지를 만들어줘. 이름, 소개글, 취미, 연락처 섹션이 있으면 좋겠어. 깔끔하고 모던한 디자인으로."
-          body={
-            <>
-              <OcStepsRow text="Show steps · 1m, 38s" />
-              <OcResponseLabel />
-              <OcParagraph>
-                좋아요. 한 줄로 동작하는 자기소개 페이지를 만들었어요. 이름·소개글·취미·연락처 4개 섹션으로 깔끔하게 정리했어요.
-              </OcParagraph>
-              <OcFileRow file="src/App.tsx" />
-              <OcFileRow file="src/styles.css" />
-              <OcParagraph muted>
-                화이트 배경에 차분한 회색 텍스트, 가운데 정렬로 모던한 느낌이에요. 미리보기에서 결과를 확인해주세요.
-              </OcParagraph>
-            </>
-          }
-          promptInput={
-            <span style={{ color: '#8a8a92' }}>
-              <span style={{ color: 'var(--c-tutorial)' }}>›</span> {curr.prompt}
-              <span style={{
-                display: 'inline-block', width: 2, height: 16,
-                background: '#d4d4dc', verticalAlign: 'middle', marginLeft: 1,
-                animation: 'blink 1s steps(1) infinite',
-              }} />
-            </span>
-          }
-        />
+        {/* 가이드는 상단 배너가 아니라 우측 상단 포스트잇 토글(relative 컨테이너 내부 absolute) */}
+        <div style={{ flex: 1, minHeight: 0, position: 'relative', display: 'flex', flexDirection: 'column' }}>
+          {/* OpenCode 임베드 (튜토리얼 환경). 전송 → 단계 완료 트리거 */}
+          <OpenCodeShell
+            title="자기소개 웹페이지 만들기"
+            promptCard="내 자기소개 웹페이지를 만들어줘. 이름, 소개글, 취미, 연락처 섹션이 있으면 좋겠어. 깔끔하고 모던한 디자인으로."
+            onSend={handleSend}
+            body={
+              <>
+                <OcStepsRow text="Show steps · 1m, 38s" />
+                <OcResponseLabel />
+                <OcParagraph>
+                  좋아요. 한 줄로 동작하는 자기소개 페이지를 만들었어요. 이름·소개글·취미·연락처 4개 섹션으로 깔끔하게 정리했어요.
+                </OcParagraph>
+                <OcFileRow file="src/App.tsx" />
+                <OcFileRow file="src/styles.css" />
+                <OcParagraph muted>
+                  화이트 배경에 차분한 회색 텍스트, 가운데 정렬로 모던한 느낌이에요. 미리보기에서 결과를 확인해주세요.
+                </OcParagraph>
+              </>
+            }
+            promptInput={
+              curr.prompt ? (
+                <span style={{ color: 'var(--c-ink-2)' }}>
+                  <span style={{ color: 'var(--c-tutorial)', marginRight: 4 }}>&rsaquo;</span>{curr.prompt}
+                  <span style={{
+                    display: 'inline-block', width: 2, height: 16,
+                    background: 'var(--c-ink-3)', verticalAlign: 'middle', marginLeft: 1,
+                    animation: 'blink 1s steps(1) infinite',
+                  }} />
+                </span>
+              ) : (
+                <span style={{ color: 'var(--c-muted)' }}>
+                  여기에 바꾸고 싶은 점을 내 말로 적어보세요…
+                  <span style={{
+                    display: 'inline-block', width: 2, height: 16,
+                    background: 'var(--c-ink-3)', verticalAlign: 'middle', marginLeft: 1,
+                    animation: 'blink 1s steps(1) infinite',
+                  }} />
+                </span>
+              )
+            }
+          />
+          {/* 튜토리얼 가이드 포스트잇 — 우측 상단, 열기/접기 (controlled) */}
+          <TutorialPostit
+            steps={steps} step={step}
+            done={currentDone} sending={sending}
+            open={guideOpen} onToggle={() => setGuideOpen((o) => !o)}
+            onNext={goNext} onPrev={goPrev} canNext={canNext}
+          />
+        </div>
       </div>
   );
 }
 
 
 // ─── C-3. 1인팀 코딩 환경 ───────────────────────────────────────
-// 짓다 툴바 + opencode iframe (전체). MVP HackathonProgress.tsx 와 동일 구조.
-function C3PersonalCoding() {
+// 짓다 툴바(원본 유지) + OpenCode minimal 임베드 셸. 1인팀은 즉시전송(합의 없음).
+// previewState 로 미리보기 3상태 분기: ready(완성앱)·empty(미준비)·spawning(서버 기동).
+function C3PersonalCoding({ previewState = 'ready' }) {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--c-paper)' }}>
         <JitdaToolbar status="hackathon_running" actions={<ParticipantCanvasActions />} />
-        <OpenCodeShell />
+        <OpenCodeShell
+          previewState={previewState}
+          composerRef={previewState === 'ready' ? <OcReferenceBlock name="App.tsx" path="src/App.tsx" lines="L12-28" /> : undefined}
+        />
       </div>
   );
 }
+// 미리보기 미준비 (서버는 떴으나 앱 빌드 전) — 결정4: 완성앱과 함께 별도 화면.
+function C3PersonalCodingEmpty() { return <C3PersonalCoding previewState="empty" />; }
+// 서버 기동 중 (SpawnLoading) — 페이지정의서 C-3 상태표 "서버 기동 중".
+function C3PersonalCodingSpawning() { return <C3PersonalCoding previewState="spawning" />; }
 
 
 // ─── C-4. 다인팀 코딩 환경 ───────────────────────────────────────
@@ -861,63 +1456,34 @@ function C4TeamCanvas() {
             </>
           }
           promptInput={
-            <span>
+            <span style={{ color: 'var(--c-ink-2)' }}>
               일정 카드를 누르면 D-1 알림 설정 토글이 나오게 해줘. 토글은 카카오톡 색(노랑) 으로.
               <span style={{
                 display: 'inline-block', width: 2, height: 16,
-                background: '#d4d4dc', verticalAlign: 'middle', marginLeft: 1,
+                background: 'var(--c-ink-3)', verticalAlign: 'middle', marginLeft: 1,
                 animation: 'blink 1s steps(1) infinite',
               }} />
             </span>
           }
-          overlay={
-            <>
-              {/* 다른 팀원 커서들 — opencode 텍스트 영역 위에 오버레이 */}
-              <TeamCursor top={210} left={420} name="이서윤" color="var(--c-blue)" />
-              <TeamCursor top={340} left={180} name="박지호" color="var(--c-mint)" />
-
-              {/* 짓다 가 추가한 팀 모드 액션 바 — opencode 프롬프트 박스 위에 */}
-              <div style={{
-                position: 'absolute',
-                left: 24, right: 24, bottom: 124,
-                display: 'flex', alignItems: 'center', gap: 10,
-                pointerEvents: 'none',
-              }}>
-                <div style={{
-                  background: 'rgba(13, 13, 17, 0.85)',
-                  backdropFilter: 'blur(8px)',
-                  border: '1px solid #2a2a32',
-                  borderRadius: 4,
-                  padding: '6px 10px',
-                  fontSize: 11, color: '#d4d4dc',
-                  fontFamily: 'var(--font-mono)',
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  pointerEvents: 'auto',
-                }}>
-                  <span style={{ color: 'var(--c-helmet)' }}>●</span>
-                  김민준이 작성 중 · 38자
-                </div>
-                <div style={{ flex: 1 }} />
-                <button style={{
-                  background: 'var(--c-helmet)',
-                  color: 'var(--c-ink)',
-                  border: '1px solid var(--c-helmet-deep)',
-                  padding: '7px 14px',
-                  borderRadius: 4,
-                  fontFamily: 'var(--font-body)',
-                  fontWeight: 700,
-                  fontSize: 12.5,
-                  cursor: 'pointer',
-                  pointerEvents: 'auto',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-                  display: 'flex', alignItems: 'center', gap: 6,
-                }}>
-                  팀에 전송 요청 →
-                </button>
+          composerRef={<OcReferenceBlock name="UploadPage.tsx" path="src/pages/UploadPage.tsx" lines="L8-40" />}
+          sendAction="request-send"
+          dock={
+            /* 팀원 프레즌스 — composer 바로 위. 전송은 composer 공용 단일 버튼이 합의(E-4) 트리거. */
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 2px 0' }}>
+              <div style={{ display: 'inline-flex' }}>
+                <span style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--c-helmet)', color: 'var(--c-stache)', border: '1.5px solid var(--c-canvas)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8.5, fontWeight: 700, fontFamily: 'var(--font-body)' }}>민준</span>
+                <span style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--c-blue)', color: '#fff', border: '1.5px solid var(--c-canvas)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8.5, fontWeight: 700, fontFamily: 'var(--font-body)', marginLeft: -6 }}>서윤</span>
+                <span style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--c-mint)', color: '#fff', border: '1.5px solid var(--c-canvas)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8.5, fontWeight: 700, fontFamily: 'var(--font-body)', marginLeft: -6 }}>지호</span>
               </div>
-            </>
+              <span style={{ fontSize: 11.5, color: 'var(--c-slate)', fontFamily: 'var(--font-mono)', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <span className="jt-dot live" style={{ width: 6, height: 6 }} />
+                김민준이 작성 중 · 38자
+              </span>
+            </div>
           }
         />
+        {/* 팀원 커서는 미리보기(라이브 앱)가 아니라 composer doc 내부에 색깔 caret+이름표로
+            표시(원 소스 affine-doc-remote-selection-widget). 미리보기 위 오버레이 커서 제거. */}
       </div>
   );
 }
@@ -940,12 +1506,10 @@ function TeamCursor({ top, left, name, color }) {
 }
 
 Object.assign(window, {
-  // \ub300\uae30\uc2e4 \ubaa8\ub378 (\ub300\uae30\uc2e4 \u2460\u00b7\u2461\u00b7\u2462) \u2014 \uc77c\uc2dc\uc815\uc9c0\ub294 dialogs.jsx\uc758 E6Paused\ub85c \ubd84\ub9ac
-  C1RoomBefore, C1RoomAfterTutorial, C1RoomEnded, C1TeamRoom,
-  // \uacfc\uac70 \uba85\uce6d \ud638\ud658 \u2014 \uce94\ubc84\uc2a4 \uad6c\uc131\uc6d0\uc774 \uc544\uc9c1 \uc774\uc804 \uc774\ub984\uc73c\ub85c \ubd80\ub97c \uc218 \uc788\uc74c
-  C1Waiting, C1Ended,
-  C2Tutorial, C3PersonalCoding, C4TeamCanvas,
-  OpenCodeShell, JitdaToolbar, ParticipantCanvasActions,
+  // C-1 \ub300\uae30\uc2e4 (v1 \ud3d0\uae30 2026-05-29 \u2014 v2 \ub2e8\uc77c \ucc44\ud0dd). C1TeamRoomV2(state, team)\uc5d0 \uc9c1\uc811 props.
+  C1RoomBeforeV2, C1RoomAfterTutorialV2, C1RoomEndedV2, C1TeamRoomV2,
+  C2Tutorial, C3PersonalCoding, C3PersonalCodingEmpty, C3PersonalCodingSpawning, C4TeamCanvas,
+  OpenCodeShell, OcReferenceBlock, OcPreviewEmpty, OcPreviewSpawning, JitdaToolbar, ParticipantCanvasActions,
   // MOCK \ud300 \ubcc0\ud615 \u2014 viewer edge case \ub4f1\ub85d\uc6a9
   MOCK_TEAM_STANDARD, MOCK_TEAM_LONG_NAME, MOCK_TEAM_MANY_MEMBERS,
 });
