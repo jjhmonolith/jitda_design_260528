@@ -4162,3 +4162,5 @@ paper 배경(#faf9f6) 위 흰색(#ffffff) 카드 → 명도 차이 1.5%. 카드 
 - **활동 칸반 mock 증원** (`STARTED_TEAMS` 30→44팀): 손든 13팀·잠시 멈춤 15팀으로 늘려 두 zone 페이지네이션(각 2페이지) 시연. 토큰 zone은 상위 10만 노출이라 증원 팀 영향 없음.
 - **페이지네이션 디자인시스템 정렬** (`KanbanPagination`): `jt-btn-ghost`+맨 span → DS `Pagination`(shared.jsx) 어휘인 `jt-btn-secondary` 버튼 + 박스형 mono 칩(canvas bg+hairline border)로 통일. 다른 화면 페이지네이션과 시각 일치(사용자 지적 반영).
 - cache-bust: `operator.jsx ?v=20260612pagecol3`. 검증: Playwright로 b2-started(토큰 zone 무 페이지네이션·손든/잠시멈춤 각 1/2·독립 페이징 동작)·b2-tutorial-running(완료 컬럼만 페이지네이션·좁은 컬럼 fit) 확인.
+- **B-2 ⑤ 활동 칸반 3 zone 카드 높이 통일** (`operator.jsx`): 손든 포스트잇(HandRaisedPostit)이 [해결] 버튼(22px) 때문에 토큰·잠시멈춤 카드보다 ~6px 높던 문제 수정. 세 카드(TokenTeamCard·HandRaisedPostit·AlertPostit) 모두 `height: 66`(border-box)로 고정 통일 + [해결] 버튼 22→18px·padding 0 9px로 축소해 66px 안에 안 잘리게 맞춤. 검증: 세 zone offsetHeight 전부 66, 클리핑 0.
+- cache-bust: `operator.jsx ?v=20260612cardh`.

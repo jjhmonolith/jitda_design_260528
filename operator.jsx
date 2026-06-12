@@ -1708,7 +1708,7 @@ function TokenTeamCard({ team, rank, max }) {
         borderRadius: 'var(--r-xs)',
         padding: '8px 10px',
         display: 'flex', flexDirection: 'column', gap: 6,
-        minHeight: 60
+        height: 66 /* 3 zone 카드 높이 통일 (2026-06-12): 손든 해결버튼 카드와 동일 높이 */
       }}>
       {/* 1행 — 순위 + 팀명 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1962,8 +1962,8 @@ function HandRaisedPostit({ team, onResolve }) {
         background: 'var(--c-helmet-soft)',
         borderRadius: 'var(--r-xs)',
         padding: '8px 10px',
-        display: 'flex', flexDirection: 'column', gap: 6,
-        minHeight: 60
+        display: 'flex', flexDirection: 'column', gap: 4,
+        height: 66 /* 3 zone 카드 높이 통일 (2026-06-12) */
       }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span style={{ color: 'var(--c-helmet-deep)', display: 'inline-flex', flexShrink: 0 }}>
@@ -1997,7 +1997,7 @@ function HandRaisedPostit({ team, onResolve }) {
           title="해결됨으로 표시 — 이 손들기를 끕니다"
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 3,
-            height: 22, padding: '0 10px',
+            height: 18, padding: '0 9px',
             border: '1px solid var(--c-stache)',
             background: 'var(--c-canvas)',
             color: 'var(--c-stache)',
@@ -2060,7 +2060,7 @@ function AlertPostit({ team }) {
         borderRadius: 'var(--r-xs)',
         padding: '8px 10px',
         display: 'flex', flexDirection: 'column', gap: 6,
-        minHeight: 60
+        height: 66 /* 3 zone 카드 높이 통일 (2026-06-12) */
       }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <span
