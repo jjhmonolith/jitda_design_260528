@@ -1564,49 +1564,43 @@
     <section id="live-frame">
       <div class="sec-head">
         <span class="sec-num">09c</span>
-        <h2 class="sec-title">Live Frame · Safari Chrome</h2>
-        <span class="sec-tag">D-2 한정 · 데코레이션 전용</span>
+        <h2 class="sec-title">Safari Chrome · 미리보기 브라우저 (공용)</h2>
+        <span class="sec-tag">shared.jsx SafariChrome · OpenCode(C-2/3/4) + 갤러리(D-2)</span>
       </div>
       <p class="sec-desc">
-        갤러리 상세(D-2) 좌측 라이브 패널의 iframe 컨테이너 상단에 얹는 <strong>macOS Tahoe Safari 톤</strong>의 컴팩트 chrome 바. 라이브 앱이 "외부 컨텍스트(실제 브라우저)에서 동작 중"임을 시각적으로 분리. <strong>전체 정적</strong> — 트래픽 라이트·아이콘·주소창 모두 클릭/호버 동작 없음. 작품명을 주소창 중앙에 노출(URL 텍스트 대신).
+        <strong>macOS Tahoe Safari 톤</strong>의 컴팩트 chrome 바 — 공용 컴포넌트 <span class="mono">SafariChrome(shared.jsx)</span>. 라이브 앱이 "외부 컨텍스트(실제 브라우저)에서 동작 중"임을 시각적으로 분리. <strong>주소 텍스트는 바 정중앙</strong>(좌·우 그룹 동일 flex + pill 내부 좌/우 18px 대칭). 레이아웃 좌→우: 트래픽 라이트 · (파일 탐색기 토글) · 뒤로/앞으로 · 주소 pill[(홈) · 주소 · 새로고침] · 새 탭에서 열기 · 주소 복사. <strong>홈 버튼은 양쪽 공통</strong>. <strong>2개 변형</strong> — <strong>Slim(갤러리 D-2)</strong>: 소스 미열람이라 파일 탐색기 토글만 제외(홈 포함). <strong>Full(OpenCode C-2/3/4)</strong>: + 파일 탐색기 토글(<strong>전 화면 항상</strong> — 파일 없음·튜토리얼·미준비 포함) + 하단 파일 탭/탐색기(<span class="mono">OcBrowser</span>). 파일이 없으면 탐색기는 빈 상태("아직 생성된 파일이 없어요"). 뒤로/앞으로는 데코(앞으로=비활성), 그 외 버튼은 동작.
       </p>
 
-      <h3 style="font-size: 14px; margin: 8px 0 12px; letter-spacing: 0.16em; color: var(--c-ink-3); text-transform: uppercase; font-family: var(--font-mono);">▸ DEFAULT · 작품명 노출 (loaded)</h3>
+      <h3 style="font-size: 14px; margin: 8px 0 12px; letter-spacing: 0.16em; color: var(--c-ink-3); text-transform: uppercase; font-family: var(--font-mono);">▸ SLIM · 갤러리 D-2 (탐색기 토글 제외 · 홈 포함)</h3>
 
       <div style="background: var(--c-stone-2); border: 1px solid var(--c-hairline); border-radius: 8px; padding: 16px; margin-bottom: 8px;">
         <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 8px; overflow: hidden; box-shadow: 0 6px 20px rgba(20,19,15,0.08);">
-          <!-- Safari chrome -->
-          <div style="display: flex; align-items: center; gap: 10px; padding: 5px 11px; background: #f5f5f7; border-bottom: 0.5px solid #d8d8da; height: 32px; box-sizing: border-box;">
-            <div style="display: flex; gap: 6px; flex-shrink: 0;">
-              <span style="width: 10px; height: 10px; border-radius: 50%; background: #FF5F57; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
-              <span style="width: 10px; height: 10px; border-radius: 50%; background: #FEBC2E; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
-              <span style="width: 10px; height: 10px; border-radius: 50%; background: #28C840; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
-            </div>
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" style="flex-shrink: 0; margin-left: 4px;">
-              <rect x="1.5" y="2.5" width="11" height="9" rx="1.5" stroke="#86868b" stroke-width="0.9"/>
-              <line x1="5" y1="2.5" x2="5" y2="11.5" stroke="#86868b" stroke-width="0.9"/>
-            </svg>
-            <div style="flex: 1; display: flex; justify-content: center; min-width: 0;">
-              <div style="display: flex; align-items: center; gap: 7px; padding: 0 10px; width: 100%; max-width: 380px; height: 22px; background: #fff; border: 0.5px solid #d6d6d8; border-radius: 6px; font-size: 11.5px; color: #1d1d1f;">
-                <span style="color: #86868b; flex-shrink: 0; line-height: 1; letter-spacing: -0.04em;">
-                  <span style="font-size: 8.5px;">a</span><span style="font-size: 11px;">A</span>
-                </span>
-                <span style="flex: 1; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #1d1d1f; font-weight: 400; letter-spacing: -0.01em;">인디 음악 디스커버리</span>
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink: 0;">
-                  <path d="M8.3 5a3.3 3.3 0 1 1-1-2.35M8.3 1.5v2h-2" stroke="#86868b" stroke-width="0.9" stroke-linecap="round" fill="none"/>
-                </svg>
+          <!-- Safari chrome · SLIM (gallery): 트래픽 + 뒤로/앞으로 + pill[스페이서·주소·새로고침] + 새탭 + 복사 -->
+          <div style="display: flex; align-items: center; gap: 10px; padding: 5px 11px; background: #f5f5f7; border-bottom: 0.5px solid #d8d8da; height: 38px; box-sizing: border-box;">
+            <div style="flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 10px;">
+              <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: #FF5F57; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: #FEBC2E; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: #28C840; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
+              </div>
+              <div style="display: flex; align-items: center; flex-shrink: 0;">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#6b6b70" stroke-width="1.5"><path d="M10 3.5 5.5 8l4.5 4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span style="width: 1px; height: 13px; background: #d6d6d8; margin: 0 5px;"></span>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#c4c4c8" stroke-width="1.5"><path d="M6 3.5 10.5 8 6 12.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 11px; flex-shrink: 0;">
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                <path d="M7 1.5v7" stroke="#86868b" stroke-width="0.9" stroke-linecap="round"/>
-                <path d="M4.8 3.7L7 1.5l2.2 2.2" stroke="#86868b" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                <path d="M3 7.5v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-4" stroke="#86868b" stroke-width="0.9" stroke-linecap="round" fill="none"/>
-              </svg>
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                <rect x="1.5" y="2.5" width="5" height="9" rx="1" stroke="#86868b" stroke-width="0.9" fill="none"/>
-                <rect x="7.5" y="2.5" width="5" height="9" rx="1" stroke="#86868b" stroke-width="0.9" fill="none"/>
-              </svg>
+            <div style="flex: 0 1 380px; min-width: 0; display: flex; justify-content: center;">
+              <div style="display: flex; align-items: center; gap: 5px; padding: 0 4px; width: 100%; height: 24px; background: #fff; border: 0.5px solid #d6d6d8; border-radius: 7px; font-size: 11.5px; color: #1d1d1f;">
+                <span style="flex-shrink: 0; width: 18px; display: flex; align-items: center; justify-content: center; color: #6b6b70;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#6b6b70" stroke-width="1.2"><path d="M2.6 7.4 8 3l5.4 4.4M4.1 6.5V13h7.8V6.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span style="flex: 1; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #1d1d1f; font-weight: 400; letter-spacing: -0.01em;">인디 음악 디스커버리</span>
+                <span style="flex-shrink: 0; width: 18px; display: flex; align-items: center; justify-content: center; color: #6b6b70;">
+                  <svg width="11" height="11" viewBox="0 0 10 10" fill="none"><path d="M8.3 5a3.3 3.3 0 1 1-1-2.35M8.3 1.5v2h-2" stroke="#6b6b70" stroke-width="0.9" stroke-linecap="round" fill="none"/></svg>
+                </span>
+              </div>
+            </div>
+            <div style="flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 4px; justify-content: flex-end; color: #6b6b70;">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M9.5 2.8h3.7v3.7M13.2 2.8 7.6 8.4" stroke="#6b6b70" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 9.2v2.6a1.6 1.6 0 0 1-1.6 1.6H4.2a1.6 1.6 0 0 1-1.6-1.6V5.6A1.6 1.6 0 0 1 4.2 4h2.6" stroke="#6b6b70" stroke-width="1.1" stroke-linecap="round"/></svg>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5.6" y="5.6" width="7.4" height="7.4" rx="1.6" stroke="#6b6b70" stroke-width="1.1"/><path d="M10.4 5.6V4.1A1.6 1.6 0 0 0 8.8 2.5H4.1A1.6 1.6 0 0 0 2.5 4.1v4.7A1.6 1.6 0 0 0 4.1 10.4h1.5" stroke="#6b6b70" stroke-width="1.1"/></svg>
             </div>
           </div>
           <!-- 본문 영역 placeholder -->
@@ -1615,63 +1609,59 @@
           </div>
         </div>
       </div>
-      <div class="mono" style="font-size: 11px; color: var(--c-slate); margin-bottom: 24px;">DetailLivePane(gallery.jsx) · 라이브 앱 정상 로드 상태</div>
+      <div class="mono" style="font-size: 11px; color: var(--c-slate); margin-bottom: 24px;">DetailLivePane(gallery.jsx) · &lt;SafariChrome url={…} /&gt; — onToggleSidebar 미전달 → 파일 탐색기 없음. 홈은 항상. 주소 정중앙.</div>
 
-      <h3 style="font-size: 14px; margin: 8px 0 12px; letter-spacing: 0.16em; color: var(--c-ink-3); text-transform: uppercase; font-family: var(--font-mono);">▸ LOADING · 연결 중 (state === 'loading')</h3>
+      <h3 style="font-size: 14px; margin: 8px 0 12px; letter-spacing: 0.16em; color: var(--c-ink-3); text-transform: uppercase; font-family: var(--font-mono);">▸ FULL · OpenCode C-3/C-4 (탐색기 토글 + 홈)</h3>
 
       <div style="background: var(--c-stone-2); border: 1px solid var(--c-hairline); border-radius: 8px; padding: 16px; margin-bottom: 8px;">
         <div style="background: var(--c-canvas); border: 1px solid var(--c-hairline); border-radius: 8px; overflow: hidden; box-shadow: 0 6px 20px rgba(20,19,15,0.08);">
-          <div style="display: flex; align-items: center; gap: 10px; padding: 5px 11px; background: #f5f5f7; border-bottom: 0.5px solid #d8d8da; height: 32px; box-sizing: border-box;">
-            <div style="display: flex; gap: 6px; flex-shrink: 0;">
-              <span style="width: 10px; height: 10px; border-radius: 50%; background: #FF5F57; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
-              <span style="width: 10px; height: 10px; border-radius: 50%; background: #FEBC2E; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
-              <span style="width: 10px; height: 10px; border-radius: 50%; background: #28C840; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
-            </div>
-            <svg width="13" height="13" viewBox="0 0 14 14" fill="none" style="flex-shrink: 0; margin-left: 4px;">
-              <rect x="1.5" y="2.5" width="11" height="9" rx="1.5" stroke="#86868b" stroke-width="0.9"/>
-              <line x1="5" y1="2.5" x2="5" y2="11.5" stroke="#86868b" stroke-width="0.9"/>
-            </svg>
-            <div style="flex: 1; display: flex; justify-content: center; min-width: 0;">
-              <div style="display: flex; align-items: center; gap: 7px; padding: 0 10px; width: 100%; max-width: 380px; height: 22px; background: #fff; border: 0.5px solid #d6d6d8; border-radius: 6px; font-size: 11.5px;">
-                <span style="color: #86868b; flex-shrink: 0; line-height: 1; letter-spacing: -0.04em;">
-                  <span style="font-size: 8.5px;">a</span><span style="font-size: 11px;">A</span>
-                </span>
-                <span style="flex: 1; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #86868b; font-weight: 400; letter-spacing: -0.01em;">연결 중…</span>
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex-shrink: 0;">
-                  <path d="M8.3 5a3.3 3.3 0 1 1-1-2.35M8.3 1.5v2h-2" stroke="#86868b" stroke-width="0.9" stroke-linecap="round" fill="none"/>
-                </svg>
+          <!-- Safari chrome · FULL (OpenCode): + 사이드바 토글(좌) + 홈(pill 좌) -->
+          <div style="display: flex; align-items: center; gap: 10px; padding: 5px 11px; background: #f5f5f7; border-bottom: 0.5px solid #d8d8da; height: 38px; box-sizing: border-box;">
+            <div style="flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 10px;">
+              <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: #FF5F57; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: #FEBC2E; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: #28C840; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.06);"></span>
+              </div>
+              <span style="display: inline-flex; margin-left: 2px; color: #6b6b70;"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#6b6b70" stroke-width="1.1"><rect x="2" y="3" width="12" height="10" rx="1.6"/><path d="M6.2 3v10"/></svg></span>
+              <div style="display: flex; align-items: center; flex-shrink: 0;">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#6b6b70" stroke-width="1.5"><path d="M10 3.5 5.5 8l4.5 4.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span style="width: 1px; height: 13px; background: #d6d6d8; margin: 0 5px;"></span>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#c4c4c8" stroke-width="1.5"><path d="M6 3.5 10.5 8 6 12.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 11px; flex-shrink: 0;">
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                <path d="M7 1.5v7" stroke="#86868b" stroke-width="0.9" stroke-linecap="round"/>
-                <path d="M4.8 3.7L7 1.5l2.2 2.2" stroke="#86868b" stroke-width="0.9" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                <path d="M3 7.5v4a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-4" stroke="#86868b" stroke-width="0.9" stroke-linecap="round" fill="none"/>
-              </svg>
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
-                <rect x="1.5" y="2.5" width="5" height="9" rx="1" stroke="#86868b" stroke-width="0.9" fill="none"/>
-                <rect x="7.5" y="2.5" width="5" height="9" rx="1" stroke="#86868b" stroke-width="0.9" fill="none"/>
-              </svg>
+            <div style="flex: 0 1 380px; min-width: 0; display: flex; justify-content: center;">
+              <div style="display: flex; align-items: center; gap: 5px; padding: 0 4px; width: 100%; height: 24px; background: #fff; border: 0.5px solid #d6d6d8; border-radius: 7px; font-size: 11.5px; color: #1d1d1f;">
+                <span style="flex-shrink: 0; width: 18px; display: flex; align-items: center; justify-content: center; color: #6b6b70;"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#6b6b70" stroke-width="1.2"><path d="M2.6 7.4 8 3l5.4 4.4M4.1 6.5V13h7.8V6.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                <span style="flex: 1; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; color: #1d1d1f; font-weight: 400; letter-spacing: -0.01em;">sapari.jitda.run</span>
+                <span style="flex-shrink: 0; width: 18px; display: flex; align-items: center; justify-content: center; color: #6b6b70;"><svg width="11" height="11" viewBox="0 0 10 10" fill="none"><path d="M8.3 5a3.3 3.3 0 1 1-1-2.35M8.3 1.5v2h-2" stroke="#6b6b70" stroke-width="0.9" stroke-linecap="round" fill="none"/></svg></span>
+              </div>
+            </div>
+            <div style="flex: 1 1 0; min-width: 0; display: flex; align-items: center; gap: 4px; justify-content: flex-end; color: #6b6b70;">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M9.5 2.8h3.7v3.7M13.2 2.8 7.6 8.4" stroke="#6b6b70" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 9.2v2.6a1.6 1.6 0 0 1-1.6 1.6H4.2a1.6 1.6 0 0 1-1.6-1.6V5.6A1.6 1.6 0 0 1 4.2 4h2.6" stroke="#6b6b70" stroke-width="1.1" stroke-linecap="round"/></svg>
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5.6" y="5.6" width="7.4" height="7.4" rx="1.6" stroke="#6b6b70" stroke-width="1.1"/><path d="M10.4 5.6V4.1A1.6 1.6 0 0 0 8.8 2.5H4.1A1.6 1.6 0 0 0 2.5 4.1v4.7A1.6 1.6 0 0 0 4.1 10.4h1.5" stroke="#6b6b70" stroke-width="1.1"/></svg>
             </div>
           </div>
-          <div style="background: var(--c-paper); padding: 32px 28px; min-height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;">
-            <div style="width: 40px; height: 40px; border-radius: 8px; background: var(--c-canvas); border: 1px solid var(--c-hairline);"></div>
-            <div style="font-size: 11px; color: var(--c-muted); font-family: var(--font-mono); letter-spacing: 0.14em;">BOOT · 00:08 · MAX 00:30</div>
+          <div style="background: #fdeed7; padding: 24px 28px; min-height: 120px; display: flex; align-items: center; justify-content: center; color: #7a5d35; font-size: 11px; font-family: var(--font-mono); letter-spacing: 0.14em;">
+            LIVE APP · 사이드바 토글 시 좌측 파일 탐색기 + 파일 탭(OcBrowser)
           </div>
         </div>
       </div>
-      <div class="mono" style="font-size: 11px; color: var(--c-slate); margin-bottom: 28px;">로딩 시 주소창 텍스트만 "연결 중…" + 회색(#86868b)으로 전환. 다른 요소는 변화 없음.</div>
+      <div class="mono" style="font-size: 11px; color: var(--c-slate); margin-bottom: 24px;">OcBrowser(participant.jsx) · 사이드바 토글(좌)·홈(pill 좌) 추가. 파일 클릭 → 상단 파일 탭 + 코드 뷰.</div>
+
+      <div class="mono" style="font-size: 11px; color: var(--c-slate); margin-bottom: 28px;">상태 분기 — <strong>loading</strong>: 주소창 텍스트만 "연결 중…" + 회색(#86868b), 그 외 정적. <strong>OpenCode</strong>: 파일 탐색기 토글·홈은 <strong>전 화면 항상</strong>(파일 없음·튜토리얼·미준비 포함). 파일 트리/탭은 파일 있을 때만 — 없으면 탐색기 빈 상태("아직 생성된 파일이 없어요").</div>
 
       <!-- 스펙 표 -->
       <div class="grid grid-3" style="margin-bottom: 20px;">
         <div class="spec">
           <div class="spec-sub">DIMENSIONS</div>
           <div style="font-size: 13px; line-height: 1.7; color: var(--c-ink); margin: 10px 0;">
-            <div>bar height · <strong>32px</strong> (이전 ~44px의 60% 슬림)</div>
+            <div>bar height · <strong>38px</strong></div>
             <div>padding · <strong>5px 11px</strong></div>
-            <div>address bar · <strong>22px × max-w 380</strong>, radius 6px</div>
+            <div>address pill · <strong>24px × 420</strong>, radius 7px (바 정중앙)</div>
+            <div>좌·우 그룹 · <strong>flex 1 1 0</strong> (동일 폭 → pill 정중앙)</div>
             <div>traffic light · <strong>10px</strong> × 3 (gap 6px)</div>
-            <div>icon stroke · <strong>0.9</strong> (SF Symbols 톤)</div>
+            <div>icon stroke · <strong>1.1~1.5</strong> (SF Symbols 톤)</div>
           </div>
         </div>
         <div class="spec">
@@ -1690,10 +1680,11 @@
           <div class="spec-sub">ELEMENTS · 좌→우</div>
           <div style="font-size: 13px; line-height: 1.7; color: var(--c-ink); margin: 10px 0;">
             <div>1. 트래픽 라이트 3개</div>
-            <div>2. 사이드바 토글 SVG</div>
-            <div>3. 주소창 (aA 리더 · 작품명 · 새로고침 ↻)</div>
-            <div>4. 공유 액션 SVG</div>
-            <div>5. 탭 그룹 SVG</div>
+            <div>2. 파일 탐색기 토글 <span style="color: var(--c-slate);">(Full만·항상)</span></div>
+            <div>3. 뒤로 / 앞으로 (앞으로 비활성)</div>
+            <div>4. 주소 pill (홈(공통) · 주소 · 새로고침 ↻)</div>
+            <div>5. 새 탭에서 열기</div>
+            <div>6. 주소 복사</div>
           </div>
         </div>
       </div>
@@ -1701,14 +1692,15 @@
       <!-- 사용 규칙 -->
       <h3 style="font-size: 14px; margin: 8px 0 12px; letter-spacing: 0.16em; color: var(--c-ink-3); text-transform: uppercase; font-family: var(--font-mono);">▸ 사용 규칙</h3>
       <div class="rules">
-        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">D-2(갤러리 상세) 좌측 라이브 패널 iframe 컨테이너에만 사용. 다른 화면에서 "외부 컨텍스트" 시각화 필요할 때만 신중히 재사용.</span></div>
-        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">주소창 중앙에는 <strong>작품명</strong>만 노출. URL/링크 텍스트 금지(2026-05-27 결정).</span></div>
-        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">색조는 macOS Safari 그레이(#f5f5f7) 고수. Jitda 워밍 톤(stone)에 맞추지 말 것 — 의도된 "외부 브라우저" 분리감.</span></div>
-        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">로딩 상태는 주소창 텍스트만 "연결 중…" + 회색으로 전환. 트래픽 라이트·다른 아이콘은 정적 유지.</span></div>
-        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">트래픽 라이트·아이콘·새로고침에 클릭 핸들러 부착 금지. <strong>전체 데코레이션 전용</strong>. 실제 새로고침/공유 액션은 GNB·BackLink 영역에서 처리.</span></div>
-        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">탭 구조(여러 탭) 추가 금지. 단일 작품 표시이므로 주소창 단일 슬롯으로 충분.</span></div>
-        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">chrome 높이를 늘리지 말 것 (32px 고정). 작업물 가시성 우선 — 두 줄·additional row 금지.</span></div>
-        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">macOS 브라우저 chrome을 페이지 최상단(GNB 위)에 깔지 말 것 — 더블 헤더 위계 충돌 (변경 사항 #1).</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">공용 <span class="mono">SafariChrome(shared.jsx)</span> 사용 — OpenCode 미리보기(C-2/3/4)·갤러리 상세(D-2) 공통. 새 "외부 브라우저" 컨텍스트 필요 시 재사용.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">주소 텍스트는 <strong>바 정중앙</strong> — 좌·우 그룹 동일 flex + pill 내부 좌/우 18px 대칭. 갤러리=작품명, OpenCode=URL/파일 경로.</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text"><strong>좁은 폭(브라우저식)</strong>: 버튼 그룹은 <span class="mono">min-width: auto</span>(min-content floor)로 안 줄고, <strong>주소 pill만 먼저 축소</strong>(URL ellipsis 말줄임). 사이드 그룹에 <span class="mono">min-width: 0</span> 금지 — 0폭 붕괴로 버튼 클립. 좁아지면 정중앙은 근사치(약간 우측).</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text">chrome 색조는 macOS Safari 그레이(#f5f5f7) 고수 — 의도된 "외부 브라우저" 분리감. (Full 변형의 파일 탐색기 사이드바는 쿨그레이 #f9f9f9 + Finder 블루 폴더 + 중립 선택 pill.)</span></div>
+        <div class="rule do"><span class="rule-tag">DO</span><span class="rule-text"><strong>홈 버튼은 공통</strong>(OpenCode·갤러리 모두). <strong>Slim(갤러리)</strong>는 파일 탐색기 토글만 제외(소스 미열람). <strong>Full(OpenCode C-2/3/4)</strong>은 탐색기 토글을 <strong>전 화면 항상</strong> 노출(파일 없으면 빈 상태) + 하단 파일 탭/코드 뷰(OcBrowser).</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">뒤로/앞으로에 동작 부여 금지 — 미리보기 히스토리 없음(데코, 앞으로=비활성). 그 외 새로고침·새탭·복사·홈·탐색기 토글은 실제 동작.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">갤러리(Slim)에 파일 탭/탐색기 추가 금지 — 단일 작품 표시. 소스 열람은 OpenCode 전용.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">chrome 높이를 늘리지 말 것 (38px 고정). 작업물 가시성 우선 — 두 줄·additional row 금지.</span></div>
+        <div class="rule dont"><span class="rule-tag">DON'T</span><span class="rule-text">macOS 브라우저 chrome을 페이지 최상단(GNB 위)에 깔지 말 것 — 더블 헤더 위계 충돌.</span></div>
       </div>
     </section>
 

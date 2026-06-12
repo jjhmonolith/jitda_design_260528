@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 
   <!-- 단일 소스: tokens.css 직접 로드 (2026-05-27 전환). 아래 인라인 <style>은 viewer-specific override만 유지. -->
-  <link rel="stylesheet" href="tokens.css?v=20260601j" />
+  <link rel="stylesheet" href="tokens.css?v=20260612mascot" />
 
   <!-- viewer 인라인 override (기존 토큰 값은 tokens.css와 다를 수 있음 — 우선순위: 인라인 > tokens.css) -->
   <style>
@@ -647,13 +647,14 @@
   </div>
 
   <!-- JSX 컴포넌트 (shared 먼저 로드) — ?v= 토큰: 브라우저 메모리 캐시 무효화 (dev only) -->
-  <script type="text/babel" src="shared.jsx?v=20260610z3"></script>
-  <script type="text/babel" src="auth.jsx?v=20260602i"></script>
-  <script type="text/babel" src="operator.jsx?v=20260601g"></script>
-  <script type="text/babel" src="participant.jsx?v=20260610z7"></script>
-  <script type="text/babel" src="gallery.jsx?v=20260610x"></script>
+  <script type="text/babel" src="shared.jsx?v=20260612digclip2"></script>
+  <script type="text/babel" src="auth.jsx?v=20260612mascot"></script>
+  <script type="text/babel" src="operator.jsx?v=20260612pagecol5"></script>
+  <script type="text/babel" src="participant.jsx?v=20260612mascot2"></script>
+  <script type="text/babel" src="gallery.jsx?v=20260612mascot"></script>
   <script type="text/babel" src="dialogs.jsx?v=20260601g"></script>
-  <script type="text/babel" src="judge.jsx?v=20260601g"></script>
+  <!-- 심사 영역 통합 (2026-06-10): judge.jsx → judging.jsx (심사위원·참여자·운영자 전 화면) -->
+  <script type="text/babel" src="judging.jsx?v=20260610judge3"></script>
 
   <script type="text/babel" data-presets="react">
     // ──────────────────────────────────────────────────────────────
@@ -661,11 +662,164 @@
     //  각 항목: { id, label, section, w?, h?, render }
     //  w/h 기본값 1280×820. B영역 일부와 D영역 일부는 920 높이.
     // ──────────────────────────────────────────────────────────────
+    // ── Z. 데모 — JitdaMascot 애니메이션 쇼케이스 (호핑 + 곡괭이질) ──
+    function ZMascotShowcase() {
+      const cell = (title, node) => (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+          <div style={{ minHeight: 170, display: 'flex', alignItems: 'flex-end' }}>{node}</div>
+          <span className="jt-mono" style={{ fontSize: 11, letterSpacing: '0.08em', color: 'var(--c-muted)' }}>{title}</span>
+        </div>
+      );
+      return (
+        <div style={{
+          width: '100%', minHeight: 520,
+          background: '#ffffff',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 48,
+          padding: 48,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 80 }}>
+            {cell('HOP · 짓는 중', <JitdaMascot size={120} />)}
+            {cell('BLUEPRINT · 도면 보는 중', <JitdaMascotBlueprint size={120} />)}
+            {cell('DIG · 머리 위로 곡괭이질(측면)', <JitdaMascotDig size={120} />)}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 56, marginTop: 4 }}>
+            <JitdaMascot size={64} />
+            <JitdaMascotBlueprint size={72} />
+            <JitdaMascotDig size={72} />
+          </div>
+          {/* 새 로고 다측 뷰 — 정면/측면 단독 확인용 */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 72, marginTop: 8 }}>
+            {cell('새 로고 · 정면', <JitdaCharFront size={120} />)}
+            {cell('새 로고 · 측면(좌)', <JitdaCharSide size={120} />)}
+            {cell('새 로고 · 측면(우)', <JitdaCharSide size={120} flip={true} />)}
+          </div>
+        </div>
+      );
+    }
+
+    // ── 0. 로고 테스트 — logo/jitda_logo-{12,13,16,17}.svg 캐릭터 베리에이션을 C-1 GNB에 적용 ──
+    //  영문 "Jitda" 워드마크는 제외, 캐릭터(표정)만 사용 + 기존 한글 "짓다" 워드마크 유지.
+    //  베리에이션은 입(표정)만 다름 — JitdaIcon/JitdaMark의 variant prop (shared.jsx JITDA_MOUTHS).
+    function LogoTestGNB() {
+      const VARIANTS = [
+        { key: 'base',    file: 'base · jitda_logo.svg', desc: '열린 ㅅ 입 (legacy)' },
+        { key: 'v12',     file: 'logo-12',               desc: '콧수염형 잔잔한 미소' },
+        { key: 'v13',     file: 'logo-13',               desc: '입술형(아랫입술 강조) 미소' },
+        { key: 'v16',     file: 'logo-16',               desc: '활짝 웃는 물결형 입', applied: true },
+        { key: 'v17',     file: 'logo-17',               desc: '혀 보이는 미소' },
+      ];
+      // C-1 대기실 GNB 우측 — 참가자 정보(이름·팀·아바타). participant.jsx C1TeamRoomV2와 동일 어휘.
+      const c1Actions = (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10,
+          paddingRight: 12, borderRight: '1px solid var(--c-hairline)' }}>
+          <span className="jt-mono" style={{ fontSize: 11, color: 'var(--c-muted)' }}>김민준 · 3팀 데이터파이터즈</span>
+          <div className="jt-avatar" style={{ background: '#d97757', color: '#fff',
+            width: 26, height: 26, fontSize: 10, fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: '-0.04em' }}>민준</div>
+        </div>
+      );
+      const tag = (v) => (
+        <span className="jt-mono" style={{
+          flex: '0 0 150px', fontSize: 11, letterSpacing: '0.04em',
+          color: v.applied ? 'var(--c-helmet-deep)' : 'var(--c-muted)',
+          fontWeight: v.applied ? 700 : 400,
+          textAlign: 'right', paddingRight: 16, lineHeight: 1.3,
+        }}>{v.file}{v.applied ? ' ✓' : ''}</span>
+      );
+      return (
+        <div style={{
+          height: '100%', overflow: 'auto',
+          background: 'linear-gradient(rgba(45,42,36,0.04) 1px, transparent 1px) 0 0 / 24px 24px, linear-gradient(90deg, rgba(45,42,36,0.04) 1px, transparent 1px) 0 0 / 24px 24px, var(--c-paper)',
+          padding: '40px 48px',
+          display: 'flex', flexDirection: 'column', gap: 40,
+        }}>
+          <header style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="jt-eyebrow" style={{ fontSize: 11, letterSpacing: '0.16em', color: 'var(--c-helmet-deep)' }}>로고 베리에이션 테스트</div>
+            <h1 style={{ fontSize: 28, lineHeight: 1.2, letterSpacing: '-0.025em', fontFamily: 'var(--font-display)', fontWeight: 800, color: 'var(--c-ink)', margin: 0 }}>
+              캐릭터 표정 베리에이션 · GNB 적용
+            </h1>
+            <p style={{ fontSize: 13, color: 'var(--c-slate)', lineHeight: 1.6, margin: 0, maxWidth: 760 }}>
+              <code style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>logo/</code> 폴더의 로고에서 영문 "Jitda" 워드마크를 제거하고 캐릭터(입모양)만 추출했습니다.
+              플랫폼 워드마크는 기존 한글 <strong>짓다</strong>를 그대로 사용합니다.
+              <strong style={{ color: 'var(--c-helmet-deep)' }}> 2026-06-11부로 정본 로고는 logo-16(✓ 활짝 웃는 물결형)으로 확정되어 전 화면 GNB·마스코트에 적용</strong>됐습니다.
+              어두운 배경에는 반전(mono) 버전을 사용합니다.
+            </p>
+          </header>
+
+          {/* GNB 적용 비교 — C-1 헤더 기준 5종 스택 */}
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-ink)', margin: 0 }}>① GNB 적용 (C-1 대기실 헤더)</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {VARIANTS.map((v) => (
+                <div key={v.file} style={{ display: 'flex', alignItems: 'center' }}>
+                  {tag(v)}
+                  <div style={{ flex: 1, border: v.applied ? '1.5px solid var(--c-helmet)' : '1px solid var(--c-hairline)', borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(20,19,15,0.05)' }}>
+                    <AppHeader brandVariant={v.key} actions={c1Actions} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* 캐릭터 단독 + 풀 마크 비교 */}
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-ink)', margin: 0 }}>② 캐릭터 단독 · 풀 마크 (캐릭터 + 짓다)</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 14 }}>
+              {VARIANTS.map((v) => (
+                <div key={v.file} style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
+                  padding: '24px 12px',
+                  background: v.applied ? 'var(--c-helmet-wash)' : 'var(--c-canvas)',
+                  border: v.applied ? '1.5px solid var(--c-helmet)' : '1px solid var(--c-hairline)', borderRadius: 12,
+                }}>
+                  <div style={{ minHeight: 64, display: 'flex', alignItems: 'center' }}>
+                    <JitdaIcon size={56} variant={v.key} />
+                  </div>
+                  <div style={{ minHeight: 30, display: 'flex', alignItems: 'center' }}>
+                    <JitdaMark size={20} variant={v.key} />
+                  </div>
+                  <span className="jt-mono" style={{ fontSize: 10.5, color: v.applied ? 'var(--c-helmet-deep)' : 'var(--c-muted)', fontWeight: v.applied ? 700 : 400, textAlign: 'center', lineHeight: 1.4 }}>
+                    {v.file}{v.applied ? ' ✓ 정본' : ''}<br />{v.desc}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* 반전(mono) 버전 — 어두운 배경 활용처 */}
+          <section style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--c-ink)', margin: 0 }}>③ 반전(mono) 버전 · 어두운 배경 활용</h2>
+            <p style={{ fontSize: 12.5, color: 'var(--c-slate)', lineHeight: 1.6, margin: 0, maxWidth: 760 }}>
+              어두운 배경에서는 <code style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5 }}>mono</code> 반전 버전을 씁니다 — 노란 몸체는 브랜드 식별을 위해 유지하고
+              눈·입 디테일만 흰색으로 스왑합니다. 실제 적용처: <strong>A-2 참가자 로그인의 좌측 블루프린트 패널</strong>(다크).
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              {/* 라이트 (기본) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center', justifyContent: 'center',
+                padding: '36px 12px', background: 'var(--c-canvas)', border: '1px solid var(--c-hairline)', borderRadius: 12 }}>
+                <JitdaMark size={26} variant="v16" />
+                <span className="jt-mono" style={{ fontSize: 10.5, color: 'var(--c-muted)' }}>LIGHT · 기본 (canvas/paper)</span>
+              </div>
+              {/* 다크 (반전 mono) — jt-blueprint-bg 어휘 */}
+              <div className="jt-blueprint-bg" style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center', justifyContent: 'center',
+                padding: '36px 12px', borderRadius: 12, position: 'relative', overflow: 'hidden' }}>
+                <JitdaMark size={26} variant="v16" mono />
+                <span className="jt-mono" style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.62)', position: 'relative', zIndex: 1 }}>DARK · 반전 mono (blueprint)</span>
+              </div>
+            </div>
+          </section>
+        </div>
+      );
+    }
+
     const SCREENS = [
+      // ─ 0. 로고 테스트 ─────────────────────────────
+      { id: 'logo-test',      section: '0. 로고 테스트', label: '0 · 캐릭터 베리에이션 (C-1 GNB 적용)', h: 1080, render: () => <LogoTestGNB /> },
+
       // ─ A. 인증 ─────────────────────────────────
       { id: 'a1',              section: 'A. 인증',      label: 'A-1 · 참가자 코드 입장 (기본)',          render: () => <A1CodeLogin /> },
       { id: 'a1-invalid',      section: 'A. 인증',      label: 'A-1 · 코드 오류',                         render: () => <A1CodeInvalid /> },
-      { id: 'a1-not-started',  section: 'A. 인증',      label: 'A-1 · 행사 미시작',                       render: () => <A1NotStarted /> },
+      // [비활성화 2026-06-12] a1-not-started — 사용자 결정 "화면 자체가 필요 없음". 복원 시 이 줄 주석 해제.
+      // { id: 'a1-not-started',  section: 'A. 인증',      label: 'A-1 · 행사 미시작',                       render: () => <A1NotStarted /> },
       { id: 'a1-ended',        section: 'A. 인증',      label: 'A-1 · 행사 종료',                         render: () => <A1Ended /> },
       { id: 'a2',              section: 'A. 인증',      label: 'A-2 · 운영자 로그인 (기본)',              render: () => <A2OperatorLogin /> },
       { id: 'a2-inflight',     section: 'A. 인증',      label: 'A-2 · Google 로그인 진행',                render: () => <A2GoogleInFlight /> },
@@ -704,6 +858,7 @@
       { id: 'c3',                    section: 'C. 참가자',  label: 'C-3 · 1인팀 캔버스 (미리보기 완성)',              render: () => <C3PersonalCoding /> },
       { id: 'c3-preview-empty',     section: 'C. 참가자',  label: 'C-3 · 1인팀 캔버스 (미리보기 미준비)',            render: () => <C3PersonalCodingEmpty /> },
       { id: 'c3-spawning',          section: 'C. 참가자',  label: 'C-3 · 1인팀 캔버스 (서버 기동 중)',               render: () => <C3PersonalCodingSpawning /> },
+      { id: 'c3-generating',        section: 'C. 참가자',  label: 'C-3 · 1인팀 캔버스 (AI 생성 중 · DIG)',           render: () => <C3PersonalCodingGenerating /> },
       { id: 'c4',                    section: 'C. 참가자',  label: 'C-4 · 다인팀 캔버스 (커서 + 전송 요청)',          render: () => <C4TeamCanvas /> },
 
       // ─ D. 갤러리 ───────────────────────────────
@@ -741,8 +896,29 @@
       // E-6 폐기 (2026-05-29): 일시정지 기능 제거
       // E-7 폐기 (2026-05-27): 참가자 종료 예고 없음 정책 — 운영자 b2-end-countdown 만료 시 곧바로 c1-ended로 전환.
 
-      // ─ F. 심사 ─────────────────────────────────
-      { id: 'f1',                    section: 'F. 심사',    label: 'F-1 · 심사위원 대시보드 (4축 채점)',              render: () => <F1JudgeDashboard /> },
+      // ─ F. 심사 (전 역할 통합 — 참여자 제출 → 운영자 설정/배정 → 심사위원 채점 → 집계 → 발표 → 결과) ─
+      // [참여자] 산출물 제출
+      { id: 'c5-submit',            section: 'F. 심사',  label: 'C-5 · [참여자] 산출물 제출·소개 (AI 초안→편집)',       render: () => <C5SubmitIntro /> },
+      { id: 'c5-submitted',         section: 'F. 심사',  label: 'C-5 · [참여자] 산출물 제출 완료',                      render: () => <C5SubmitIntro stateVariant="submitted" /> },
+      // [운영자] 심사 진입 (종료 대시보드 + 심사 시작 배너 — b2-ended에서 분리, 2026-06-12)
+      { id: 'b2-ended-judging',     section: 'F. 심사',  label: 'B-2 · [운영자] 심사 진입 (종료 대시보드 + 심사 시작 배너)', h: 920, render: () => <B2DashboardEnded judgingEntry /> },
+      // [운영자] 루브릭 설정 · 심사위원 배정
+      { id: 'b3-rubric-settings',   section: 'F. 심사',  label: 'B-3 · [운영자] 루브릭 설정 (항목·배점·보조데이터)',     render: () => <B3RubricSettings /> },
+      { id: 'b3-judge-management',  section: 'F. 심사',  label: 'B-3 · [운영자] 심사위원 관리 (초대)',                  render: () => <B3JudgeManagement tab="invite" /> },
+      { id: 'b3-judge-assign',      section: 'F. 심사',  label: 'B-3 · [운영자] 심사위원 관리 (배정 현황)',             render: () => <B3JudgeManagement tab="assign" /> },
+      // [심사위원] 온보딩 · 채점
+      { id: 'f1-rubric',            section: 'F. 심사',  label: 'F-1 · [심사위원] 루브릭 기준 안내 (온보딩)',           render: () => <F1RubricConfig /> },
+      { id: 'f1',                   section: 'F. 심사',  label: 'F-1 · [심사위원] 대시보드 (채점 중 · 과정 가중 루브릭)', render: () => <F1JudgeDashboard /> },
+      { id: 'f1-completed',         section: 'F. 심사',  label: 'F-1 · [심사위원] 대시보드 (채점 완료 · 제출)',         render: () => <F1JudgeDashboard stateVariant="completed" /> },
+      // [운영자] 집계 → [발표]
+      { id: 'b3-results-tally',     section: 'F. 심사',  label: 'B-3 · [운영자] 심사 결과 집계·발표 제어',             render: () => <B3ResultsTally /> },
+      { id: 'f2',                   section: 'F. 심사',  label: 'F-2 · [발표] 결과 발표·시상 (운영자 발표 모드)',       render: () => <F2AwardCeremony /> },
+      // [참여자] 결과 확인
+      { id: 'c-result',             section: 'F. 심사',  label: 'C-결과 · [참여자] 결과 뷰 (점수·심사평·수상)',        render: () => <CParticipantResult /> },
+      { id: 'c-result-private',     section: 'F. 심사',  label: 'C-결과 · [참여자] 결과 뷰 (점수 비공개·심사평만)',     render: () => <CParticipantResult scorePublic={false} awarded={false} /> },
+
+      // ─ Z. 데모 ─────────────────────────────────
+      { id: 'z-mascot',              section: 'Z. 데모',    label: 'Z · 마스코트 호핑 애니메이션',                    render: () => <ZMascotShowcase /> },
     ];
 
     const SCREEN_BY_ID = Object.fromEntries(SCREENS.map(s => [s.id, s]));
@@ -770,7 +946,8 @@
       'b2-hack-waiting':     { 'start-hackathon': 'b2-hackathon-start-confirm', 'open-team': 'b2-roster-detail' },            // ④ → 확인 모달 / 팀 카드 클릭
       'b2-roster-detail':    { 'close-roster-detail': 'b2-tutorial-waiting' },              // 백드롭·X 클릭 시 원래 화면(예시: ①)으로 복귀
       'b2-started':          { 'end': 'b2-end', 'open-gallery': 'd1', 'resolve-hand-raise': 'b2-started', 'open-absent': 'b2-started', 'close-absent': 'b2-started' }, // ⑤ → 종료 / 갤러리 / 손들기 해결 / 불참 모달 토글. 카드 open-team 제거 (v15)
-      'b2-ended':            { 'open-gallery': 'd1-ended-operator', 'open-token-all': 'b2-ended', 'close-token-all': 'b2-ended' }, // ⑥ → 운영자 갤러리 / 전체 팀 토큰 모달 토글(자기 화면 유지)
+      'b2-ended':            { 'open-gallery': 'd1-ended-operator', 'open-token-all': 'b2-ended', 'close-token-all': 'b2-ended' }, // ⑥ → 운영자 갤러리 / 토큰 모달 (2026-06-12: 심사 미개발 → 진입 배너 없는 기본 버전)
+      'b2-ended-judging':    { 'open-gallery': 'd1-ended-operator', 'open-token-all': 'b2-ended-judging', 'close-token-all': 'b2-ended-judging', 'start-rubric': 'b3-rubric-settings', 'start-judging': 'b3-rubric-settings' }, // 배너 버전(F.심사 영역) → 갤러리 / 토큰 모달 / 심사 단계 진입(루브릭부터)
       'd1-ended-operator':   { 'back-to-dashboard': 'b2-ended', 'open-card': 'd2' },         // 운영자 갤러리 → 대시보드 복귀 / 작품 상세
 
       // B 모달 6종 (3개 기존 + 3개 신규)
@@ -804,6 +981,24 @@
       'd2-comments':            { 'open-thread-0': 'd2-comments-thread', 'open-thread-1': 'd2-comments-thread', 'open-thread-2': 'd2-comments-thread', 'open-thread-3': 'd2-comments-thread' },
       'd2-comments-thread':     { 'close-thread': 'd2-comments' },
       'd2-comments-thread-compose': { 'close-thread': 'd2-comments' },
+
+      // 심사 단계 흐름 (2026-06-10): 참여자 제출 → 운영자 설정·배정·집계 → 심사위원 채점 → 발표 → 참여자 결과
+      // C-5 산출물 제출 (참여자)
+      'c5-submit':           { 'ai-regenerate': 'c5-submit', 'submit': 'c5-submitted' }, // AI 다시쓰기 / 제출 완료
+      'c5-submitted':        { 'edit': 'c5-submit' }, // 다시 수정
+      // B-3 운영자 심사 단계
+      'b3-rubric-settings':  { 'cancel': 'b2-ended-judging', 'save': 'b3-judge-management', 'select-preset': 'b3-rubric-settings', 'add-item': 'b3-rubric-settings', 'delete-item': 'b3-rubric-settings', 'toggle': 'b3-rubric-settings' },
+      'b3-judge-management': { 'back': 'b3-rubric-settings', 'tab': 'b3-judge-assign', 'add-judge': 'b3-judge-management', 'copy-link': 'b3-judge-management', 'start-judging': 'f1-rubric' },
+      'b3-judge-assign':     { 'back': 'b3-rubric-settings', 'tab': 'b3-judge-management', 'auto-assign': 'b3-judge-assign', 'start-judging': 'f1-rubric' },
+      'b3-results-tally':    { 'back': 'b3-judge-management', 'start-awards': 'f2', 'resolve-tie': 'b3-results-tally', 'add-special-award': 'b3-results-tally', 'export-csv': 'b3-results-tally', 'toggle-public': 'b3-results-tally' },
+      // F. 심사위원 — 온보딩 → 채점 큐 순환 → 완료 제출 → (운영자 집계) → 발표
+      'f1-rubric':           { 'start': 'f1' }, // 온보딩 → 채점 시작
+      'f1':                  { 'save-next': 'f1', 'open': 'f1', 'tab': 'f1', 'prev': 'f1' }, // 데모: 다음/탭은 동일 화면, 실 운영은 큐 순환
+      'f1-completed':        { 'submit': 'b3-results-tally', 'review': 'f1', 'save-next': 'f1-completed' }, // 제출 → 운영자 집계로 귀결
+      'f2':                  { 'gallery': 'd1-ended', 'next': 'f2' }, // 갤러리 / 다음 카테고리 공개
+      // C-결과 (참여자) — 발표 후 본인 결과
+      'c-result':            { 'open-gallery-all': 'd1-ended', 'open-gallery-team': 'd1-ended' },
+      'c-result-private':    { 'open-gallery-all': 'd1-ended', 'open-gallery-team': 'd1-ended' },
     };
 
     // 현재 화면 — 클릭 핸들러가 참조

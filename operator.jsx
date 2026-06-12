@@ -306,13 +306,14 @@ const PENDING_TEAMS = [
 //   · idleMin >= 20                        → 🔴 위험
 //   · idleMin >= 10                        → 🟡 주의
 //   · 그 외                                 → 정상 (분포 카운트만)
-// 시연용 mock 분포 (30팀):
-//   · 손든 팀: 2팀 (오래 기다린 순 정렬 시연 — 디버그 라이프 72초, 진하경 23초)
+// 시연용 mock 분포 (70팀 — 2026-06-12 손든·잠시 멈춤 zone 페이지네이션 시연 위해 40팀 증원):
+//   · 손든 팀: 26팀 (오래 기다린 순 정렬 + zone 페이지네이션 — perPage 20 → 2페이지, 1페이지 꽉 채움)
 //   · 불참: 4팀 (전원 미접속 가정 — 뉴럴 네트, 명도윤, 류재석, 천도현)
-//   · 위험 🔴: 2팀 (코드밍아웃 23분, 캐시 미스 18분 → 18분도 위험으로 시연. 임계 ≥20분이지만 mock은 19분 경계 시뮬 위해 18분도 위험 카드 노출)
-//   · 주의 🟡: 3팀 (우시현 14분, await me 11분, 시맨틱 메모리 10분)
-//   · 정상: 19팀
-// 전체 30팀 — 가나다순 (한글 → 영문 → 숫자). 1인팀·다인팀 섞임 (§18-21).
+//   · 잠시 멈춤(주의🟡 10~19분 + 위험🔴 ≥20분): 28팀 (오래 멈춘 순 정렬 + zone 페이지네이션 — perPage 20 → 2페이지)
+//   · 정상: 나머지
+// 전체 70팀 — 기존 30팀 가나다순 + 말미에 시연용 추가 팀 append. 1인팀·다인팀 섞임 (§18-21).
+// perPage 20(2col×10행)으로 토큰 zone 상위 10팀 높이와 맞춰 1페이지가 컬럼을 꽉 채움 → 빈 공백/바닥 페이지네이션 "헷갈림" 해소.
+// 토큰 순위(AI 사용량) zone은 상위 10팀만 노출(페이지네이션 없음)이라 증원 팀은 토큰 zone에 거의 안 보임.
 // tokensUsed: 본행사 시작 후 팀이 누적 사용한 토큰 합계 (2026-06-02 사용자 룰 추가).
 //   데이터 흐름: 각 팀 프로젝트별로 매 AI 동작(generate·edit·chat) 종료 시점에 사용 토큰 수를 서버 전송.
 //   서버는 hackathon_teams.tokens_used에 합산 누적. 운영자 화면은 폴링 또는 SSE로 동기화.
@@ -347,7 +348,50 @@ const STARTED_TEAMS = [
 { name: 'JS의 비밀', members: 2, idleMin: 1, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 6480 },
 { name: 'null pointer', members: 3, idleMin: 0, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 16320 }, /* TOP 5 */
 { name: 'undefined', members: 3, idleMin: 2, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 20180 }, /* TOP 2 */
-{ name: '404 NOT FOUND', members: 4, idleMin: 13, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 8960 }];
+{ name: '404 NOT FOUND', members: 4, idleMin: 13, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 8960 },
+// 2026-06-12: 손든·잠시 멈춤 zone 페이지네이션 시연용 추가 팀 (큰 행사일수록 두 목록은 길어짐).
+// 손든 팀 추가 (handRaisedSec != null) — 오래 기다린 순 정렬 시연.
+{ name: '가비지 컬렉터', members: 3, idleMin: 0, firstActivity: true, handRaisedSec: 118, published: false, tokensUsed: 7240 },
+{ name: '람다 익스프레스', members: 2, idleMin: 0, firstActivity: true, handRaisedSec: 96, published: true, tokensUsed: 6010 },
+{ name: '부트스트랩', members: 4, idleMin: 0, firstActivity: true, handRaisedSec: 64, published: false, tokensUsed: 8470 },
+{ name: '시그널 노이즈', members: 1, solo: true, idleMin: 0, firstActivity: true, handRaisedSec: 51, published: true, tokensUsed: 2240 },
+{ name: '오버플로우', members: 2, idleMin: 0, firstActivity: true, handRaisedSec: 42, published: false, tokensUsed: 5320 },
+{ name: '캐스케이드', members: 3, idleMin: 0, firstActivity: true, handRaisedSec: 28, published: true, tokensUsed: 4760 },
+{ name: '패리티 비트', members: 2, idleMin: 0, firstActivity: true, handRaisedSec: 16, published: false, tokensUsed: 3980 },
+{ name: '힙 정렬', members: 1, solo: true, idleMin: 0, firstActivity: true, handRaisedSec: 6, published: true, tokensUsed: 1870 },
+{ name: '포인터 디레프', members: 3, idleMin: 0, firstActivity: true, handRaisedSec: 132, published: false, tokensUsed: 6940 },
+{ name: '비동기 어웨잇', members: 2, idleMin: 0, firstActivity: true, handRaisedSec: 124, published: true, tokensUsed: 5580 },
+{ name: '클로저 트랩', members: 4, idleMin: 0, firstActivity: true, handRaisedSec: 108, published: false, tokensUsed: 7810 },
+{ name: '리졸버', members: 1, solo: true, idleMin: 0, firstActivity: true, handRaisedSec: 90, published: true, tokensUsed: 2120 },
+{ name: '프로미스 체인', members: 3, idleMin: 0, firstActivity: true, handRaisedSec: 80, published: false, tokensUsed: 6230 },
+{ name: '스코프 호이스팅', members: 2, idleMin: 0, firstActivity: true, handRaisedSec: 69, published: true, tokensUsed: 4510 },
+{ name: '리렌더', members: 4, idleMin: 0, firstActivity: true, handRaisedSec: 58, published: false, tokensUsed: 8030 },
+{ name: '메모이즈', members: 2, idleMin: 0, firstActivity: true, handRaisedSec: 46, published: true, tokensUsed: 3640 },
+{ name: '뮤테이션', members: 3, idleMin: 0, firstActivity: true, handRaisedSec: 34, published: false, tokensUsed: 5270 },
+{ name: '디바운스', members: 1, solo: true, idleMin: 0, firstActivity: true, handRaisedSec: 25, published: true, tokensUsed: 2030 },
+{ name: '콜백 헬', members: 2, idleMin: 0, firstActivity: true, handRaisedSec: 18, published: false, tokensUsed: 4180 },
+{ name: '패칭', members: 3, idleMin: 0, firstActivity: true, handRaisedSec: 12, published: true, tokensUsed: 5640 },
+{ name: '널 체크', members: 1, solo: true, idleMin: 0, firstActivity: true, handRaisedSec: 4, published: false, tokensUsed: 1450 },
+// 잠시 멈춤 팀 추가 (idleMin >= 10, 손들기 안 함) — 오래 멈춘 순 정렬 시연.
+{ name: '데드락', members: 3, idleMin: 24, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 6680 },
+{ name: '뮤텍스', members: 2, idleMin: 21, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 5140 },
+{ name: '스레드 풀', members: 4, idleMin: 17, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 7020 },
+{ name: '인덱스 아웃', members: 1, solo: true, idleMin: 15, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 2510 },
+{ name: '토큰 버킷', members: 3, idleMin: 13, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 4430 },
+{ name: '페이지 폴트', members: 2, idleMin: 11, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 3760 },
+{ name: '세마포어', members: 3, idleMin: 26, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 6120 },
+{ name: '컨텍스트 스위치', members: 2, idleMin: 23, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 5390 },
+{ name: '캐시 워밍', members: 4, idleMin: 22, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 7240 },
+{ name: '콜드 스타트', members: 1, solo: true, idleMin: 20, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 2280 },
+{ name: '백프레셔', members: 3, idleMin: 19, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 5860 },
+{ name: '스택 트레이스', members: 2, idleMin: 18, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 4730 },
+{ name: '힙 덤프', members: 4, idleMin: 16, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 6510 },
+{ name: '메모리 릭', members: 2, idleMin: 14, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 4060 },
+{ name: '레이지 로드', members: 3, idleMin: 13, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 5180 },
+{ name: '프리페치', members: 1, solo: true, idleMin: 12, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 2640 },
+{ name: '워치독', members: 2, idleMin: 11, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 3920 },
+{ name: '배럴 파일', members: 3, idleMin: 10, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 4850 },
+{ name: '사이드 이펙트', members: 2, idleMin: 10, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 3540 }];
 
 
 // ── B-2. 대시보드 (튜토리얼 대기) ──────────────────────────
@@ -371,8 +415,10 @@ function B2DashboardStarted() {
 // B2DashboardPaused 폐기 (2026-05-29): 일시정지 기능 제거.
 
 // ── B-2. 대시보드 (해커톤 종료) ────────────────────────────
-function B2DashboardEnded() {
-  return <DashboardShell status="hackathon_ended" teams={STARTED_TEAMS} mode="summary" />;
+// 2026-06-12: 기본(b2-ended)은 심사 진입 배너 없는 깨끗한 결산 대시보드.
+//   배너 버전은 judgingEntry로 분리 — F.심사 영역 'b2-ended-judging' 화면에서만 사용.
+function B2DashboardEnded({ judgingEntry = false }) {
+  return <DashboardShell status="hackathon_ended" teams={STARTED_TEAMS} mode="summary" judgingEntry={judgingEntry} />;
 }
 
 // ── 실시간 데이터 상태 인디케이터 ──────────────────────────────
@@ -415,7 +461,7 @@ function LiveStatus() {
 //   · tutorial-progress / activity / summary (썸네일 카드 ~210px) → 12팀/페이지, 4열×3행
 // 60팀 행사 1페이지 노출. 30팀 mock은 totalTeams <= perPage라 RosterView에서 페이지네이션 숨김.
 // 호출부에서 perPage 명시 시 우선. sticky 헤더의 상태 제어·접속 합계는 전체 teams 기준.
-function DashboardShell({ status, runtime, teams, mode, live, page = 1, perPage }) {
+function DashboardShell({ status, runtime, teams, mode, live, page = 1, perPage, judgingEntry = false }) {
   const effectivePerPage = perPage ?? (mode === 'roster' ? 60 : 12);
   // 5상태별 제어 버튼: 좌측 약한 보조 / 우측 강한 Primary로 위치 분리
   // 종료(비가역)는 별도 그룹의 우측 끝.
@@ -520,7 +566,7 @@ function DashboardShell({ status, runtime, teams, mode, live, page = 1, perPage 
             {mode === 'roster' && <RosterView teams={teams} live={live} multiCount={multiCount} soloCount={soloCount} {...pageProps} />}
             {mode === 'tutorial-progress' && <TutorialProgressView teams={teams} live={live} {...pageProps} />}
             {mode === 'activity' && <ActivityView teams={teams} totalTeams={teams.length} />}
-            {mode === 'summary' && <SummaryView teams={teams} {...pageProps} />}
+            {mode === 'summary' && <SummaryView teams={teams} judgingEntry={judgingEntry} {...pageProps} />}
           </div>
         );
       })()}
@@ -902,19 +948,12 @@ function TutorialProgressBar({ columns, totalTeamsCount }) {
 // 컨셉: "설계 격자지 위에 포스트잇 적층". DashboardShell 루트의 24px grid bg를 그대로 노출,
 // 컬럼은 박스 없는 투명 zone. 컬럼 사이 dashed 수직선(드래프팅 가이드)으로 구분.
 // 포스트잇 = RosterRow (대기 화면과 100% 동일 어휘: tape · rotation · ON/OFF count · 22px 미니 아바타).
-// 페이지네이션 (2026-06-02 사용자 룰): 컬럼당 10팀. 어느 컬럼이라도 10초과면 페이지네이션 활성.
-//   페이지 P에서 각 컬럼은 teams.slice((P-1)*10, P*10)으로 동기 슬라이스.
+// 페이지네이션 (2026-06-12 사용자 룰): 컬럼당 10팀, *컬럼별 독립* 페이지네이션.
+//   각 컬럼이 자체 페이지 상태를 가짐 — 한 컬럼만 10초과면 그 컬럼 하단에만 페이지네이션 노출.
+//   (구: 전체 칸 합산 단일 페이지네이션 → 폐기. 컬럼별로 팀 수가 달라 합산 페이징은 부적절.)
 const TUTORIAL_PER_COL = 10;
 
 function TutorialKanban({ columns }) {
-  const [page, setPage] = React.useState(1);
-  const maxLen = Math.max(0, ...columns.map((c) => c.teams.length));
-  const totalPages = Math.max(1, Math.ceil(maxLen / TUTORIAL_PER_COL));
-  const clampedPage = Math.min(page, totalPages);
-  const pagedColumns = columns.map((col) => ({
-    ...col,
-    teams: col.teams.slice((clampedPage - 1) * TUTORIAL_PER_COL, clampedPage * TUTORIAL_PER_COL)
-  }));
   return (
     <div>
       <div style={{
@@ -922,22 +961,16 @@ function TutorialKanban({ columns }) {
         gridTemplateColumns: 'repeat(5, 1fr)',
         gap: 0
       }}>
-        {pagedColumns.map((col, i) =>
+        {columns.map((col, i) =>
         <TutorialKanbanColumn key={col.id} column={col} index={i} isLast={i === columns.length - 1} />
         )}
       </div>
-      {totalPages > 1 &&
-      <KanbanPagination
-        page={clampedPage}
-        totalPages={totalPages}
-        onPrev={() => setPage((p) => Math.max(1, p - 1))}
-        onNext={() => setPage((p) => Math.min(totalPages, p + 1))} />
-      }
     </div>);
 
 }
 
 function TutorialKanbanColumn({ column, index, isLast }) {
+  const { paged, page, totalPages, onPrev, onNext } = useColumnPaging(column.teams, TUTORIAL_PER_COL);
   return (
     <div style={{
       display: 'flex', flexDirection: 'column',
@@ -983,14 +1016,14 @@ function TutorialKanbanColumn({ column, index, isLast }) {
         paddingTop: 4, paddingBottom: 14,
         flex: 1
       }}>
-        {column.teams.length === 0 &&
+        {paged.length === 0 &&
           <div className="jt-mono" style={{
             fontSize: 10, color: 'var(--c-muted)', textAlign: 'center',
             padding: '20px 0', letterSpacing: '0.08em',
             opacity: 0.5
           }}>·  ·  ·</div>
         }
-        {column.teams.map((t) =>
+        {paged.map((t) =>
           // key에 step 포함 → 팀이 이동하면 wrapper remount → entrance keyframe 재생.
           // 초기 마운트 시점엔 _moved=false이므로 클래스 미부여(애니메이션 없음).
           <div key={`${t.name}-${t.step}`} className={t._moved ? 'jt-kanban-card-enter' : undefined}>
@@ -998,6 +1031,10 @@ function TutorialKanbanColumn({ column, index, isLast }) {
           </div>
         )}
       </div>
+      {/* 컬럼별 페이지네이션 — 이 컬럼이 10팀 초과일 때만 하단에 노출 (marginTop:auto로 바닥 정렬). */}
+      {totalPages > 1 &&
+      <KanbanPagination compact page={page} totalPages={totalPages} onPrev={onPrev} onNext={onNext} />
+      }
     </div>);
 
 }
@@ -1520,33 +1557,17 @@ function ActivityDistributionBar({ segments, totalTeams }) {
 //   토큰 zone(span 1): 카드 1열 적층, 카드 안 두번째 행에 가로 막대 그래프 통합.
 //   손든 zone(span 2): 2col sub-grid × 10행 = 20 카드/페이지
 //   잠시 멈춤 zone(span 2): 2col sub-grid × 10행 = 20 카드/페이지
-// 모든 zone 페이지당 10행 (사용자 룰).
+// 페이지당 10행 (2026-06-12 갱신): 토큰 zone 상위 10팀 높이와 맞춰 2col zone도 페이지당 20카드(10행)로 채움.
+//   → 카드가 컬럼 높이를 채워 페이지네이션이 바로 아래 붙음(빈 공백 + 바닥 페이지네이션의 "헷갈림" 해소).
 const ROWS_PER_PAGE = 10;
-const TOKEN_PER_PAGE = ROWS_PER_PAGE;
-const HAND_RAISED_PER_PAGE = ROWS_PER_PAGE * 2;
-const ALERTS_PER_PAGE = ROWS_PER_PAGE * 2;
+const TOKEN_TOP_N = 10; // 토큰 순위 상위 노출 수 (페이지네이션 대신 상위 N만 고정 노출)
+const HAND_RAISED_PER_PAGE = ROWS_PER_PAGE * 2; // 2col × 10행 = 20
+const ALERTS_PER_PAGE = ROWS_PER_PAGE * 2; // 2col × 10행 = 20
 
+// 페이지네이션 (2026-06-12 사용자 룰): zone별 *독립* 페이지네이션.
+//   각 zone(토큰·손든·잠시 멈춤)이 자체 페이지 상태를 가짐 — 해당 zone이 perPage 초과일 때만 그 zone 하단에 노출.
+//   (구: 세 zone 중 최대 페이지 수로 합산 단일 페이지네이션 → 폐기. zone마다 팀 수가 달라 합산 페이징은 부적절.)
 function ActivityKanban({ tokenRanked, handRaised, alerts, onResolveHandRaise }) {
-  const [page, setPage] = React.useState(1);
-  const tokenPages = Math.max(1, Math.ceil(tokenRanked.length / TOKEN_PER_PAGE));
-  const handRaisedPages = Math.max(1, Math.ceil(handRaised.length / HAND_RAISED_PER_PAGE));
-  const alertsPages = Math.max(1, Math.ceil(alerts.length / ALERTS_PER_PAGE));
-  const totalPages = Math.max(tokenPages, handRaisedPages, alertsPages);
-  const clampedPage = Math.min(page, totalPages);
-
-  const pagedTokens = tokenRanked.slice(
-    (clampedPage - 1) * TOKEN_PER_PAGE,
-    clampedPage * TOKEN_PER_PAGE
-  );
-  const pagedHandRaised = handRaised.slice(
-    (clampedPage - 1) * HAND_RAISED_PER_PAGE,
-    clampedPage * HAND_RAISED_PER_PAGE
-  );
-  const pagedAlerts = alerts.slice(
-    (clampedPage - 1) * ALERTS_PER_PAGE,
-    clampedPage * ALERTS_PER_PAGE
-  );
-
   const maxTokens = tokenRanked[0]?.tokensUsed || 1;
 
   return (
@@ -1556,11 +1577,10 @@ function ActivityKanban({ tokenRanked, handRaised, alerts, onResolveHandRaise })
         gridTemplateColumns: 'repeat(5, 1fr)',
         gap: 0
       }}>
-        {/* 토큰 zone — 단일 col 카드 적층 (각 카드 안에 막대 그래프 통합) */}
+        {/* 토큰 zone — 단일 col 카드 적층 (각 카드 안에 막대 그래프 통합). zone 내부에서 자체 페이지네이션. */}
         <TokenLeaderZone
-          teams={pagedTokens}
+          teams={tokenRanked}
           maxTokens={maxTokens}
-          startRank={(clampedPage - 1) * TOKEN_PER_PAGE + 1}
           isLast={false} />
 
         {/* 손든 zone (v10: helmet 어휘 회귀 — 사용자 결정. 주의(helmet-wash)와는 채도/명도 차이로 분리) */}
@@ -1576,10 +1596,10 @@ function ActivityKanban({ tokenRanked, handRaised, alerts, onResolveHandRaise })
           countColor="var(--c-helmet-deep)"
           emptyMessage="손든 팀 없음 — 좋아요"
           emptyMint={false}
-          isLast={false}>
-
-          {pagedHandRaised.map((t) => <HandRaisedPostit key={t.name} team={t} onResolve={onResolveHandRaise} />)}
-        </ActivityKanbanZone>
+          isLast={false}
+          items={handRaised}
+          perPage={HAND_RAISED_PER_PAGE}
+          renderItem={(t) => <HandRaisedPostit key={t.name} team={t} onResolve={onResolveHandRaise} />} />
 
         {/* 잠시 멈춤 zone (safety 어휘) */}
         <ActivityKanbanZone
@@ -1595,29 +1615,24 @@ function ActivityKanban({ tokenRanked, handRaised, alerts, onResolveHandRaise })
           countColor={alerts.length > 0 ? 'var(--c-safety-deep)' : 'var(--c-muted)'}
           emptyMessage="모든 팀 잘 가고 있어요"
           emptyMint={true}
-          isLast={true}>
-
-          {pagedAlerts.map((t) => <AlertPostit key={t.name} team={t} />)}
-        </ActivityKanbanZone>
+          isLast={true}
+          items={alerts}
+          perPage={ALERTS_PER_PAGE}
+          renderItem={(t) => <AlertPostit key={t.name} team={t} />} />
       </div>
-      {totalPages > 1 &&
-      <KanbanPagination
-        page={clampedPage}
-        totalPages={totalPages}
-        onPrev={() => setPage((p) => Math.max(1, p - 1))}
-        onNext={() => setPage((p) => Math.min(totalPages, p + 1))} />
-
-      }
     </div>);
 
 }
 
 // ── 토큰 zone — 단일 col 카드 적층, 카드 안에 막대 그래프 통합 (2026-06-02 v7) ─
 // span 1. 카드 1행: 순위 + 팀명. 2행: 가로 막대 + 축약 라벨. 인원수 표시 제거.
-function TokenLeaderZone({ teams, maxTokens, startRank, isLast }) {
+function TokenLeaderZone({ teams, maxTokens, isLast }) {
   const isEmpty = teams.length === 0;
+  // 페이지네이션 없음 (2026-06-12 사용자 룰) — 순위는 상위권만 의미 있으므로 상위 TOKEN_TOP_N팀만 고정 노출.
+  const paged = teams.slice(0, TOKEN_TOP_N);
+  const startRank = 1;
   // FLIP — 순위 변동 시 카드 위치 부드럽게 (Web Animations API).
-  const keySig = teams.map((t) => t.name).join('|');
+  const keySig = paged.map((t) => t.name).join('|');
   const setFlipRef = useFlip([keySig]);
   return (
     <div style={{
@@ -1663,7 +1678,7 @@ function TokenLeaderZone({ teams, maxTokens, startRank, isLast }) {
         paddingTop: 4, paddingBottom: 16,
         flex: 1
       }}>
-          {teams.map((t, i) =>
+          {paged.map((t, i) =>
         <div key={t.name} ref={setFlipRef(t.name)}>
               <TokenTeamCard team={t} rank={startRank + i} max={maxTokens} />
             </div>
@@ -1749,9 +1764,11 @@ function TokenTeamCard({ team, rank, max }) {
 // cols: zone 내부 sub-grid 열 수. 손든=2 / 챙겨야 할=3 → 튜토리얼 1컬럼 폭(~225px)과 동일 카드 사이즈.
 // span: 외부 5컬럼 grid에서 차지하는 column 수.
 // info: sub 옆에 (i) 아이콘 + native title 툴팁. 정체 기준 같이 명확화 필요할 때.
-function ActivityKanbanZone({ span, cols, accent, bg, icon, label, sub, info, count, countColor, isLast, emptyMessage, emptyMint, children }) {
-  const childArr = React.Children.toArray(children);
-  const isEmpty = childArr.length === 0;
+function ActivityKanbanZone({ span, cols, accent, bg, icon, label, sub, info, count, countColor, isLast, emptyMessage, emptyMint, items, perPage, renderItem }) {
+  // zone 자체 페이지네이션 (2026-06-12) — items를 perPage 단위로 슬라이스, 해당 zone 하단에만 노출.
+  const { paged, page, totalPages, onPrev, onNext } = useColumnPaging(items, perPage);
+  const isEmpty = items.length === 0;
+  const childArr = paged.map((t) => renderItem(t));
   // FLIP — 자식 카드(React key=팀명) 위치 변경 시 부드럽게 보간.
   // deps: 자식 key 시퀀스 (위치 바뀜 감지).
   const keySig = childArr.map((c) => c.key).join('|');
@@ -1834,6 +1851,10 @@ function ActivityKanbanZone({ span, cols, accent, bg, icon, label, sub, info, co
         )}
         </div>
       }
+      {/* zone별 페이지네이션 — 이 zone 팀이 perPage 초과일 때만 하단에 노출. */}
+      {totalPages > 1 &&
+      <KanbanPagination compact page={page} totalPages={totalPages} onPrev={onPrev} onNext={onNext} />
+      }
     </div>);
 
 }
@@ -1856,33 +1877,59 @@ function KanbanEmpty({ message, mint = false }) {
 
 }
 
-// ── 칸반 페이지네이션 — shared Pagination 어휘 차용, 카드 개수가 아닌 페이지 카운트 직접 표시 ─
-function KanbanPagination({ page, totalPages, onPrev, onNext }) {
+// ── 칸반 컬럼별 페이지네이션 hook (2026-06-12 사용자 룰) ─────────────
+// 각 칸반 컬럼/zone이 독립 페이지 상태를 가짐 (전체 칸 합산 페이지네이션 폐기).
+// 컬럼마다 팀 수가 달라도 다른 컬럼에 영향 없이 해당 컬럼만 페이지 이동.
+function useColumnPaging(items, perPage) {
+  const [page, setPage] = React.useState(1);
+  const totalPages = Math.max(1, Math.ceil(items.length / perPage));
+  const clampedPage = Math.min(page, totalPages);
+  const paged = items.slice((clampedPage - 1) * perPage, clampedPage * perPage);
+  return {
+    paged,
+    page: clampedPage,
+    totalPages,
+    onPrev: () => setPage(() => Math.max(1, clampedPage - 1)),
+    onNext: () => setPage(() => Math.min(totalPages, clampedPage + 1))
+  };
+}
+
+// ── 칸반 페이지네이션 — 디자인 시스템 Pagination(shared.jsx) 칩 어휘 정렬 (2026-06-12) ─
+// DS 어휘: jt-btn-secondary 버튼(이전/다음) + 박스형 mono 칩(canvas bg + hairline border)로 페이지 표기.
+//   (구: jt-btn-ghost + 맨 span → 다른 화면 페이지네이션과 시각 불일치. 사용자 지적으로 DS 정렬.)
+//   카드 개수 대신 페이지 카운트("p / total")를 칩에 표기 — 칸반 컬럼은 항목 범위보다 페이지가 직관적.
+// compact=true: 컬럼/zone 하단용 — marginTop:auto로 stretch된 컬럼 바닥 정렬, 상단 패딩 축소.
+function KanbanPagination({ page, totalPages, onPrev, onNext, compact = false }) {
+  const prevDisabled = page === 1;
+  const nextDisabled = page === totalPages;
   return (
     <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16,
-      padding: '14px 0 4px'
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
+      padding: compact ? '12px 0 4px' : '20px 0 4px',
+      ...(compact ? { marginTop: 'auto' } : {})
     }}>
       <button
         type="button"
         onClick={onPrev}
-        disabled={page === 1}
-        className="jt-btn jt-btn-ghost jt-btn-sm"
-        style={{ minWidth: 72 }}>
+        disabled={prevDisabled}
+        className={`jt-btn jt-btn-secondary jt-btn-sm ${prevDisabled ? 'is-disabled' : ''}`}
+        style={{ padding: '6px 12px', gap: 4 }}>
         {Icon.arrowLeft(11)} 이전
       </button>
-      <span className="jt-mono" style={{
-        fontSize: 11, color: 'var(--c-slate)',
-        letterSpacing: '0.04em'
+      <span style={{
+        fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--c-ink)',
+        background: 'var(--c-canvas)', border: '1px solid var(--c-hairline)',
+        padding: '6px 14px', borderRadius: 4,
+        whiteSpace: 'nowrap', flexShrink: 0
       }}>
-        {page} / {totalPages}
+        {page} <span style={{ color: 'var(--c-muted)' }}>/ {totalPages}</span>
       </span>
       <button
         type="button"
         onClick={onNext}
-        disabled={page === totalPages}
-        className="jt-btn jt-btn-ghost jt-btn-sm"
-        style={{ minWidth: 72 }}>
+        disabled={nextDisabled}
+        className={`jt-btn jt-btn-secondary jt-btn-sm ${nextDisabled ? 'is-disabled' : ''}`}
+        style={{ padding: '6px 12px', gap: 4 }}>
         다음 {Icon.arrowRight(11)}
       </button>
     </div>);
@@ -2116,7 +2163,7 @@ function AbsentTeamRow({ team }) {
 //   두 영역의 시간 성격이 다르다는 점을 eyebrow 라벨·LIVE pulse로 시각 분리.
 // 토큰·좋아요 순위는 b2-started TokenLeaderZone과 동일 어휘(jt-mono #N + 가로 막대)를 사용해
 // 진행→종료 흐름의 시각 정합을 유지.
-function SummaryView({ teams, totalTeams }) {
+function SummaryView({ teams, totalTeams, judgingEntry = false }) {
   // ── 운영 결산(고정) ────────────────────────────────────────
   const totalTokens = React.useMemo(
     () => teams.reduce((s, t) => s + (t.tokensUsed || 0), 0),
@@ -2180,6 +2227,11 @@ function SummaryView({ teams, totalTeams }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {/* 심사 단계 진입 — 종료 후 다음 액션 (2026-06-10 심사 흐름).
+          2026-06-12: 심사 기능 미개발 → b2-ended 기본은 배너 없는 깨끗한 버전.
+          배너 버전은 judgingEntry prop으로 분리, F.심사 영역 'b2-ended-judging' 화면에서만 노출. */}
+      {judgingEntry && <JudgingEntryBanner totalTeams={totalTeams} />}
+
       {/* 핵심 KPI 3카드 — 참가팀·운영시간·AI 사용량 누적 */}
       <SummaryKpiRow
         totalTeams={totalTeams}
@@ -2289,25 +2341,12 @@ function SummaryBlock({ eyebrow, eyebrowDot, eyebrowNote, title, titleIcon, acti
 
 }
 
-// ── 라이브 라벨 — mint pulse + LIVE + 누적 중 안내 ──────
-// b2-started LiveStatus 어휘 차용. (마지막 갱신 시각은 노이즈라 제거 — 사용자 피드백 2026-06-02.)
+// ── 라이브 라벨 — 누적 중 안내 ──────
+// 2026-06-12: LIVE 칩(mint pulse 도트 + LIVE 워드) 제거 — 안내 문구만 유지 (사용자 피드백).
+//   (이전: b2-started LiveStatus 어휘 차용 / 마지막 갱신 시각은 노이즈라 제거 — 2026-06-02.)
 function SummaryLiveLabel() {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-      <span style={{ position: 'relative', width: 10, height: 10, flexShrink: 0 }}>
-        <span className="jt-status-pulse" style={{
-          position: 'absolute', inset: 1,
-          background: 'var(--c-mint)', borderRadius: '50%'
-        }} />
-        <span style={{
-          position: 'absolute', inset: 3,
-          background: 'var(--c-mint)', borderRadius: '50%'
-        }} />
-      </span>
-      <span className="jt-mono" style={{
-        fontSize: 10.5, fontWeight: 700, color: 'var(--c-ink)',
-        letterSpacing: '0.1em'
-      }}>LIVE</span>
       <span style={{ fontSize: 11.5, color: 'var(--c-slate)' }}>
         종료 후에도 누적 중
       </span>

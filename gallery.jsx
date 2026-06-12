@@ -710,12 +710,13 @@ function PreviewLoading() {
       flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       gap: 16, color: 'var(--c-slate)', background: 'var(--c-paper)'
     }}>
-      <div style={{
-        width: 64, height: 64, borderRadius: 10,
-        background: 'var(--c-canvas)', border: '1px solid var(--c-hairline)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center'
-      }}>
-        <BouncingDots size={6} />
+      <div style={{ position: 'relative', width: 220, height: 168, overflow: 'visible' }}>
+        <div className="jt-swap-slot">
+          <span className="jt-mascot-swap jt-mascot-swap-a"><JitdaMascotBlueprint size={92} /></span>
+        </div>
+        <div className="jt-swap-slot">
+          <span className="jt-mascot-swap jt-mascot-swap-b"><JitdaMascotDig size={80} /></span>
+        </div>
       </div>
       <div style={{ fontSize: 14, color: 'var(--c-ink)', fontWeight: 600 }}>앱을 불러오고 있어요</div>
       <div style={{ fontSize: 12, color: 'var(--c-muted)', textAlign: 'center', maxWidth: 280, lineHeight: 1.55 }}>

@@ -5,6 +5,157 @@
 
 ---
 
+## §μ+5 2026-06-12 마스코트 애니메이션 가이드 신설 + 발밑 그림자 + reduced-motion 버그 수정
+
+**계기**: 사용자 지시 — Z. 데모의 마스코트 애니메이션 3종(HOP·BLUEPRINT·DIG)을 문서화하고, 로딩/대기를 포함하는 모든 화면을 식별해 화면별 적절한 애니메이션을 선정.
+
+**변경**:
+- **DIG 발밑 그림자(움직이는)**: `JitdaMascotDig`에 다른 마스코트처럼 발밑 타원 그림자 추가. `jt-dig-shadow`(bob 동기 — 들림 15% scaleX0.76·opacity0.07 / 내려찍기 46% scaleX1.12·opacity0.2). `var(--c-ink)`, reduced-motion 정적값 opacity0.16. `shared.jsx`·`tokens.css`. `shared.jsx?v=20260612logo33`.
+- **새 문서 `마스코트-애니메이션-가이드.md`**: ① 3종 정밀 프로파일(시각·동작분해·타이밍·은유·에너지·a11y) ② 로딩/대기 화면 인벤토리(6영역 전수, 37건) ③ 화면별 추천 + 근거 ④ 마스코트 비권장 화면(스피너/스켈레톤/카운트다운이 우월) ⑤ 구현 가이드. **핵심 결론: AI 생성 순간(`sending` — "AI가 작업하는 중이에요…" participant.jsx:1540) → DIG**(브랜드 동사 "짓다" 직결). c1/c1-after → BLUEPRINT(대기실), a1-not-started → HOP.
+- **reduced-motion 버그 수정**: `.jt-mascot-shadow`(HOP)에 base `opacity:0.22`가 없어 `animation:none`(reduced-motion) 시 keyframe opacity 미적용 → **불투명 검정 블롭으로 깨짐**. 다중에이전트 적대 검증으로 적발 → base opacity 추가(`tokens.css`). 이제 HOP·BLUEPRINT(인라인0.13)·DIG(0.16) 3종 모두 안전.
+
+**분석 방법**: Workflow 9-에이전트(애니메이션 프로파일러 1 + 영역 스캐너 6 + 합성 1 + 적대 검수 1). 검수가 (a) `sending` 생성 상태 누락 (b) c5-submitted→BLUEPRINT 화면 사실 오독(제출완료=수정가능 확인 화면이지 결과대기 아님) (c) c3-spawning/d2-loading DIG는 인프라 부팅이라 약한 매핑 (d) HOP 그림자 reduced-motion 결함을 적발 → 최종 문서/코드에 반영.
+
+**검증**: `?id=z-mascot` 콘솔 0. DIG 그림자 windup 56px@0.07 / impact 83px@0.19 측정 확인. 화면 추천은 은유 정합성 가설(실사용 미검증) — 문서에 명시, 전면 적용 전 A/B 권고.
+
+**후속**: 미배치 상태(쇼케이스 only). 실배치는 `design-workflow.md §1` 패턴 A로 화면별 진행. BLUEPRINT 도면 색·HOP 그림자 토큰 하드코딩은 다크/모노 배경 전 해결 필요.
+
+---
+
+## §μ+4 2026-06-11 OpenCode 미리보기 — 사파리형 파일 탐색기 + 탭 + 검색 (C-3·C-4)
+
+**계기**: 사용자 지시 — 우측 미리보기를 실제 맥 사파리 창처럼 확장. ① 파일 탐색기(좌측 사이드바, 개폐) ② 복수 파일 탭 ③ 기존 미리보기 기능 전부 ④ 파일명 검색.
+
+**변경** (`participant.jsx`, `tokens.css`):
+- 신규 `OcBrowser`(+`OcFileTree`·`OcFileTab`·`OcCodeView`) — 공용 `OpenCodeShell` 우측 컬럼의 `SafariChrome + previewNode` 블록을 대체. `SafariChrome` 자체는 D-2용으로 존치(미수정).
+- **사파리 사이드바 메타포**: chrome 좌측 토글 ⊞(항상 노출)로 파일 탐색기 개폐. 탐색기는 chrome 바로 아래부터 **전체 높이**를 차지하고, **탭 스트립은 우측 콘텐츠 컬럼 상단에만** 위치(사이드바와 겹치지 않음).
+- **탭**: 0번 미리보기(라이브 앱·고정·닫기 불가) + 트리에서 파일 클릭 시 새 탭. 주소창은 활성 탭에 따라 URL ↔ 파일 경로. **탭 스트립은 탭이 2개 이상일 때만 노출**(사이드바 개폐와 무관 → 기본 룩 유지).
+- **검색**: 사이드바 상단 input — 파일명 부분일치 평면 필터.
+- **코드 뷰**: 읽기 전용, 줄번호 거터 + monospace, 주석 라인 muted. Mock 코드 베이스 정적 주입(C-3 음료앱 / C-4 OCR 일정봇).
+- **하위호환**: `files` 없음 | `tutorial`(C-2) | `previewState !== 'ready'`(c3-preview-empty·c3-spawning) → 토글·탭 숨김, 기존 `SafariChrome` 동작과 동일.
+- `tokens.css` 신규 클래스: `.oc-tree-row`·`.oc-browser-tabstrip`·`.oc-browser-tab`·`.oc-browser-tab-close`.
+
+**후속 조정** (동일 2026-06-11, 사용자 피드백 반복 반영):
+- **레이아웃**: 탐색기 사이드바는 chrome 아래 전체 높이, 탭 스트립은 우측 콘텐츠 컬럼 상단에만(겹침 제거). 탭 스트립은 탭 2개↑일 때만(사이드바 개폐 무관).
+- **탭 폭**: 제목 길이와 무관하게 고정 144px(긴 이름 ellipsis). 닫기 버튼 확대(20px 버튼·13px 글리프).
+- **주소창**: 좌측 `aA` 인디케이터 폐기. 주소 텍스트 정중앙 정렬(좌·우 컨트롤 동일 폭 18px). 최종 배치 = 좌: **홈**(기본 미리보기 페이지로 복귀, `setActiveId('preview')` — 열린 탭은 유지) / 우: **새로고침**. **새 탭에서 열기**는 복사 버튼 옆(우측 끝)으로 이동, 항상 라이브 앱 URL을 새 브라우저 탭으로 엶.
+- **상단바 네비게이션**: 사파리 레퍼런스 위치(사이드바 토글 우측·주소창 좌측)에 **뒤로/앞으로** 추가. 미리보기 히스토리 없음 → 뒤로=활성 톤·앞으로=비활성(흐림), 사이 구분선.
+- **사파리 색 정합성**(이미지 레퍼런스 기반, 멀티에이전트 워크플로 합성): 미리보기 브라우저는 의도적 non-Jitda 쿨그레이로 통일 — 사이드바 `#f9f9f9`(기존 warm `--c-paper` 폐기)·검색필드 보더 `#d8d8dc`·돋보기 `#86868b`. 폴더 아이콘=Finder 블루 채움(`#4aa3ff`/`#1a8cff`, 기존 gold `--c-helmet-deep` 폐기). 선택 행=중립 회색 pill `#efefee` + 텍스트·아이콘 블루 틴트 `#006ef5`(기존 yellow `--c-helmet-soft` 폐기). hover=어두워짐 `rgba(0,0,0,.045)`. 파일 ext 배지=쿨 중립 칩 `#eef0f4`/`#d6d8dd`/`#5b6270`(트리·검색·탭 공통). 탭 스트립 `#eaeaea`·활성 탭 off-white `#f9f9f9`·비활성 글자 `#5a5a5e`. 상단 chrome 바(`#f5f5f7` 등)는 이미 사파리 톤이라 미수정.
+
+**후속 조정 2** (2026-06-12, chrome 공용화 + 갤러리 적용):
+- **공용화(디자인시스템 반영)**: 중복돼 있던 chrome을 **공용 `SafariChrome`(shared.jsx)** 하나로 통합. `OcBrowser`의 인라인 chrome 제거 → `<SafariChrome address openUrl onRefresh onHome onToggleSidebar sidebarOpen tutorial />` 호출. 갤러리 `DetailLivePane`(gallery.jsx)은 기존 `<SafariChrome url={…} />` 그대로 → 자동으로 새 chrome 적용.
+- **주소 정중앙(근본 수정)**: chrome을 `[좌 그룹 flex:1][주소 pill flex 0 1 420·정중앙][우 그룹 flex:1]`로 재구성. 좌·우 그룹 동일 flex → pill이 바 정중앙(Playwright 측정 offset=0; 이전엔 좌측 그룹이 넓어 +42px 우측 치우침).
+- **갤러리(D-2) 적용 + 소스 버튼 제외**: 홈·파일 탐색기 토글은 `onHome`/`onToggleSidebar` prop 있을 때만 노출 → OpenCode(enabled)만 전달, 갤러리는 미전달 → 갤러리엔 소스코드 버튼 없음. 갤러리 chrome = 트래픽+뒤로/앞으로+pill[스페이서·작품명·새로고침]+새탭+복사.
+- **모든 OpenCode 화면 일관**: C-2(튜토리얼)·C-3·C-4 모두 동일 SafariChrome. 비-ready(c3-empty/spawning)·tutorial은 토글·홈 숨김(갤러리 Slim과 동일). 파일 탐색기/탭은 C-3·C-4(ready)만.
+- **파일 탐색기 열기 애니메이션**: `.oc-file-sidebar` — `@keyframes oc-sidebar-open`(width 0→196 + opacity, 200ms decelerate). 사이드바 `overflow:hidden`으로 0폭 클립, 콘텐츠 자연스럽게 밀림.
+- **캐시 무효화**: `viewer.html`·`Renewal.html`의 `shared.jsx`·`participant.jsx`·`tokens.css` `?v=`를 `20260612safari`로 bump(편집 후 필수 절차). 검증 중 `_serve.py`(no-store) 기동 권장.
+- **디자인시스템 문서**: `Jitda Design System.html` §09c 갱신 — Slim(갤러리)/Full(OpenCode) 2변형 정적 레플리카, ELEMENTS·DIMENSIONS·DO/DON'T 새 레이아웃 반영(높이 38px·정중앙·뒤로앞으로 데코·소스 버튼 변형 규칙).
+
+**후속 조정 3** (2026-06-12, 탐색기 노출 규칙 변경 — 후속 조정 2의 토글·홈 노출 규칙 대체):
+- **파일 탐색기 토글 = OpenCode 전 화면 항상**(파일 없음·튜토리얼·미준비 포함). `OcBrowser`가 `onToggleSidebar`를 무조건 전달. `enabled = files && !tutorial && active==='ready'` → `hasFiles = files.tree.length`로 분리 — `hasFiles`는 트리/검색/탭 콘텐츠 활성만 결정(토글 노출과 무관).
+- **빈 상태**: 파일 없을 때(C-2 튜토리얼 등) 탐색기 열면 "아직 생성된 파일이 없어요". 파일 있으면(C-3/C-4·spawning 포함) 트리 표시.
+- **홈 = 공통**: `SafariChrome`이 홈을 항상 렌더(onHome 없으면 데코) → **갤러리(D-2)도 홈 노출**(클릭 no-op). 갤러리는 여전히 파일 탐색기 토글 없음(onToggleSidebar 미전달).
+- `?v=` → `20260612safari2`(shared.jsx·participant.jsx). `Jitda Design System.html` §09c·desc·rules·SLIM 레플리카에 홈 공통·토글 항상·빈 상태 반영.
+
+**검증** (`viewer.html` Playwright + `browser_evaluate`): c4 주소 **offset=0** 유지(홈 항상 렌더해도 좌·우 18px 대칭). 버튼 세트 — c4/c3(Full): 토글·뒤로·앞으로·홈·새로고침·새탭·복사 / **c2 튜토리얼: +토글·홈**(복사 無, 탐색기 열면 빈 상태 확인) / **c3-spawning: 토글 有 → 트리 표시**(파일 존재) / **d2 갤러리: 홈 有·토글 無**(뒤로·앞으로·홈·새로고침·새탭·복사). 사이드바 `.oc-file-sidebar` animationName=`oc-sidebar-open`. 콘솔 0(favicon 404 제외). ⚠ `python3 -m http.server`는 no-cache 아님 — 편집 반영 안 되면 `?v=` bump + `_serve.py` 사용.
+
+**후속 조정 4** (2026-06-12, 좁은 폭에서 상단 바 깨짐 수정):
+- **증상**: 미리보기 패널을 드래그로 좁히면 좌·우 버튼 그룹(`flex: 1 1 0; min-width: 0`)이 0폭으로 붕괴 → 뒤로/앞으로·토글이 클립/오버플로, 420px pill이 바를 점유해 깨짐.
+- **원인**: 사이드 그룹에 명시한 `min-width: 0`이 flex 기본 `min-width: auto`(=min-content 바닥)를 덮어써 콘텐츠 밑으로 축소·붕괴 허용.
+- **수정**(사용자 선택=브라우저식): `SafariChrome` 좌·우 그룹의 `min-width: 0` 제거 → 버튼 그룹은 min-content에서 floor(안 줄어듦), **주소 pill만 먼저 축소**(text-overflow ellipsis로 URL 말줄임). 넓은 폭=정중앙 유지, 좁아지면 주소창이 줄며 약간 우측으로 드리프트(실제 크롬·사파리식).
+- **검증**: c4를 360px(미리보기 최소 폭)로 강제 → `barOverflow=0`(안 깨짐), 7개 버튼 전부 바 안, 주소 텍스트 `clipped=true`(말줄임). `?v=` → `20260612safari3`(shared.jsx).
+
+---
+
+## §μ+3 2026-06-11 새 로고 다측 뷰 현행화 + DIG 측면뷰 재작업 (Z. 데모)
+
+**계기**: 사용자가 로고 디자인 갱신 + 다측 뷰 SVG 추가(`logo/jitda_view/`: Front·Front Side·Front Three-Quarter·Left/Right Side·Back·Back2).
+
+**변경**:
+- `shared.jsx` — 새 컴포넌트 `JitdaCharFront`(jitda_Front.svg)·`JitdaCharSide`(jitda_Left Side.svg, flip로 우측) 추가(원본 path 그대로 + size/mono). viewBox 638.38×677.65.
+- **현행화**: HOP(`JitdaMascot`)·BLUEPRINT(`JitdaMascotBlueprint`)의 `JitdaIcon` → `JitdaCharFront`.
+- **DIG 재작업**: 손으로 그린 `JitdaHelmetSide`(폐기) → 새 측면뷰 `JitdaCharSide`. 돔+챙(CUT 0.58)만 노출·얼굴/발은 clip. 지면 마커는 **없음**(직선→곡선→회색타원 모두 폐기, 사용자 최종 "회색동그라미 없애"). 손 크기 = BLUEPRINT 손 비율(rx18). 곡괭이가 clip 라인 아래로 사라지며 흙 튐.
+- `viewer.html` — Z 하단줄에 새 로고 정면/측면(좌·우) 단독 셀.
+
+**검증**: `?id=z-mascot` 콘솔 0(favicon 404 제외). 윈드업(헬멧 빼꼼)·내려찍기(곡괭이 사라짐+흙) 사용자 레퍼런스 이미지와 일치. 동기 겹침 테스트 0(CUT 축소로 더 안전).
+
+**후속 보정(logo31~33)**:
+- **전신 노출 + 곡괭이질 재구성**: clip 제거해 측면 캐릭터 전신 노출. 팔(손+곡괭이) 한 강체로 머리 위 오버핸드 스윙(swing −108°≈8시반), 머리·팔 키프레임 % 동기, 피벗을 앞으로(helmetX cx+0.13)·z-order(팔 먼저→헬멧)로 들 땐 헬멧 뒤·내려찍을 땐 헬멧 앞.
+- **파는 지점 회색 타원(구멍)**: 곡괭이 최저점 바닥에 작은 회색 타원. **뒤 림(전체)+앞 림(하단 절반 clip)** 2겹으로 머리를 그 사이에 끼워 "구멍에서 빠져나오는" 느낌, 곡괭이 머리 끝은 앞 림(하단 곡선부)에만 가려짐. 관통 방지(머리 하단 y165 < 앞 림 바닥). **중간선 제거**: 두 림 반투명 겹침→하단 이중불투명 경계선 → **opacity 1**(동색)로 경계 소거. **가림 비율**: 타원 중심(지면)을 머리 하단 1/3 지점(머리 높이 37px 측정→중심 y153)에 둬 머리 **하단 1/3만** 가려지고 2/3 노출(digHoleY Sy+0.3).
+- **발밑 그림자(움직이는)**: 다른 마스코트처럼 캐릭터 발밑 타원 그림자 추가, **bob 동기** `jt-dig-shadow`(들림 15%→scaleX0.76·opacity0.07 작고 옅게 / 내려찍기 46%→scaleX1.12·opacity0.2 크고 진하게). `var(--c-ink)`, reduced-motion 정적값 opacity0.16. 측정 검증: windup 56px@0.07 / impact 83px@0.19. `shared.jsx?v=20260612logo33`.
+
+---
+
+## §μ+2 2026-06-11 JitdaMascotDig 신규 — 땅 파기(측면 land-level) 마스코트 (Z. 데모)
+
+**계기**: 사용자 지시 — Z 영역 로고 애니메이션을 참고해 "땅을 파는 캐릭터" 신규 동작 추가. 3차 반복으로 측면 land-level·머리 위로 넘기는 곡괭이질로 최종 확정.
+
+**추상화 규칙(사용자 명세, 최종)**:
+- **측면 land-level 뷰** — 지면 = **회색 직선 하나**(구덩이/구멍 묘사 없음). 선 아래는 clip(=땅속).
+- **측면 헬멧**(`JitdaHelmetSide`, 돔+챙) — 윗머리만 지면선 위로 **아주 조금** 빼꼼(나머지 clip), `jt-dig-bob`으로 움찔. (정면 `JitdaIcon`은 어색해서 폐기)
+- **어깨(피벗)는 지면선 바로 아래(땅속, 안 보임)**. 손+곡괭이가 **한 강체**로 어깨를 중심으로 각운동 → **손도 곡괭이와 같이 움직임**(고정 아님).
+- **머리 위로 넘기는 오버핸드**: 1시(뒤로 든 준비) → 12시(머리 위 통과) → 9시 지나(좌하단) 내려찍기. 9시경 곡괭이가 지면선 아래로 들어가 **clip되어 보이지 않음**.
+- 곡괭이는 헬멧 **위로** 지나가며 **겹치지 않음**(헬멧을 어깨 가까이 둬 호의 높은 지점에서 통과). 착지(파는 구멍)는 헬멧 왼쪽.
+- 내려찍는 순간 **흙(회색 동그라미 3개)**이 착지점에서 튐.
+
+**변경**:
+- `shared.jsx` — `JitdaHelmetSide`(측면 헬멧, viewBox 상단 여백 0) 신규 + `JitdaMascotDig` 재작성. 구조: clip 박스(지면선 아래 가림) 안에 측면 헬멧(`jt-dig-bob`) + 팔 SVG(`jt-dig-swing`, transform-origin=어깨, viewBox 바닥중앙 피벗) → 지면선(회색 rect) → 흙(`jt-dig-dirt` ×3, `--pop`).
+- `tokens.css` — `@keyframes jt-dig-swing`(어깨 피벗 오버핸드 +32°→-128°)·`jt-dig-bob`·`jt-dig-dirt`(1.0s 동기화) + `prefers-reduced-motion` 정지.
+- `viewer.html` — `ZMascotShowcase` DIG 셀(120·72px), 라벨 "DIG · 머리 위로 곡괭이질(측면)", `shared.jsx?v=20260611dig18`로 캐시 갱신.
+
+**비겹침 보장(핵심)**: 헬멧을 **쉬는(윈드업) 자세의 손 바로 아래**에 배치(helmetH 0.58·poke 0.13·helmetX cx+0.42·Sx cx+0.24, 윈드업 +38~50°; 측정으로 손 x≈235에 헬멧을 맞춤)해 손·곡괭이와 한 덩어리로 붙임 — "헬멧·손/곡괭이 더 가깝게" 요청 반영(헬멧↔손 간격 57px→≈0). 스윙은 거기서 위로 떠나 왼쪽으로 내려찍으므로(우측 정수리 위만 잠깐 고공 통과) 안 겹침. `document.elementsFromPoint` 기반 **기하 정확 겹침 테스트**(전 회전각 +52°~-130°, 1.5° 스텝·1px 그리드)로 **0 겹침** 확인. (초기 버전은 좌하강 -59°~-92°에서 손이 돔 좌측면과 겹쳐 다중에이전트 감사로 적발 → 수정)
+
+**헬멧 모션**: 위아래 움찔(translateY)에 더해 **앞뒤 까딱**(jt-dig-bob rotate, transform-origin=지면선) 추가 — 윈드업엔 살짝 뒤로 젖히고 내려찍을 때 앞으로 숙임(머리 끄덕). "위아래만 말고 앞뒤 기울임" 요청 반영.
+
+**일정 거리 + 축소(최종)**: "뒤=가깝고 앞=멀어짐" 지적 반영 → **헬멧을 스윙 피벗 정중앙(helmetX=Sx=cx)** 에 둠. 손·곡괭이가 헬멧을 중심으로 공전하므로 헬멧↔손 거리가 스윙 내내 **일정**(측정: 전 각도 ~55px, 변동 ≤8px). 팔 최단점(자루 끝동)이 돔 반경보다 커 항상 비겹침(측정 0). "전체 크기 축소" 반영 → W 2.6→2.15·H 1.92→1.58·팔 swH 1.16→0.92·돔 0.58→0.5. **"더 가까이/헬멧 더 보이게" 추가 반영** → 그립을 자루 아래로 내려(viewBox cy 84·93→116·126) 손↔헬멧 거리 ~55px→**~37px**(여전히 일정, 변동 ≤8px), poke 0.11→**0.17**(돔 더 노출). 비겹침 0 유지(전 각도 기하 테스트). `shared.jsx?v=20260611dig18`.
+
+**챙 빼꼼(앞 들릴 때)**: "앞 들렸을 때 안전모 챙 조금 보이게" 요청 → 헬멧을 **좁은 돔 + 넓은 챙**(앞=왼쪽 더 김)으로 재작도, 지면선이 챙 바로 위에 오게 내림(poke 0.17→0.29, helmetH 0.5→0.46). 앞뒤 까딱 진폭↑(윈드업 +9°·내려찍기 −6°). 앞이 들리면 챙이 지면 위로 빼꼼, 숙이면 숨음. 돔을 좁혀 손 거리 ~37px 유지. **시간 동기 겹침 테스트(스윙+틸트 동시 t=0~1000ms) 0 겹침** 확인(챙 보이는 windup엔 곡괭이가 우상단이라 안 닿음).
+
+**검증**: `?id=z-mascot` 콘솔 0 에러. 윈드업(챙 빼꼼)·머리 위 통과·하강 분리·내려찍기 후 지면 아래 소멸·흙 튐 프레임 확인. mono(헬멧·곡괭이 무채색 스왑)·prefers-reduced-motion(흙 idle 비표시) 처리.
+
+**신규 토큰 0개**(키프레임 3종만 추가).
+
+---
+
+## §μ+1 2026-06-10 TutorialPostit 펼친 카드 테이프 잘림 수정
+
+**계기**: 사용자 지시 — 튜토리얼 가이드 펼쳤을 때 `::before` 테이프가 보이지 않음(잘림).
+
+**원인**: `TutorialPostit` 펼친 카드(L1199)에 `overflowY: 'auto'`가 직접 걸려 있었음. CSS 사양상 `overflow-x: visible` + `overflow-y: auto` 조합은 허용되지 않아 `overflow-x`도 자동으로 `auto`가 됨. 결과적으로 카드 박스 위로 솟아나오는 `::before` 테이프(`top: calc(--postit-tape-h * -0.5)` = 약 -4.5px)가 함께 잘림.
+
+**변경** (`participant.jsx` `TutorialPostit` 펼친 상태):
+- `.jt-postit-card`에서 `overflowY: 'auto'`·`maxHeight`·`padding`·`display:flex`·`gap` 모두 제거
+- 카드 내부에 스크롤 컨테이너 div 신설 — `maxHeight: calc(100vh - 64px)`, `overflowY: auto`, padding/flex/gap 이관
+- 카드는 폭·radius·CSS vars(`--postit-rot`·`--postit-tint`)만 유지 → `overflow: visible`(기본값) 보존 → 테이프 정상 노출
+- `borderRadius: inherit` 로 내부 스크롤러 모서리 정렬
+
+**검증**: `?id=c2-tutorial-1` (또는 c2-tutorial-2/3/4)에서 펼친 가이드 상단에 테이프 시각화 확인.
+
+**신규 토큰 0개**.
+
+**§μ 후속 결정**: 프롬프트 포스트잇 tint는 `--c-helmet-wash` 유지(사용자 결정). 의미상 `tokens.css:32` 주석은 "anticipation 단계"로 정의돼 있지만, paper-edge 시절부터의 관행 보존(짓다 헬멧 노랑 브랜드 연속성). 후속으로 `tokens.css` 주석에 "사용자 발화 메시지 tint 겸용" 추가 검토.
+
+---
+
+## §μ 2026-06-10 OcUserMessage paper-edge → jt-postit-card 어휘 통일
+
+**계기**: 사용자 지시 — 프롬프트 전송 말풍선이 종이 모양(paper-edge polygon clip-path)인데 디자인시스템 포스트잇 어휘로 바꿀 것.
+
+**변경** (`participant.jsx` `OcUserMessage`):
+- `clipPath: OC_PAPER_EDGE` + `WebkitClipPath` 제거 → `className="jt-postit-card jt-postit-card-static jt-postit-tape-md"`
+- 인라인 vars 주입: `--postit-rot: var(--postit-rot-c)` (0.6° 미세 회전) · `--postit-tint: var(--c-helmet-wash)` (기존 노랑톤 보존)
+- `borderRadius: var(--r-xs)`, padding `13px 18px` → `14px 18px 15px` (tape 시각 균형)
+- wrapper `paddingTop: 6` 추가 — tape(8px)이 카드 상단 밖으로 노출되어 잘리지 않도록 여백 확보
+- `OC_PAPER_EDGE` 상수 폐기, 헤더 주석 갱신.
+
+**신규 토큰 0개** — 기존 `.jt-postit-card` · `--postit-rot-c` · `--c-helmet-wash` 재사용.
+
+**검증**: `?id=c2-tutorial-1` (튜토리얼 진행) 등 OpenCodeShell 사용 화면에서 사용자 발화가 미세 회전+테이프 포스트잇으로 렌더 — viewer.html 새로고침으로 확인 권장.
+
+**반증·후속(Critical Analysis)**: (a) tape가 채팅 흐름에서 과한 시각 노이즈일 가능성 — 다수 사용자 발화 연속 시 회전 누적이 산만해 보이면 `--postit-rot: 0deg`로 회전만 제거 검토. (b) `--postit-tint`를 helmet-wash 그대로 유지했지만 다른 포스트잇(튜토리얼=tutorial-soft, 팀=hash 3색)과의 색 위계 재검토 여지 — 사용자 발화는 가장 약한 톤이 적절한지 확인 필요.
+
+---
+
 ## §24 2026-06-04 OpenCodeShell 라이트 paper + 2-pane 재설계 (c2·c3·c4 공용 셸 교체)
 
 **계기**: 사용자 지시 — `06-design/static-open-code-no-script-desktop.html` (OpenCode "Codle" 변형 스냅샷, `data-theme="jitda" data-color-scheme="light"`) 기반으로 바이브코딩 진행 화면 재설계. 레퍼런스를 읽어 보니 기존 셸과 두 가지 큰 차이:
@@ -3877,3 +4028,137 @@ paper 배경(#faf9f6) 위 흰색(#ffffff) 카드 → 명도 차이 1.5%. 카드 
 **범위**: 공용 컴포넌트라 C-1 전 화면(표준·긴 팀명·다인팀)·전 상태(roomBefore/AfterTutorial/Ended)에 일괄 반영. 로스터는 팀원 전체 표시 유지.
 
 **검증**: `viewer.html?id=c1-many-members` 새로고침 — LIVE·팀 변경 미표시, 7명 전원 노출 확인. `grep "LIVE\|팀 변경\|ParticipantLiveStatus" participant.jsx` 0건.
+
+---
+
+## §25 F 영역 심사 전면 재설계 — placeholder 삭제 → 데이터 열람 중심 3 화면 (2026-06-10)
+
+**트리거**: 사용자 "디자인에 f 영역 관련 페이지 디자인해봐. hifi로, 기존 심사위원 대시보드는 삭제." (패턴 C 신규 화면 + 기존 삭제)
+
+**기획 근거**: `03-planning/product/2026-06-10_심사-평가-기능-기획.md`. 사용자 확정 방향 — (1) 범용 제품 기능, (2) 균형 하이브리드·과정 가중, (3) **채점은 사람 심사위원이 하고 플랫폼은 판단에 필요한 데이터를 한 화면에서 열람·반영하도록 지원**(자동 합산 점수 트랙 폐기, 동료평가·자동지표는 참고용).
+
+**기존 문제**: `F1JudgeDashboard`는 전통 개발 해커톤 룰을 복사한 4축(창의성/완성도/실용성/프레젠테이션) 0–10 슬라이더 placeholder. 바이브코딩에서 결과물 완성도는 AI 모델 성능이 좌우 → "잘한 팀"이 아니라 "AI가 잘 뽑아준 팀"을 뽑게 됨. 플랫폼 고유 신호(프롬프트 히스토리·기여도)를 *심사위원이 어떻게 열람·반영하는가*에 대한 설계 부재.
+
+**변경**:
+- **`judge.jsx` 전면 재작성** (기존 407줄 삭제). 화면 3종:
+  - `f1` 심사위원 대시보드(채점 중): 3분할 — 좌(심사 큐 + 내 분담 진행률 + 마감) / 중(라이브 앱 iframe + **보조 데이터 4탭: 과정 요약·기여도·산출물 소개·참고**) / 우(**과정 가중 5항목 루브릭** + 심사평 + 가중 합계). 데이터 열람과 점수 입력이 한 화면에 공존 = 설계 1원칙.
+  - `f1-completed`: 동일 레이아웃 + 큐 전체 채점 완료 + 하단 mint 제출 바(심사 제출하기).
+  - `f2` 결과 발표·시상: 포디움(🏆대상/🥈최우수/🥉우수, 대상=helmet 큰 기둥) + 특별상 4종 포스트잇(💬베스트 프롬프트·🤝베스트 협업·📈성장상·👏관객상) · 운영자 발표 모드.
+- **루브릭 배점**(운영자 조정 가능 프리셋): 문제정의 20 / **과정·프롬프트 30(★)** / 결과물 25 / 협업 15 / 발표 10. 과정30>결과물25로 AI 성능 혼동 회피.
+- **과정 요약 탭**: AI가 47개 프롬프트에서 핵심 분기(반복 개선·문제 해결·좋은 분해)를 추림 + "원본 프롬프트 전체(47)" always 한 클릭 + "요약 미심쩍으면 원본 확인, 점수 자동 반영 안 함" 배너(요약 환각 리스크 완화, 기획 §6).
+- **참고 탭**: 동료평가 ★·반복 횟수·기여 균형을 "점수 미반영·참고용"으로 명시 + **"토큰 사용량은 평가 지표 아님"** 경고 배너.
+- **신규 헬퍼**: `ProcessSummaryPanel`/`ContribPanel`/`IntroPanel`/`RefPanel`/`JudgeQueueItem`/`RubricRow`/`JudgeTab`/`JChip`/`F2AwardCeremony`/`PodiumCard`. `Object.assign(window, { F1JudgeDashboard, F2AwardCeremony })`.
+- **와이어링**(viewer ACTIONS): `f1` 큐/탭/저장 self-loop, `f1-completed.submit → f2`, `f2.gallery → d1-ended`.
+- **정합 갱신**: viewer.html SCREENS 3건 + ACTIONS, Renewal.html artboard 2건 + subtitle + nav "F (3)", STRUCTURE §2 표·§3 인덱스·§5 갭(2-1 해소)·§6 미검증 가정·변경이력·상단 총합 48→50.
+
+**신규 토큰 0개** — 기존 어휘 재사용(`jt-postit-card`·`jt-btn-helmet`·`--c-mint-wash`·`--c-helmet-soft` 등).
+
+**검증**: viewer `?id=f1`·`?id=f1-completed`·`?id=f2` 콘솔 0 에러(favicon 제외). 3분할·4탭·포디움·특별상 정상 렌더(스크린샷 확인). `grep F1JudgeDashboard viewer.html` validation required 배열에 잔존(컴포넌트명 유지).
+
+**반증·후속(Critical Analysis)**: (a) 심사위원이 과정 요약을 실제로 보는가 — 안 보면 과정 가중 전제 붕괴, 실제 심사위원 인터뷰 필요. (b) AI 요약 정확도 — 왜곡 시 오심, 실데이터 사전 테스트 필요. (c) 심사위원 진입 인증 방식 TBD. (d) 페이지정의서·화면상태정의서 F 섹션은 기존 4축 스텁 그대로 → 정렬 필요. (e) c5-submit(산출물 제출, C영역)은 본 범위 제외 — 발표 데이터원으로 후속 신설.
+
+
+---
+
+## §26 심사 기능 3-역할 전 화면 확장 — 참여자·운영자·심사위원 (2026-06-10)
+
+**트리거**: 사용자 "심사 관련된 모든 화면을 디자인. 심사위원·참여자·운영자로 나눠서 영역을 추가하고 작업해라." (패턴 C ×다수, 3 역할 횡단)
+
+**접근**: 설계 워크플로우(3 역할 병렬 설계 + 적대적 통합/완결성 검토)로 인벤토리·와이어링·구현 순서 도출 후 메인에서 직렬 구현(공유 파일 충돌·렌더 검증). §25(F 재설계)의 f1/f1-completed/f2는 재구현 없이, 누락된 데이터원·설정·집계·결과 화면을 채움.
+
+**영역 구조 결정**: 신규 심사 섹션을 따로 만들지 않고 **역할별 파일 컨벤션 유지** — 심사위원=judge.jsx(F), 참여자=participant.jsx(C), 운영자=operator.jsx(B). viewer/Renewal 각 역할 섹션 끝에 추가.
+
+**신규 화면 9 (+ 보강 1)**:
+- 참여자(participant.jsx): `c5-submit`·`c5-submitted`(C5SubmitIntro — 작품명·문제·핵심기능3·시연포인트, AI 초안 배지, helmet 제출. 발표/문제정의 데이터원), `c-result`·`c-result-private`(CParticipantResult — 점수(scorePublic 분기)·🏆수상·심사평 인용·갤러리 링크).
+- 운영자(operator.jsx): `b3-rubric-settings`(B3RubricSettings — 프리셋·5행 항목(과정30★)·합계100·보조데이터 토글·토큰금지 배너), `b3-judge-management`/`b3-judge-assign`(B3JudgeManagement tab — 초대/배정현황 진행률), `b3-results-tally`(B3ResultsTally — 점수 행렬 "자동점수 아님" 명시·시상 확정·동률·점수공개 토글). 공통 JudgingShell/JudgingStepper(4단계)/ToggleCard.
+- 심사위원(judge.jsx): `f1-rubric`(F1RubricConfig — 온보딩 읽기전용 루브릭 + "과정30>결과물25" 안내).
+- 보강: b2-ended SummaryView 상단 JudgingEntryBanner(심사 진입 CTA).
+
+**버그 수정**: §25 judge.jsx F2/IntroPanel의 `--rot`/`--tint` → `--postit-rot`/`--postit-tint`(jt-postit-card 참조 일치). 포스트잇 회전·tint 미적용 버그 수정(스크린샷으로 7카드 적용 확인).
+
+**와이어링(viewer ACTIONS)**: c5-submit submit→c5-submitted / b2-ended start-rubric·start-judging→b3-rubric-settings / b3-rubric-settings save→b3-judge-management cancel→b2-ended / b3-judge-management tab↔b3-judge-assign start-judging→f1-rubric / b3-results-tally start-awards→f2 back→b3-judge-management / f1-rubric start→f1 / f1-completed submit→b3-results-tally / c-result open-gallery-*→d1-ended.
+
+**정합**: viewer/Renewal SCREENS·artboard·nav, STRUCTURE §2(B 14→18·C 9→13·F 3→4)·§3 인덱스·총합 50→59·변경이력. 스크립트 cache-bust `?v=20260610judge2`.
+
+**사고·복구(투명성)**: participant.jsx 1차 작성 시 Edit 도구가 한글을 리터럴 `\uXXXX`로 직렬화 → JSX 텍스트·속성 깨짐(JS 문자열은 babel이 해석해 정상이라 부분만 보임). 진단 중 Python open('w') truncate-then-error로 파일 0바이트 사고 → git HEAD 복원 → Python 직접 작성(Edit 우회)으로 실제 한글 재구현. operator/judge/문서는 이스케이프 0(영향 없음).
+
+**검증**: viewer 9개 신규 화면 콘솔 0 에러. c5/c-result/b3-rubric/b3-tally/f1-rubric 스크린샷 실제 한글·디자인 토큰 정상. Renewal 72 아트보드 emptyCount 0.
+
+**반증·후속**: (a) f1-completed submit→b3-results-tally는 데모상 역할 전환(실제는 별도 진입). (b) 자동배정·항목 추가/삭제는 시각만(Full에서 상태). (c) 페이지정의서·화면상태정의서에 B-3/C-5/C-결과 명세 미반영 → 후속 흡수. (d) 심사위원 인증 화면 미구현(초대 링크로 부분 대체).
+
+
+---
+
+## §27 심사 전 화면 단일 영역 분리 — judging.jsx 통합 + "F. 심사" 단일 섹션 (2026-06-10)
+
+**트리거**: 사용자 "심사 관련 페이지들은 전부 별도 영역으로 나눠줘. 지금은 여기저기 섞여있어서 개발할 때 헷갈림."
+
+**결정**: 역할별 파일에 흩어져 있던 심사 코드/화면을 (1) **단일 파일 judging.jsx**, (2) **viewer/Renewal 단일 "F. 심사" 섹션**으로 통합.
+
+**변경**:
+- 신규 `judging.jsx` — 심사 전 컴포넌트 통합: 심사위원(F1RubricConfig·F1JudgeDashboard·F2AwardCeremony + ProcessSummaryPanel/ContribPanel/IntroPanel/RefPanel/JudgeQueueItem/RubricRow/JudgeTab/PodiumCard + JUDGE_USER/RUBRIC/JUDGE_QUEUE/DRAFT_SCORE), 운영자(B3RubricSettings·B3JudgeManagement·B3ResultsTally + JudgingShell/JudgingEntryBanner/JudgingStepper/ToggleCard + RUBRIC_PRESETS/OP_RUBRIC/JUDGES/JUDGE_STATUS/TALLY), 참여자(C5SubmitIntro/SubmitField/CParticipantResult).
+- `judge.jsx` 삭제. operator.jsx·participant.jsx에서 심사 블록 + Object.assign export 제거.
+- operator SummaryView의 `<JudgingEntryBanner totalTeams=…/>`는 judging.jsx 전역 함수 참조로 유지 — babel 전역 스코프라 로드 순서 무관, 렌더 시점 해석. b2-ended 0 에러로 검증.
+- viewer.html SCREENS: b3-*/c5-*/c-result-* 의 section을 모두 `F. 심사`로, 흐름순 재배치(참여자 제출 → 운영자 설정·배정 → 심사위원 채점 → 집계 → 발표 → 참여자 결과), 라벨에 [참여자]/[운영자]/[심사위원]/[발표] 태그.
+- Renewal.html: judge DCSection 재구성("F. 심사 영역 (참여자·운영자·심사위원 통합)"), 12 아트보드 흐름순.
+- 스크립트 judge.jsx→judging.jsx, cache-bust `?v=20260610judge3`(operator/participant도 갱신).
+- 화면 ID는 b3/c5/c-result/f 접두 유지 — ACTIONS 와이어링 무변경, 안정성 우선.
+
+**리뷰 반영(§26 워크플로우)**: ContribPanel 팀원명 `이서연`→`이서윤` 통일, B3JudgeManagement auto-assign 힌트 "· Full" 표기.
+
+**검증**: viewer `?id=b2-ended`(JudgingEntryBanner 교차 참조 정상)·`f1`·`b1`·`c1` 콘솔 0 에러. 드롭다운 optgroup "F. 심사" 12개, B/C 섹션 심사 잔존 0. judging.jsx 전 컴포넌트 typeof function.
+
+**후속**: 페이지정의서·화면상태정의서에 통합 구조 반영. 솔로팀 f1 변형·점수공개 분기 등 Full 항목 잔여.
+
+
+---
+
+## §28 마스코트 대기 애니메이션 배치 (마스코트-애니메이션-가이드 §4) (2026-06-12)
+
+**트리거**: 마스코트(HOP·BLUEPRINT·DIG) 3종을 대기·생성·로딩 화면에 일괄 배치 — 빈 스피너/플레이스홀더를 브랜드 마스코트로 교체해 대기 시간 체감 완화.
+
+**결정**: 마스코트-애니메이션-가이드 §4 권고 매핑을 그대로 적용. 마스코트 컴포넌트는 shared.jsx 전역 함수(`JitdaMascot`=HOP·`JitdaMascotBlueprint`=BLUEPRINT·`JitdaMascotDig`=DIG), reduced-motion 처리는 각 컴포넌트 내부 키프레임에 내장.
+
+**배치 (5건)**:
+1. **sending → DIG**: 신규 `OcPreviewGenerating` + `previewState='generating'` 분기 + 신규 화면 `c3-generating`(`C3PersonalCodingGenerating`) — 1인팀 캔버스 미리보기 패널에 DIG(곡괭이질) 마스코트로 "AI 생성 중" 표현.
+2. **a1-not-started → HOP**: 기존 스피너를 HOP 마스코트로 대체.
+3. **c1 · c1-after-tutorial → BLUEPRINT**: 좌측 메시지 영역에 BLUEPRINT(도면 보는 중) 마스코트 배치 (종료 상태 `c1-ended` 제외).
+4. **c3-spawning → HOP**: 서버 기동 중 스피너를 HOP 마스코트로 대체.
+5. **d2-loading → BLUEPRINT ↔ DIG**: 좌우 슬라이드 교대 스왑 (tokens.css `.jt-mascot-swap` 신규 키프레임).
+
+**미배치 (가이드 권고)**: `c3-preview-empty`·`c5-submitted`·`f2` 는 마스코트 미배치 — 빈/완료/발표 화면은 마스코트가 컨텍스트와 충돌하거나 과함.
+
+**정합**: viewer.html·Renewal.html SCREENS·artboard에 `c3-generating` 추가, 스크립트 cache-bust `?v=20260612mascot`(auth.jsx·participant.jsx·gallery.jsx·tokens.css). STRUCTURE §2 C 13→14·§3 인덱스·총합 59→60·변경이력 반영.
+
+**후속 조정 (2026-06-12, 사용자 지시 — 위 §4 권고 매핑 override)**: 가이드 §6 권고대로 전면 적용 전 사용자 검토 결과 아래로 재배치.
+- **대기실 마스코트 차별화**: 튜토리얼 대기 `c1`(roomBefore)=BLUEPRINT(도면 검토) 유지 · 해커톤 대기 `c1-after-tutorial`(roomAfterTutorial)=**DIG**(곡괭이질 — "튜토리얼 끝, 이제 짓는다"). `C1TeamRoomV2`에서 `state==='roomAfterTutorial'` 분기. (위 배치 3 override — 둘 다 BLUEPRINT → 상태별 차별)
+- **미리보기 3상태 재배치**: `c3-preview-empty`(OcPreviewEmpty) 스켈레톤→**HOP**(친근한 빈 상태) · `c3-spawning`(OcPreviewSpawning) HOP→**BLUEPRINT**(준비·검토). → 진행 서사: 빈상태 HOP → 준비중 BLUEPRINT → 생성중 DIG. (위 배치 4 + 미배치 항목 override)
+- **`a1-not-started` 비활성화**: "화면 자체가 필요 없음" → viewer.html SCREENS·Renewal.html artboard 주석 처리. `A1NotStarted` 함수는 auth.jsx에 보존(복원 시 주석 해제), 위 배치 2(a1 HOP)는 화면 비활성화로 무효. A 10→9·총 60→59.
+- cache-bust: `participant.jsx ?v=20260612mascot2`. 검증: Playwright로 c1·c1-after-tutorial·c3-preview-empty·c3-spawning 재확인 + a1-not-started 부재 확인.
+- **DIG 곡괭이 clip 버그 수정** (`shared.jsx JitdaMascotDig`): 내려찍는 순간(swing rotate(-108deg)) 곡괭이 머리가 구멍 림 아래로 튀어나오던 현상 수정. `jt-dig-swing`(회전 요소)을 **회전하지 않는 clip 래퍼**(`height: digHoleY + digHoleH/2`, `overflow:hidden`)로 감싸 지면 표면 아래는 잘려 "땅 속으로" 사라짐(가이드 §2.3 "곡괭이가 지면선 아래라 clip되어 보이지 않음" 의도 실제 구현). 모든 DIG 인스턴스(c1-after-tutorial·c3-generating·d2-loading) 일괄 적용. `shared.jsx ?v=20260612digclip` bump.
+
+## §29 b2-ended 심사 진입 배너 분리 + 갤러리 호응 LIVE 칩 제거 (2026-06-12)
+
+**트리거**: 사용자 지시 2건 — (1) "live 버튼 삭제", (2) "심사 단계 시작 배너 없는 버전을 기본으로 하고, 배너 있는 기존 화면은 심사 영역으로 이동".
+
+**결정 1 — LIVE 칩 삭제**: 갤러리 호응 eyebrow의 `SummaryLiveLabel`(operator.jsx)에서 mint pulse 도트 + "LIVE" 워드(칩) 제거. "종료 후에도 누적 중" 안내 문구는 유지(사용자 선택: 칩만 삭제·문구 유지). 본문에 "갤러리는 종료 후에도 계속 운영됩니다…" 안내가 이미 있어 정보 손실 없음.
+
+**결정 2 — 심사 배너 분리 (심사 기능 미개발)**: `JudgingEntryBanner`("심사 단계를 시작하세요" + 루브릭 설정/심사 시작 CTA)를 b2-ended 기본에서 제거. 사유: 심사 기능이 아직 개발 전이라 진입 배너 없는 깨끗한 종료 대시보드가 기본으로 필요. 배너 버전은 폐기하지 않고 F.심사 영역의 별도 화면으로 보존.
+
+**구현**:
+- operator.jsx: `SummaryView`·`DashboardShell`·`B2DashboardEnded`에 `judgingEntry` prop(기본 false) 추가. false면 `<JudgingEntryBanner>` 미렌더. `B2DashboardEnded`(b2-ended)는 기본값 false → 깨끗판.
+- 신규 화면 `b2-ended-judging`(F.심사): `<B2DashboardEnded judgingEntry />` — 종료 대시보드 + 심사 시작 배너. 컴포넌트는 operator.jsx 재사용(judging.jsx 신규 정의 아님).
+- viewer.html: SCREENS에 `b2-ended-judging`(section 'F. 심사', h 920) 추가. ACTIONS — `b2-ended`에서 `start-rubric`/`start-judging` 제거(갤러리·토큰 모달만), `b2-ended-judging`에 갤러리·토큰·`start-rubric`/`start-judging`→b3-rubric-settings 추가, `b3-rubric-settings` cancel → `b2-ended-judging`(왕복 정합).
+- Renewal.html: F.심사 섹션에 `b2-ended-judging` artboard(1280×920) 추가.
+- cache-bust: `operator.jsx ?v=20260612endclean`(viewer·Renewal 동시 bump).
+
+**정합**: STRUCTURE §2(F 12→13)·§3 인덱스(b2-ended-judging 행)·§7 와이어링·헤더 총합 60→61·B운영자 note·변경이력 반영.
+
+**검증**: Playwright — `?id=b2-ended`(배너 없음·LIVE 칩 없음·"종료 후에도 누적 중" 유지) 0 에러, `?id=b2-ended-judging`(배너 + 루브릭/심사 시작 CTA) 0 에러 렌더 확인.
+
+**미검증/후속**: 심사 기능 개발 시 b2-ended(깨끗판)에서 b2-ended-judging(또는 심사 흐름)으로의 진입 경로를 다시 설계해야 함 — 현재는 F.심사 섹션 직접 진입만 존재(의도된 임시 상태).
+- **칸반 컬럼별 페이지네이션** (`operator.jsx` B-2 ② 튜토리얼 진행·⑤ 해커톤 진행): 기존 전체 칸 합산 단일 페이지네이션 → **컬럼/zone별 독립 페이지네이션**으로 전환(`useColumnPaging` 훅). 한 컬럼만 perPage 초과면 그 컬럼 하단에만 노출(marginTop:auto로 바닥 정렬). 튜토리얼 칸반은 컬럼당 10팀, 활동 칸반은 손든·잠시 멈춤 zone 각 10팀(2col×5행).
+- **AI 사용량 순위 zone 페이지네이션 제거**: 순위는 상위권만 의미 → `TOKEN_TOP_N=10` 고정 노출, 페이지네이션 없음(`TOKEN_PER_PAGE` 폐기).
+- **활동 칸반 mock 증원** (`STARTED_TEAMS` 30→44팀): 손든 13팀·잠시 멈춤 15팀으로 늘려 두 zone 페이지네이션(각 2페이지) 시연. 토큰 zone은 상위 10만 노출이라 증원 팀 영향 없음.
+- **페이지네이션 디자인시스템 정렬** (`KanbanPagination`): `jt-btn-ghost`+맨 span → DS `Pagination`(shared.jsx) 어휘인 `jt-btn-secondary` 버튼 + 박스형 mono 칩(canvas bg+hairline border)로 통일. 다른 화면 페이지네이션과 시각 일치(사용자 지적 반영).
+- cache-bust: `operator.jsx ?v=20260612pagecol3`. 검증: Playwright로 b2-started(토큰 zone 무 페이지네이션·손든/잠시멈춤 각 1/2·독립 페이징 동작)·b2-tutorial-running(완료 컬럼만 페이지네이션·좁은 컬럼 fit) 확인.

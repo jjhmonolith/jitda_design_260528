@@ -3,7 +3,7 @@
 > **이 문서의 역할**: 짓다 UI 디자인 수정·검토·개발 시 **어떤 문서와 코드를 어떤 순서로 봐야 하는지**의 지도.
 > AI가 디자인 작업을 할 때, 사람이 화면을 수정·검토할 때 **첫 번째로 읽는 문서**.
 >
-> 작성: 2026-05-26 · 기준 캔버스: `Jitda Renewal.html` (48개 화면 상태 — 2026-06-01: b2-started v2 (운영자 액션 중심 — 미리보기 그리드 폐기 → 손든 팀·정체·불참 4단 우선순위. 화면 수 동일. 손들기 기능 신설은 `03-planning/product/2026-06-01_손들기-기획.md` 별도). 2026-06-01: E-4 v1(e4·e4-waiting·e4-rejected) 폐기, v2(거대 ring) 정본 채택 → E -3, 총합 51→48. 이전 변경: 2026-06-01: D-2 대댓글 디자인 신설(d2-comments-replies·d2-comments-reply-compose) → D 10→12, 총합 49→51. 2026-05-29 C-1 v1 폐기 + v2를 canonical c1으로 채택 → C 9→5 (c1-ended-long-name·c1-ended-many-members edge case도 함께 정리), 총합 54→49 + paper surface 적용. 2026-05-29 c1-v2·c1-after-tutorial-v2·c1-ended-v2 신설로 C 6→9 · A4 운영자 회원가입 신설 A 9→10 · b2-paused·e6-paused 폐기로 B 15→14, E 11→10 · 2026-05-26 a1-expired 폐기 50→49 · c1-paused → e6-paused 이전 C 7→6, E 8→9 · 2026-05-27 b2-roster-detail 신설 B 14→15 · e7-ending 폐기 E 9→8 · e4-waiting 신설 E 8→9 · e4-v2/e4-waiting-v2 신설 E 9→11)
+> 작성: 2026-05-26 · 기준 캔버스: `Jitda Renewal.html` (61개 화면 상태 — 2026-06-12: b2-ended 심사 진입 배너 분리 → F.심사 `b2-ended-judging`(B2DashboardEnded judgingEntry) 신설, b2-ended 기본은 배너 없는 깨끗판 + 갤러리 호응 LIVE 칩 제거(문구 유지), F 12→13·총 60→61. 2026-06-12(후속): a1-not-started 비활성화 → A 10→9·총 60→59; 마스코트 재배치 c1-after-tutorial→DIG·c3-preview-empty→HOP·c3-spawning→BLUEPRINT. 2026-06-12: c3-generating(1인팀 캔버스 AI 생성 중 · 미리보기 패널 DIG 마스코트) 신설 → C 13→14, 총합 59→60. 2026-06-10: 심사 기능 3-역할 전 화면 — 참여자 C-5(2)·C-결과(2), 운영자 B-3(4), 심사위원 f1-rubric(1) 신설 → 총합 50→59. 같은 날 F 영역 심사 재설계 f1(1)→f1·f1-completed·f2(3) 48→50. 2026-06-01: b2-started v2 (운영자 액션 중심 — 미리보기 그리드 폐기 → 손든 팀·정체·불참 4단 우선순위. 화면 수 동일. 손들기 기능 신설은 `03-planning/product/2026-06-01_손들기-기획.md` 별도). 2026-06-01: E-4 v1(e4·e4-waiting·e4-rejected) 폐기, v2(거대 ring) 정본 채택 → E -3, 총합 51→48. 이전 변경: 2026-06-01: D-2 대댓글 디자인 신설(d2-comments-replies·d2-comments-reply-compose) → D 10→12, 총합 49→51. 2026-05-29 C-1 v1 폐기 + v2를 canonical c1으로 채택 → C 9→5 (c1-ended-long-name·c1-ended-many-members edge case도 함께 정리), 총합 54→49 + paper surface 적용. 2026-05-29 c1-v2·c1-after-tutorial-v2·c1-ended-v2 신설로 C 6→9 · A4 운영자 회원가입 신설 A 9→10 · b2-paused·e6-paused 폐기로 B 15→14, E 11→10 · 2026-05-26 a1-expired 폐기 50→49 · c1-paused → e6-paused 이전 C 7→6, E 8→9 · 2026-05-27 b2-roster-detail 신설 B 14→15 · e7-ending 폐기 E 9→8 · e4-waiting 신설 E 8→9 · e4-v2/e4-waiting-v2 신설 E 9→11)
 
 ---
 
@@ -38,29 +38,29 @@
 
 | 영역 | 화면 수 | JSX 파일 | 페이지정의서 | 화면상태정의서 | UX 리뷰 |
 |------|--------|---------|-------------|--------------|---------|
-| **A 인증** | 10 | `auth.jsx` — A1Expired 폐기 (2026-05-26) · A4 운영자 회원가입 신설 (2026-05-29) | §A (L23~154) | §3·§4·§5-1 | §A (L29~108) |
-| **B 운영자** | 14 | `operator.jsx` — 5상태 + 확인 모달 6종 + 팀 상세 모달 1종(2026-05-27) · b2-paused 폐기(2026-05-29) | §B (L155~277) | §6·§7 | §B (L110~173) |
-| **C 참가자** | 9 | `participant.jsx` — c1-paused 폐기(2026-05-26) · c1-v2/c1-after-tutorial-v2/c1-ended-v2 신설(2026-05-29: 운영자 b2-tutorial-waiting 디자인 어휘 이식) | §C (L278~474) | §5-2·§7 | §C (L175~242) |
+| **A 인증** | 9 | `auth.jsx` — A1Expired 폐기 (2026-05-26) · A4 운영자 회원가입 신설 (2026-05-29) · **a1-not-started 비활성화 (2026-06-12, 함수 보존·viewer/Renewal 주석)** | §A (L23~154) | §3·§4·§5-1 | §A (L29~108) |
+| **B 운영자** | 18 | `operator.jsx` — 5상태 + 확인 모달 6종 + 팀 상세 모달 1종(2026-05-27) · b2-paused 폐기(2026-05-29) · **B-3 심사 4종**(루브릭·심사위원 관리·집계) + b2-ended 진입 CTA — **컴포넌트는 judging.jsx로 이동(2026-06-10)**, operator는 SummaryView의 JudgingEntryBanner 참조만 유지(2026-06-12: b2-ended 기본은 배너 미노출 — `judgingEntry` prop true일 때만, F.심사 `b2-ended-judging` 화면 전용) | §B (L155~277) | §6·§7 | §B (L110~173) |
+| **C 참가자** | 14 | `participant.jsx` — c1-paused 폐기(2026-05-26) · c1-v2/c1-after-tutorial-v2/c1-ended-v2 신설(2026-05-29) · **C-5 산출물 제출 + C-결과 결과 뷰** — **컴포넌트는 judging.jsx로 이동(2026-06-10)** · c3-generating 신설(2026-06-12: AI 생성 중 DIG 마스코트) | §C (L278~474) | §5-2·§7 | §C (L175~242) |
 | **D 갤러리** | 12 | `gallery.jsx` — d2-comments-replies·d2-comments-reply-compose 신설(2026-06-01: 대댓글 1단계 디자인 — 들여쓰기 + 답글 액션, 대대댓글 차단) | §D (L475~584) | §8·§9 | §D (L244~289) |
 | **E 다이얼로그** | 10 | `dialogs.jsx` — E-4 게임 수락 단순화 · E-7 폐기(2026-05-27) · e4-waiting 신설(2026-05-27) · **e4-v2/e4-waiting-v2 신설**(2026-05-27: 매치 수락 어휘 alternate 세트) · **E-6 일시정지 폐기(2026-05-29)** | §E (L585~716) | §7-5·§9-5 (일부) | §E (L290~305) ⚠️ |
-| **F 심사** | 1 | `judge.jsx` (407줄) | §F (L717~768) | ❌ (정의 없음) | ❌ (리뷰 없음) |
+| **F 심사 (전 역할 통합)** | 13 | **`judging.jsx`** — 2026-06-10 심사 전 화면 단일 파일 통합. 심사위원(f1-rubric·f1·f1-completed·f2) + 참여자(c5-submit·c5-submitted·c-result·c-result-private) + 운영자(b2-ended-judging·b3-rubric-settings·b3-judge-management·b3-judge-assign·b3-results-tally). `b2-ended-judging`은 operator.jsx의 `B2DashboardEnded judgingEntry`(종료 대시보드 + JudgingEntryBanner) — 심사 진입 화면(2026-06-12). viewer/Renewal에서도 단일 "F. 심사" 섹션. judge.jsx 삭제. JudgingEntryBanner는 judging.jsx 정의·operator SummaryView가 참조(전역). | §F (L717~768) | ❌ | 기획 `03-planning/product/2026-06-10_심사-평가-기능-기획.md` |
 | 공용 | - | `shared.jsx` (491줄) | §전체 페이지 맵 (L769~) | §10 공통 컴포넌트 | - |
 
 ⚠️ = 일부 누락. ❌ = 전체 누락 (§5 알려진 갭 참조)
 
 ---
 
-## 3. 화면 ↔ 컴포넌트 인덱스 (51개)
+## 3. 화면 ↔ 컴포넌트 인덱스 (52개)
 
 각 화면의 `id`는 `Jitda Renewal.html`의 `<DCArtboard id="...">` 값. JSX 파일에서 컴포넌트 이름으로 찾으면 됨.
 
-### A. 인증 (10)
+### A. 인증 (9)
 
 | ID | 라벨 | Component | 파일 | 페이지정의서 | 화면상태정의서 |
 |----|------|-----------|------|-------------|--------------|
 | `a1` | 코드 입장 (기본) | `A1CodeLogin` | auth.jsx | L29 | §5-1 |
 | `a1-invalid` | 코드 오류 | `A1CodeInvalid` | auth.jsx | L29 | §5-1 |
-| `a1-not-started` | 행사 미시작 | `A1NotStarted` | auth.jsx | L29 | §5-1 |
+| ~~`a1-not-started`~~ | 행사 미시작 — **[비활성화 2026-06-12]** (함수 보존, viewer/Renewal 주석) | `A1NotStarted` | auth.jsx | L29 | §5-1 |
 | `a1-ended` | 행사 종료 | `A1Ended` | auth.jsx | L29 | §5-1 |
 | `a2` | 운영자 로그인 (기본) | `A2OperatorLogin` | auth.jsx | L77 | §3-1 |
 | `a2-inflight` | Google 로그인 진행 | `A2GoogleInFlight` | auth.jsx | L77 | §3-1 |
@@ -88,10 +88,15 @@
 | `b2-tutorial-end-confirm` | 모달 · 튜토리얼 종료 확인 + 완료 현황 (② → ④) [신규] | `B2TutorialEndConfirm` | operator.jsx | §규칙 L215 | - |
 | `b2-hackathon-start-confirm` | 모달 · 해커톤 시작 확인 (④ → ⑤) [신규] | `B2HackathonStartConfirm` | operator.jsx | §규칙 L216 | - |
 | `b2-roster-detail` | 모달 · 팀 상세 (RosterRow 카드 클릭 → 멤버·접속) [신규 2026-05-27] | `B2RosterDetail` + `RosterTeamDetailModal` | operator.jsx | §B-2 ⑦ | - |
+| `b2-ended-judging` | 심사 진입 — 종료 대시보드 + 심사 시작 배너 (b2-ended에서 분리) [신규 2026-06-12] | `B2DashboardEnded judgingEntry` | operator.jsx | 기획 §3 | §7 |
+| `b3-rubric-settings` | 심사 — 루브릭 설정 (항목·배점·보조데이터 ON/OFF) [신규 2026-06-10] | `B3RubricSettings` | judging.jsx | 기획 §3·§5 | - |
+| `b3-judge-management` | 심사 — 심사위원 관리 (초대 탭) [신규 2026-06-10] | `B3JudgeManagement tab="invite"` | judging.jsx | 기획 §4.4 | - |
+| `b3-judge-assign` | 심사 — 심사위원 관리 (배정 현황 탭) [신규 2026-06-10] | `B3JudgeManagement tab="assign"` | judging.jsx | 기획 §5 Full | - |
+| `b3-results-tally` | 심사 — 결과 집계·발표 제어 (점수 행렬·시상 확정·동률) [신규 2026-06-10] | `B3ResultsTally` | judging.jsx | 기획 §4.4 | - |
 
 > ⚠️ 명명 불일치: `b2-tutorial-waiting` ↔ `B2DashboardPending`. 향후 `B2DashboardTutorialWaiting`으로 리네이밍 권장.
 
-### C. 참가자 (9)
+### C. 참가자 (10)
 
 | ID | 라벨 | Component | 파일 | 페이지정의서 | 화면상태정의서 |
 |----|------|-----------|------|-------------|--------------|
@@ -101,8 +106,13 @@
 | `c1-long-name` | 대기실 ① · edge: 긴 팀명 (25+자) | `C1TeamRoomV2 + MOCK_TEAM_LONG_NAME` | participant.jsx | (edge) | - |
 | `c1-many-members` | 대기실 ① · edge: 다인팀 7명 | `C1TeamRoomV2 + MOCK_TEAM_MANY_MEMBERS` | participant.jsx | (edge) | - |
 | `c2` | 셀프 튜토리얼 | `C2Tutorial` | participant.jsx | L322 | §7 |
-| `c3` | 1인팀 캔버스 (OpenCode 임베드) | `C3PersonalCoding` | participant.jsx | L374 | §7 |
-| `c4` | 다인팀 캔버스 (커서 + 전송 요청) | `C4TeamCanvas` | participant.jsx | L418 | §7 |
+| `c3` | 1인팀 캔버스 (OpenCode 임베드 · 미리보기=`OcBrowser` 사파리형 탐색기+탭+검색 [2026-06-11]) | `C3PersonalCoding` | participant.jsx | L374 | §7 |
+| `c3-generating` | 1인팀 캔버스 — AI 생성 중(미리보기 패널 DIG 마스코트) [신규 2026-06-12] | `C3PersonalCodingGenerating` | participant.jsx | L374 | §7 |
+| `c4` | 다인팀 캔버스 (커서 + 전송 요청 · 미리보기=`OcBrowser` 사파리형 탐색기+탭+검색 [2026-06-11]) | `C4TeamCanvas` | participant.jsx | L418 | §7 |
+| `c5-submit` | 산출물 제출·소개 (AI 초안→편집 · 심사 데이터원) [신규 2026-06-10] | `C5SubmitIntro` | judging.jsx | 기획 §4.2 | - |
+| `c5-submitted` | 산출물 제출 완료 | `C5SubmitIntro stateVariant="submitted"` | judging.jsx | 기획 §4.2 | - |
+| `c-result` | 참가자 결과 뷰 (점수·심사평·수상) [신규 2026-06-10] | `CParticipantResult` | judging.jsx | 기획 §4.4 | - |
+| `c-result-private` | 참가자 결과 뷰 (점수 비공개·심사평만) | `CParticipantResult scorePublic={false} awarded={false}` | judging.jsx | 기획 §6 #6 | - |
 
 > 일시정지/재시작은 2026-05-29 폐기. E-6 오버레이도 함께 제거됨.
 >
@@ -153,11 +163,16 @@
 | ~~`e6-paused`~~ | ~~일시정지 오버레이~~ | — | — | — | **2026-05-29 폐기**: 일시정지 기능 자체를 제거. 진행 중 휴식은 운영자 구두 안내로 처리(작업물은 자동 저장). |
 | ~~`e7-ending`~~ | ~~해커톤 종료 카운트다운 오버레이~~ | — | — | — | **2026-05-27 폐기**: 참가자에게 종료 예고 없음 정책. 운영자 30초 유예 만료 시 C-3/C-4 → c1-ended 직접 전환. |
 
-### F. 심사 (1)
+### F. 심사위원 (4)
+
+> 2026-06-10 전면 재설계. 설계 원칙: 채점은 사람 심사위원, 플랫폼은 라이브 앱·과정 요약·기여도를 한 화면에서 열람·채점 반영하도록 지원. 심사는 세 역할에 걸침 — 참여자 제출(C-5)·운영자 설정/집계(B-3)·심사위원 채점(F). 기획: `03-planning/product/2026-06-10_심사-평가-기능-기획.md`
 
 | ID | 라벨 | Component | 파일 | 페이지정의서 |
 |----|------|-----------|------|-------------|
-| `f1` | 심사위원 대시보드 (4축 채점) | `F1JudgeDashboard` | judge.jsx | L723 |
+| `f1-rubric` | 루브릭 기준 안내 (심사위원 온보딩 · 읽기전용) [신규 2026-06-10] | `F1RubricConfig` | judging.jsx | 기획 §4.3 |
+| `f1` | 심사위원 대시보드 (채점 중 · 과정 가중 루브릭 + 과정요약/기여도/참고 탭) | `F1JudgeDashboard` | judging.jsx | L723 |
+| `f1-completed` | 심사위원 대시보드 (채점 완료 · 제출 바) | `F1JudgeDashboard stateVariant="completed"` | judging.jsx | L723 |
+| `f2` | 결과 발표·시상 (포디움 + 다중 특별상 · 운영자 발표 모드) | `F2AwardCeremony` | judging.jsx | — (신규 기획) |
 
 ---
 
@@ -227,7 +242,7 @@ hackathon_ended                           → c1-ended (대기실 ③)
 ### ⏸️ 의도된 미완성 (1/12)
 | 갭 | 처리 |
 |----|------|
-| F-1 심사 영역 기획 부재 (2-1) | **아직 기획 안 함** — 디자인은 placeholder. 기획 시점 미정. |
+| ~~F-1 심사 영역 기획 부재 (2-1)~~ | **2026-06-10 해소** — 기획 `2026-06-10_심사-평가-기능-기획.md` 작성 + F-1/F-1-completed/F-2 하이파이 디자인. 잔여: 페이지정의서·화면상태정의서 F 섹션은 기존 스텁 그대로 → 후속 정렬 필요. |
 
 ### 📐 검증되지 않은 가정 (Critical Analysis — 미해결, 사용자 테스트 필요)
 - **"진입 버튼 없이 자동 전환"** (C영역) → 참가자가 화면 전환을 인지 못해 혼란할 가능성
@@ -311,6 +326,7 @@ hackathon_ended                           → c1-ended (대기실 ③)
 | `b2-end-countdown` | 종료 취소 / 즉시 종료 (또는 30초 만료 자동) | → `b2-started` / `b2-ended` |
 | `b2-skip` | 취소 / 건너뛰고 시작 | → `b2-tutorial-waiting` / `b2-hack-waiting` |
 | `b2-ended` | 갤러리 보기 (`open-gallery`) / 전체 팀 토큰 모달 (`open-token-all` / `close-token-all`) | → `d1-ended-operator` / 자기 화면 토글 |
+| `b2-ended-judging` | 갤러리 / 토큰 모달 / 루브릭 설정 (`start-rubric`) / 심사 시작 (`start-judging`) | → `d1-ended-operator` / 자기 화면 토글 / `b3-rubric-settings` |
 | `d1-ended-operator` | 대시보드 복귀 (`back-to-dashboard`) / 갤러리 카드 (`open-card`) | → `b2-ended` / `d2` |
 | `d1`, `d1-ended` | 갤러리 카드 (`open-card`) | → `d2` |
 ### 핵심 데모 시나리오 (클릭만으로 완주)
@@ -322,7 +338,7 @@ hackathon_ended                           → c1-ended (대기실 ③)
 다음 화면은 시각 디자인만 있고 클릭 동작 없음. 드롭다운/키보드로 탐색.
 - **C영역 (참가자)**: 실제 앱에서 운영자 상태 따라 자동 전환되는 화면들. 프로토타입에서 자동 전환 시뮬레이트는 과한 비용
 - **E영역 (다이얼로그)**: E-1, E-4, E-5 — 진입 경로가 다양해 단일 매핑 어려움
-- **F영역 (심사)**: 단일 화면, 진입/종료 정의 부재 (§5 갭 참조)
+- **F영역 (심사)**: 2026-06-10 재설계로 3 화면(f1·f1-completed·f2). 잔여 미검증 — 심사위원 진입 인증 방식 TBD, 심사위원이 프롬프트 과정 요약을 실제로 보는지·AI 요약 정확도(기획 §6 미검증 가정)
 - **A-2 inflight, popup**: 부차 상태, 메인 흐름에서 제외
 
 ### 프로토타입 한계 (정직한 표기)
@@ -367,6 +383,18 @@ hackathon_ended                           → c1-ended (대기실 ③)
 
 ## 변경 이력
 
+| 2026-06-12 | **b2-ended 심사 진입 배너 분리 + 갤러리 호응 LIVE 칩 제거 (F 12→13, 총 60→61)** — 사용자 지시 2건: (1) **LIVE 칩 삭제** — 갤러리 호응 eyebrow의 `SummaryLiveLabel`에서 mint pulse 도트 + "LIVE" 워드 제거, "종료 후에도 누적 중" 문구만 유지(사용자 선택: 칩만 삭제·문구 유지). (2) **심사 배너 이동** — `JudgingEntryBanner`("심사 단계를 시작하세요" + 루브릭/심사 시작 CTA)를 b2-ended 기본에서 분리. 사유: 심사 기능 미개발 → 진입 배너 없는 깨끗한 종료 대시보드가 기본 필요. 구현: `SummaryView`/`DashboardShell`/`B2DashboardEnded`에 `judgingEntry` prop(기본 false) 추가 — false면 배너 미노출. 배너 버전은 F.심사 영역 신규 화면 `b2-ended-judging`(`<B2DashboardEnded judgingEntry />`)으로 보존. 정합: viewer.html SCREENS(F.심사에 b2-ended-judging 추가)·ACTIONS(b2-ended에서 start-rubric/start-judging 제거, b2-ended-judging에 추가, b3-rubric-settings cancel → b2-ended-judging), Renewal.html artboard 추가, `operator.jsx ?v=20260612endclean` bump(viewer·Renewal). 검증: Playwright로 b2-ended(배너 없음·LIVE 칩 없음)·b2-ended-judging(배너 있음) 둘 다 0 에러 렌더 확인. | AI |
+
+| 2026-06-12 | **마스코트 재배치 (대기실 구분) + a1-not-started 비활성화 (A 10→9, 총 60→59)** — 사용자 지시 3건: (1) **대기실 마스코트 차별화** — 튜토리얼 대기 `c1`=BLUEPRINT(도면 검토) 유지, 해커톤 대기 `c1-after-tutorial`=**DIG**(곡괭이질, "이제 짓는다")로 변경(`C1TeamRoomV2` state 분기). (2) **미리보기 3상태 마스코트 재배치** — `c3-preview-empty`(OcPreviewEmpty) 스켈레톤→**HOP**(친근한 빈 상태), `c3-spawning`(OcPreviewSpawning) HOP→**BLUEPRINT**(준비·검토). 결과 진행: 빈상태 HOP → 준비중 BLUEPRINT → 생성중 DIG. (3) **a1-not-started 비활성화** — "화면 자체가 필요 없음" → viewer.html SCREENS·Renewal.html artboard 주석 처리(A1NotStarted 함수는 auth.jsx에 보존, 복원 시 주석 해제). `participant.jsx ?v=20260612mascot2` bump. 검증: Playwright로 c1/c1-after-tutorial/c3-preview-empty/c3-spawning 재확인 + a1-not-started 드롭다운 부재 확인. 상세 spec-updates §28. | AI |
+
+| 2026-06-12 | **마스코트 대기 애니메이션 배치 + c3-generating 신설 (C 13→14, 총합 59→60)** — 마스코트-애니메이션-가이드 §4 권고대로 대기/생성 화면에 마스코트 일괄 배치. 신규 화면 `c3-generating`(`C3PersonalCodingGenerating`, participant.jsx) — 1인팀 캔버스 미리보기 패널에 DIG(곡괭이질) 마스코트(AI 생성 중). 기타 배치: a1-not-started→HOP, c1·c1-after-tutorial→BLUEPRINT(좌측 메시지·종료상태 제외), c3-spawning→HOP, d2-loading→BLUEPRINT↔DIG 좌우 슬라이드 교대 스왑(tokens.css `.jt-mascot-swap` 키프레임). c3-preview-empty·c5-submitted·f2는 미배치(가이드 권고). 정합: viewer.html/Renewal.html SCREENS·artboard에 c3-generating 추가, `?v=20260612mascot` bump(auth·participant·gallery·tokens.css). 상세는 spec-updates §28. | AI |
+| 2026-06-11 | **OpenCodeShell — composer 자동 확대 전체 폭 오버레이 + 대각선 애니메이션 + 첨부 포커스 정책** — 사용자 지시 누적: (a) 첨부(+) 메뉴 fixed 팝오버화(composer `overflow:hidden` 클리핑 탈출 — 짧은 입력창 메뉴 잘림 수정, 버튼 rect 기준 JS 좌표), (b) "+ 포커싱=입력창 포커싱 인정" → 깜빡임(blur→collapse→expand) 발생 → 정정: `+`·바깥 오버레이·이미지·파일 항목 `onMouseDown preventDefault`로 입력창 blur 차단(포커스 보존), `isBig=autoExpand&&focused` 환원(클릭 시점 상태 보존), (c) **캡처만 예외** — `onClick`에서 `setFocused(false)` 명시 호출로 자동 확대 해제(캡처 영역 가림 방지·완료 시 복귀는 시안 후속), (d) **확대=높이+폭** — 확대 시 composer 가 좌측 컬럼을 벗어나 미리보기까지 전체 폭 오버레이: `shellRef`+`useLayoutEffect` 폭 추적, `composerWidth=(isBig?shellW:colW)-28`, `alignSelf:flex-start`·`width`·`position:relative`·`zIndex isBig?6:1`(positioned z-index → 비포지셔닝 미리보기 위 페인트)·확대 elevation 그림자 강화, (e) **대각선 성장** — 폭(composer)·높이(doc body) 애니메이션을 동일 `var(--dur-base)`·`--ease-emphasized`로 통일(기존 height=ease-standard 분리 → 코너가 직선 대각선으로 자연 확대/축소), 드래그(높이·스플리터) 중 transition 비활성. 영향: `participant.jsx OpenCodeShell`·`tokens.css`(`.oc-split-*`/`.oc-attach-*`). 정책문서 `POLICY-composer-attach-focus.md` 신설(확대 정의·첨부 포커스 표·캡처 4단계 영역캡처 플로우·대각선 애니메이션). 검증: esbuild JSX 0 에러(브라우저 사용자 세션 점유로 시각 캡처 미수행 — 사용자 새로고침 확인 필요). 후속: 캡처 실제 드래그·삽입 미구현, 메뉴 열린 채 스플리터 드래그 시 fixed 팝오버 재배치 안 됨, colW/composer 폭 화면전환 시 리셋(영속화 미적용). | AI |
+| 2026-06-11 | **정본 로고 = logo-16(v16) 확정 — 전 화면 GNB·마스코트 일괄 적용 + 반전(mono) 버전 활용** — 사용자 결정 "전체 화면 로고를 16번으로 / 반전 버전도 적절한 곳에". 변경: (1) `shared.jsx` `JitdaIcon` 기본값 `variant='v16'`(활짝 웃는 물결형) — `JitdaMark`(GNB)·`AppHeader`·`JitdaToolbar`·`JitdaMascot/Blueprint/Dig`(마스코트 전 종) 등 variant 미지정 호출처 **전부 자동 v16 전환**(기존 40+ 화면). legacy 'ㅅ' 입은 `JITDA_MOUTHS.base`로 보존(명시적 `variant="base"` 시에만). 렌더 통일: 입은 항상 몸체 다음(맨 위). (2) **반전 버전**: 기존 `mono` 경로(노란 몸체 유지 + 눈·입 흰색)가 v16에 자동 적용 — 실제 활용처 `auth.jsx:89` A-1 참가자 로그인 좌측 다크 블루프린트 패널(`jt-blueprint-bg`). (3) `viewer.html` `logo-test` 쇼케이스 갱신: ① GNB 5종에 v16 ✓ 정본 하이라이트, ② 캐릭터 카드 v16 helmet-wash 강조, ③ **반전(mono) 라이트/다크 비교 섹션 신설**(h 820→1080). shared.jsx cache-bust `?v=20260611logo16`. 검증: viewer `?id=logo-test`·`?id=c1`(라이트 GNB v16)·`?id=a1`(다크 패널 반전 v16) 콘솔 0 에러, v16 미소 입 정상 렌더(스크린샷 확인). 후속: Renewal.html(shared.jsx `?v` 없음 — 하드리로드 시 자동 반영), 실 앱(`enk-hackathon-vite`)은 별도 구현이라 무관. | AI |
+| 2026-06-11 | **OpenCodeShell — 좌/우 분할 드래그 핸들 + 첨부(+) 확장 메뉴 (c2·c3·c4 공용 셸)** — 사용자 지시 2건: (1) "좌(채팅)·우(미리보기) 경계선에 좌우 크기 조절 핸들 추가", (2) "이미지 버튼을 +로 바꿔 클릭 시 이미지·캡처·파일 3가지 메뉴 확장". 변경: (1) `OpenCodeShell`에 `colW` state(기본=`leftWidth` 460) + `shellRef` + `onColHandleDown`(col-resize 드래그, 좌측 폭 `COL_MIN 340`~`COL_MAX 760`, 우측 미리보기 최소 360 확보 위해 `rect.width-360` 상한). 좌측 패널 `flex 0 0 colW`, 기존 `borderRight` hairline 제거 → 신규 세로 핸들이 구분선 겸 grab. 핸들 `.oc-split-handle`(7px col-resize, `::before` hairline 중앙선 + `.oc-split-grip` 40→52px ink 그립, hover/dragging 강조). (2) 액션 바 `.oc-image-btn`(이미지 pill) → `.oc-attach-btn`(원형 + 버튼, `is-open` 시 ink fill + 45° 회전) + `attachOpen` state. 클릭 시 `.oc-attach-menu` 팝오버(`bottom: 100%+8`, 위로 확장, `oc-attach-pop` 애니메이션) — `.oc-attach-item` 3종 이미지·캡처·파일(각 SVG 아이콘). 바깥 `position:fixed inset:0` 오버레이로 외부 클릭 닫힘. 영향: `participant.jsx` `OpenCodeShell`(L494~), `tokens.css`(`.oc-split-*`·`.oc-attach-*` 신설, `.oc-image-btn`은 잔존하나 미사용). C-3(c3)·C-4(c4) 공용 적용. viewer.html·Renewal.html 무수정(셸 내부 변경). 검증: esbuild JSX transform 0 에러(브라우저가 사용자 세션 점유로 시각 캡처 미수행 — 사용자 새로고침 확인 필요). 후속 검증 포인트: (a) colW state라 화면 전환 시 폭 리셋(localStorage 영속화 미적용 — 시안 단계 의도), (b) 첨부 메뉴 3종은 클릭만 닫힘(실제 업로드 동작 없음, 시안), (c) `.oc-image-btn` dead CSS 정리 후보, (d) 좁은 폭(<340)에서 좌측 composer 가독 한계 미검증. | AI |
+| 2026-06-11 | **0. 로고 테스트 화면 신설 — 캐릭터 표정 베리에이션을 C-1 GNB에 적용 (viewer 전용 쇼케이스)** — 사용자 지시 "logo 폴더 로고들로 샘플 GNB / a 위에 0.로고 테스트 추가 / c1 화면 기반 베리에이션 / svg 영문 텍스트 제거 캐릭터만 + 기존 한글 '짓다' 워드마크 유지". `logo/jitda_logo-{12,13,16,17}.svg` 4종은 캐릭터 입(표정)만 다른 변형 — 영문 "Jitda" 워드마크 path(x≈270~693)와 i-dot circle은 제외하고 입 path만 추출. 변경: (1) `shared.jsx` — `JITDA_MOUTHS` 맵(v12 콧수염미소·v13 입술미소·v16 물결미소·v17 혀미소) 신설, `JitdaIcon`에 `variant` prop 추가(미지정 시 base 'ㅅ' 입; variant 입은 원본 SVG처럼 몸체 다음 렌더해 안 가려짐). `JitdaMark`·`AppHeader`(`brandVariant`)에 prop 패스스루. 기존 40+ 화면 무영향(variant 미지정 시 base 동일). (2) `viewer.html` — 인라인 `LogoTestGNB` 컴포넌트(C-1 대기실 헤더 어휘 5종 스택 + 캐릭터 단독·풀마크 비교 그리드), SCREENS 최상단 `logo-test`(section '0. 로고 테스트') 추가 → 드롭다운 A 위. shared.jsx cache-bust `?v=20260611logo`. **스코프**: 테스트 쇼케이스라 Renewal.html 50-아트보드 정본 캔버스에는 미추가(의도적). 검증: viewer `?id=logo-test` 콘솔 0 에러(favicon 제외), 5종 GNB·비교 카드 정상 렌더, 영문 텍스트 0(스크린샷 확인). 후속: 사용자 표정 선택 시 base를 해당 variant로 교체(JitdaIcon 기본값 변경) 가능. | AI |
+| 2026-06-10 | **심사 전 화면 단일 영역 분리 — judge.jsx → `judging.jsx` 통합 + viewer/Renewal "F. 심사" 단일 섹션** — 사용자 지시 "심사 관련 페이지 전부 별도 영역으로 / 여기저기 섞여 개발 헷갈림". 변경: (1) 신규 `judging.jsx` 단일 파일에 심사 전 컴포넌트 통합 — judge.jsx 전체(F1RubricConfig·F1JudgeDashboard·F2AwardCeremony + 헬퍼) + operator.jsx의 B3RubricSettings/B3JudgeManagement/B3ResultsTally/JudgingShell/JudgingEntryBanner/JudgingStepper/ToggleCard + 상수 + participant.jsx의 C5SubmitIntro/SubmitField/CParticipantResult. (2) judge.jsx 삭제. (3) operator.jsx·participant.jsx에서 심사 블록·export 제거(기존 b1·c1 등 무영향 검증). operator SummaryView의 `<JudgingEntryBanner/>`는 judging.jsx 전역 함수 참조로 유지(babel 전역 스코프, 렌더 시점 해석 — b2-ended 0 에러 검증). (4) viewer.html SCREENS: 흩어진 b3-*/c5-*/c-result-* 를 모두 section `F. 심사`로 이동·흐름순 재배치(제출→설정→배정→채점→집계→발표→결과), 라벨에 [역할] 태그. (5) Renewal.html: judge DCSection을 "F. 심사 영역(전 역할 통합)"으로 재구성, b3/c5/c-result 아트보드 이동. (6) 스크립트 태그 judge.jsx→judging.jsx, 버전 cache-bust `?v=20260610judge3`. 리뷰 반영: ContribPanel 팀원명 이서연→이서윤 통일, auto-assign 힌트 "Full" 표기. 검증: viewer `?id=b2-ended`(JudgingEntryBanner 교차참조)·f1·b1·c1 콘솔 0 에러, 드롭다운 "F. 심사" 12개 그룹핑, B/C 잔존 0. ID는 b3/c5/f 접두 유지(ACTIONS 호환). 후속: 페이지정의서·화면상태정의서에 통합 반영. | AI |
+| 2026-06-10 | **심사 기능 3-역할 전 화면 확장 — 참여자(C-5)·운영자(B-3)·심사위원(F) + 총합 50→59** — 사용자 지시 "심사 관련된 모든 화면을 디자인 / 심사위원·참여자·운영자로 나눠 영역 추가". 설계 워크플로우(3역할 병렬 + 적대적 통합 검토)로 인벤토리 도출 후 구현. **영역 구조 결정**: 역할별 파일 컨벤션 유지(신규 심사 섹션 안 만듦) — 심사위원=judge.jsx(F), 참여자=participant.jsx(C), 운영자=operator.jsx(B). 신규 9 화면: (참여자) `c5-submit`·`c5-submitted`(C5SubmitIntro, 산출물 소개 AI초안→편집, 발표·문제정의 데이터원), `c-result`·`c-result-private`(CParticipantResult, 점수·심사평·수상, scorePublic 분기). (운영자) `b3-rubric-settings`(B3RubricSettings, 항목·배점·프리셋·보조데이터 ON/OFF·합계100 검증·토큰금지 배너), `b3-judge-management`/`b3-judge-assign`(B3JudgeManagement tab, 초대/배정현황·진행률), `b3-results-tally`(B3ResultsTally, 점수 행렬·"자동점수 아님" 명시·시상 확정·동률·점수공개 토글). (심사위원) `f1-rubric`(F1RubricConfig, 온보딩 읽기전용 루브릭). 공통 헬퍼: operator `JudgingShell`/`JudgingEntryBanner`/`JudgingStepper`/`ToggleCard` + 상수 `RUBRIC_PRESETS`/`OP_RUBRIC`/`JUDGES`/`TALLY`; participant `SubmitField`. **보강**: b2-ended SummaryView 상단에 `JudgingEntryBanner` 심사 진입 CTA. **버그수정**: judge.jsx F2/IntroPanel postit 토큰 `--rot`/`--tint` → `--postit-rot`/`--postit-tint`(jt-postit-card 참조 일치 — 회전·tint 미적용 버그 수정, 스크린샷 검증). **사고·복구**: participant.jsx 1차 Edit에서 한글이 리터럴 `\\uXXXX`로 직렬화됨(JSX 텍스트 깨짐) → Python으로 디코드 시도 중 truncate 사고 → git HEAD 복원 후 Python 직접 작성으로 재구현(실제 한글 확정). 와이어링(viewer ACTIONS): 제출→완료, b2-ended→루브릭, 루브릭→심사위원→f1-rubric→f1, f1-completed 제출→집계, 집계→발표(f2), 결과→갤러리. 정합: viewer/Renewal SCREENS·artboard·nav, 스크립트 버전 cache-bust(`?v=20260610judge2`). 검증: viewer/Renewal 콘솔 0 에러, c5/c-result/b3-rubric/b3-tally/f1-rubric 스크린샷 실제 한글 정상 렌더, Renewal 72 아트보드 emptyCount 0. 후속: 페이지정의서·화면상태정의서 F/B/C 섹션 명세 흡수, 심사위원 인증, 자동 트리아지(Full). | AI |
+| 2026-06-10 | **F 영역 심사 전면 재설계 — 기존 `F1JudgeDashboard`(4축 슬라이더 placeholder) 삭제 후 재작성, F 1→3 화면, 총합 48→50** — 사용자 지시 "f 영역 관련 페이지 하이파이로 / 기존 심사위원 대시보드 삭제". 기획 `03-planning/product/2026-06-10_심사-평가-기능-기획.md` 기반. 설계 원칙: **채점은 사람 심사위원, 플랫폼은 데이터 열람·반영 지원**(자동 합산 점수 트랙 없음). 변경: (1) `judge.jsx` 전면 재작성 — `F1JudgeDashboard`(stateVariant `scoring`/`completed`) 3분할(좌 심사 큐+분담 / 중 라이브 앱 + **과정요약·기여도·산출물소개·참고 4탭** / 우 **과정 가중 5항목 루브릭** 문제20·과정30·결과물25·협업15·발표10 + 심사평 + 가중합계). 과정30>결과물25는 AI 모델 성능 혼동 회피(기획 §2.2). 참고 탭은 동료평가·자동지표를 "점수 미반영·참고용"으로 명시, 토큰 사용량 평가지표 금지 배너. completed 변형은 하단 mint 제출 바. 신규 `F2AwardCeremony`(포디움 대상/최우수/우수 + 특별상 4종 베스트프롬프트·베스트협업·성장상·관객상 포스트잇, 운영자 발표 모드). 헬퍼 신설: `ProcessSummaryPanel`/`ContribPanel`/`IntroPanel`/`RefPanel`/`JudgeQueueItem`/`RubricRow`/`JudgeTab`/`PodiumCard` 등. `Object.assign(window, { F1JudgeDashboard, F2AwardCeremony })`. (2) viewer.html SCREENS f1 라벨 갱신 + f1-completed·f2 2건 추가, ACTIONS f1/f1-completed/f2 와이어링(완료 제출→f2, f2→갤러리). (3) Renewal.html judge DCSection subtitle 갱신 + artboard 2건 추가 + 사이드바 nav "F — 심사 (3)". (4) STRUCTURE §2 표·§3 인덱스·§5 갭(2-1 해소)·§6 미검증 가정 갱신. 신규 토큰 0개(기존 어휘 재사용: jt-postit-card·jt-btn-helmet·mint-wash 등). 검증: viewer `?id=f1`·`?id=f1-completed`·`?id=f2` 콘솔 0 에러(favicon 제외), 3분할·4탭·포디움·특별상 정상 렌더(스크린샷 확인). 잔여(후속): 페이지정의서·화면상태정의서 F 섹션은 기존 4축 스텁 그대로 → 정렬 필요. c5-submit(산출물 제출, C영역)은 본 범위 제외. 미검증 가정(기획 §6): 심사위원이 과정 요약을 실제로 보는가·AI 요약 정확도·심사위원 진입 인증 방식. | AI |
 | 2026-06-04 | **§24 OpenCodeShell 라이트 paper + 2-pane 재설계 (c2·c3·c4 공용 셸 교체)** — 사용자 지시 "static-open-code-no-script-desktop.html 기반으로 바이브코딩 진행 화면 디자인 다시". 레퍼런스(`data-theme="jitda" data-color-scheme="light"`) 와 기존 셸의 두 가지 큰 차이 정합: (1) 다크 SaaS `#0d0d11` → 라이트 paper `var(--c-paper)` 어휘 전환(13개 다크 hex 인스턴스 제거), (2) 단일 채팅 컬럼 → 좌측 채팅(`flex 0 0 460px`) + 우측 미리보기/파일(`flex 1`) 2-pane. 사용자 발화에 레퍼런스 `--paper-edge` polygon clip-path 차용(`OcUserMessage` + `var(--c-helmet-wash)` 노란 paper-tinted 배경). 기획-디자인 갭 해소: `2026-05-18_동시편집-캔버스-기획.md` L205·L248 *"OpenCode 채팅+미리보기 2패널"* 명세를 시안이 못 따라가던 상태였음. 우측 패널 `미리보기`/`파일 N` 탭 + `OcFileChangesPanel` (M/A/D 상태 배지). 하단 dock(composer) 카드 + chip(Build/모델/agent) + 첨부·크게보기·전송 아이콘. 시행착오 정정 2건: (a) 1차 시안에 OpenCode 내부 상단 바를 추가했으나 **레퍼런스에 그런 바가 없음** → 사용자 지적으로 즉시 제거, GNB 바로 아래 2-pane 본문. (b) 우측 탭 제거 시안 시도 후 사용자 결정 "탭은 유지" → 복원. 호출처 정렬: C2 `promptInput` 다크 hex → ink-2/ink-3, C4 팀 모드 액션 바 다크 backdrop → canvas pill + helmet-deep dot, TeamCursor 위치 재조정. 영향: `participant.jsx` `OpenCodeShell` L494~ 전면 재작성 + `OcUserMessage`/`OcStepsRow`/`OcResponseLabel`/`OcParagraph`/`OcFileRow`/`OcChip`/`OcTab`/`OcFileChangesPanel`/`OcDefaultPreview` (재작성·신설). viewer.html·Renewal.html·tokens.css·다른 영역 JSX 무수정. dialogs.jsx·judge.jsx 의 `OpenCodeShell`/`Oc*` 참조 0건 — e4/e5 회귀 없음. 검증: viewer `?id=c2`·`?id=c3`·`?id=c4` 콘솔 0 에러(favicon 제외), paper-edge user message·우측 탭·미리보기·파일 행 정상 렌더. spec-updates §24 신설. 검증 포인트(향후): (a) paper-edge polygon 모바일/저해상도 깨짐, (b) `OcDefaultPreview` 살구색 `#fdeed7` 토큰화 후보, (c) C4 액션 바 `bottom:86` magic number 정리, (d) Codle 원본 3 컬럼(채팅\|미리보기\|파일트리) 축약 → 별도 파일 트리 컬럼 도입 후속 결정, (e) helmet-wash user message 가 tutorial_running 컨텍스트에서도 노란색 — purple 변형 도입 여부. | AI |
 | 2026-06-02 | **§23c 디자인 시스템에 Podium 어휘 등록** — §09f Component Library에 ▸ PODIUM sub-section 신설(시각 데모 3블록 + 속성 표 + DO/DON'T 6종). 사유: §23b에서 도입한 시상대(1·2·3등) 어휘는 결산성 화면에서 재사용 여지가 높아 디자인 시스템 정식 등록 가치 ★★★. 토큰 매핑은 기존 사용(`--c-helmet`/`--c-stone-2`/`--c-helmet-deep`) 그대로 — 신규 토큰 추가 없음. nav 갱신 불필요(§09f 내부 sub-section). 영향: `Jitda Design System.html` §09f 1건만 추가. 검증: `/Jitda Design System.html#components` 페이지의 ▸ PODIUM sub-section에서 3블록 시각·표·DO/DON'T 정상 렌더. 후속 검증 포인트(향후): (a) c1-ended 등 다른 결산 화면에서 Podium 재사용 시 어휘 어긋남 없는지, (b) 동률 발생 정책 미정 — 미래 데이터 모델 결정 시 spec-updates에 별도 항목, (c) Live Indicator·Rank Row는 §23b §3·§5 추가 갭으로 식별됐으나 본 차수에서는 미등록(사용자 결정 "포디움만 추가"). | AI |
 | 2026-06-02 | **§23b B-2 종료 화면 보강 + D-1 운영자 갤러리 신설** — 사용자 피드백 4건 추가 반영: (1) AI 사용량 순위를 시상대(podium) 어휘로 — 1·2·3등 [2등 좌·1등 중앙(가장 높음)·3등 우] 배치, 1등 helmet 노랑/2등 stone-2/3등 helmet-deep, 팀명·값은 시상대 위·#N은 시상대 안. 4·5등은 막대 없이 작은 행. 신규 `SummaryPodium`·`SummaryRankRowMini`. 갤러리 인기 순위는 현 디자인(막대+행) 유지. (2) LIVE 라벨에서 "마지막 갱신 HH:MM:SS" 노이즈 제거 — `SummaryLiveLabel` updated prop 폐기, `lastUpdated` state 제거. (3) 운영 결산 eyebrowNote "행사 종료 시점 확정" 제거. (4) 곡선 아래 한 줄 인사이트 카피("막판 몰아치기형") 제거. (5) "전체 N팀" 버튼 → 모달로 막대 리스트 전체 노출. 신규 `AiUsageTeamsModal`·`AiUsageTeamRow` (`AbsentTeamsModal` 포스트잇 어휘 차용, tutorial purple 막대). viewer ACTIONS에 `open-token-all`·`close-token-all` self-loop. (6) D-1 운영자 갤러리 신설 — `D1GalleryListEnded`에 `role` prop 추가, `BackLink`/`GallerySubHeader`에 `dataAction`/`backDataAction` prop 추가. 신규 화면 `d1-ended-operator` (`<D1GalleryListEnded role="operator" />`, operator GalleryHeader + "대시보드로 돌아가기" 버튼). viewer ACTIONS 변경: `b2-ended.open-gallery: d1-ended` → `d1-ended-operator`. `d1-ended-operator.back-to-dashboard: b2-ended`. Renewal.html artboard 1개 신설. STRUCTURE §3 D-1 행 1개 추가 + §7 와이어링 표 2건. spec-updates §23b 보강. 영향: operator.jsx + gallery.jsx + viewer.html SCREENS 1건/ACTIONS 4건 + Renewal.html artboard 1건. 검증: viewer `?id=b2-ended` podium·모달·LIVE 노이즈 제거 확인, `?id=d1-ended-operator` 대시보드 복귀 버튼 확인. | AI |

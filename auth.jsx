@@ -299,18 +299,14 @@ function A1NotStarted() {
           background: 'var(--c-canvas)',
           border: '1px solid var(--c-hairline)',
           borderRadius: 10,
-          padding: 18,
+          padding: '16px 18px',
           marginBottom: 18,
-          display: 'flex', alignItems: 'center', gap: 14,
+          display: 'flex', alignItems: 'center', gap: 16,
+          overflow: 'visible',
         }}>
-          <div style={{
-            width: 40, height: 40, borderRadius: '50%',
-            border: '2.5px solid var(--c-hairline-strong)',
-            borderTopColor: 'var(--c-ink)',
-            animation: 'jt-spin 1.4s linear infinite',
-            flexShrink: 0,
-          }} />
-          <style>{`@keyframes jt-spin { to { transform: rotate(360deg); } }`}</style>
+          <div style={{ flexShrink: 0, overflow: 'visible', display: 'flex', alignItems: 'flex-end' }}>
+            <JitdaMascot size={54} />
+          </div>
           <div style={{ flex: 1, lineHeight: 1.5 }}>
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-ink)', marginBottom: 2 }}>운영자의 시작을 기다리는 중</div>
             <div style={{ fontSize: 12, color: 'var(--c-slate)' }}>접속이 유지되고 있어요.</div>

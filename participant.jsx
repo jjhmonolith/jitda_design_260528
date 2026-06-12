@@ -329,6 +329,14 @@ function C1TeamRoomV2({ state = 'roomBefore', team = MOCK_TEAM_STANDARD }) {
           textAlign: 'left', maxWidth: 560,
           justifySelf: 'start',
         }}>
+          {!s.ended && (
+            <div style={{ marginBottom: 2, overflow: 'visible' }}>
+              {/* 튜토리얼 대기 = 도면 검토(BLUEPRINT) / 해커톤 대기 = 곡괭이질(DIG, "이제 짓는다") */}
+              {state === 'roomAfterTutorial'
+                ? <JitdaMascotDig size={96} />
+                : <JitdaMascotBlueprint size={104} />}
+            </div>
+          )}
           <div className="jt-eyebrow" style={{
             fontSize: 11, letterSpacing: '0.16em',
             color: s.ended ? 'var(--c-safety-deep)' :
@@ -473,7 +481,7 @@ function ParticipantCanvasActions() {
 //   dock          composer 위 동적 dock 노드 (질문/권한/Todo 등)
 //   sendAction    전송 버튼 data-action (1인팀 즉시전송=없음 / 다인팀 합의=‘request-send’). 버튼 디자인은 공용 단일.
 //   preview       우측 미리보기 노드 (지정 시 previewState 무시)
-//   previewState  'ready' | 'empty' | 'spawning' (기본 ready)
+//   previewState  'ready' | 'empty' | 'spawning' | 'generating' (기본 ready)
 //   previewUrl    미리보기 슬림 헤더 주소 pill
 //   leftWidth     좌측 대화 컬럼 폭 (기본 460)
 //   overlay       셸 위 absolute 오버레이 (팀 커서·코치마크 등)
@@ -490,6 +498,7 @@ function OpenCodeShell({
   preview,
   previewState = 'ready',
   previewUrl = 'sapari.jitda.run',
+  files,
   tutorial = false,
   leftWidth = 460,
   overlay,
@@ -502,6 +511,49 @@ function OpenCodeShell({
   const [autoExpand, setAutoExpand] = React.useState(true); // 기본 ON
   const [focused, setFocused] = React.useState(false);
   const [dragging, setDragging] = React.useState(false);
+  const [attachOpen, setAttachOpen] = React.useState(false); // 첨부(+) 메뉴 — 이미지·캡처·파일
+  const attachBtnRef = React.useRef(null);
+  const [attachPos, setAttachPos] = React.useState(null); // 버튼 화면 좌표(고정 팝오버 — composer overflow 탈출)
+  const toggleAttach = () => {
+    setAttachOpen((v) => {
+      if (!v && attachBtnRef.current) {
+        const r = attachBtnRef.current.getBoundingClientRect();
+        setAttachPos({ left: r.left, bottom: window.innerHeight - r.top + 8 });
+      }
+      return !v;
+    });
+  };
+
+  // ── 좌(대화)/우(미리보기) 분할 — 가운데 세로 핸들 드래그로 좌측 폭 조절. ──
+  const COL_MIN = 340, COL_MAX = 760;       // 좌측 컬럼 폭 한계
+  const shellRef = React.useRef(null);
+  const [colW, setColW] = React.useState(leftWidth);
+  const [colDragging, setColDragging] = React.useState(false);
+  const onColHandleDown = (e) => {
+    e.preventDefault();
+    const rect = shellRef.current ? shellRef.current.getBoundingClientRect() : null;
+    setColDragging(true);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    const onMove = (ev) => {
+      // 셸 좌측 기준 마우스 X → 컬럼 폭 (우측 미리보기 최소폭 360 확보).
+      const max = rect ? Math.min(COL_MAX, rect.width - 360) : COL_MAX;
+      const raw = rect ? ev.clientX - rect.left : colW;
+      setColW(Math.min(max, Math.max(COL_MIN, raw)));
+    };
+    const onUp = () => {
+      setColDragging(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
+  // + 버튼은 mousedown preventDefault 로 입력창 포커스를 유지 → 클릭 시점의 포커스 상태가 그대로 보존됨.
+  //   (포커스 상태에서 누르면 확대 유지 / 비포커스면 작은 상태 유지)
   const isBig = autoExpand && focused;
   const docHeight = isBig ? bigH : smallH;
   const onDocFocus = () => setFocused(true);
@@ -530,6 +582,18 @@ function OpenCodeShell({
     window.addEventListener('mouseup', onUp);
   };
 
+  // ── 셸 전체 폭 추적 — 자동 확대(isBig) 시 composer 를 미리보기 영역까지 전체 폭으로 확장. ──
+  const [shellW, setShellW] = React.useState(0);
+  React.useLayoutEffect(() => {
+    const measure = () => { if (shellRef.current) setShellW(shellRef.current.getBoundingClientRect().width); };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
+  const COMPOSER_GUTTER = 28; // 좌우 margin 14*2
+  // 작은 상태: 좌측 컬럼 폭 / 확대 상태: 셸 전체 폭(미리보기 침범).
+  const composerWidth = (isBig && shellW ? shellW : colW) - COMPOSER_GUTTER;
+
   const defaultPromptCard = "코딩 단계마다 어울리는 음료를 추천해주는 한 페이지 앱을 만들어줘. 카드 4개로, 각 카드에 음료 이름과 한 줄 설명.";
   const defaultBody = (
     <>
@@ -554,11 +618,12 @@ function OpenCodeShell({
   const previewNode = preview ?? (
     previewState === 'empty' ? <OcPreviewEmpty />
     : previewState === 'spawning' ? <OcPreviewSpawning />
+    : previewState === 'generating' ? <OcPreviewGenerating />
     : <OcDefaultPreview />
   );
 
   return (
-    <div style={{
+    <div ref={shellRef} style={{
       flex: 1, minHeight: 0,
       display: 'flex', flexDirection: 'row',
       background: 'var(--c-paper)',
@@ -569,11 +634,10 @@ function OpenCodeShell({
     }}>
       {/* ── 좌측: 대화 타임라인 + composer ── */}
       <div style={{
-        flex: '0 0 ' + leftWidth + 'px',
+        flex: '0 0 ' + colW + 'px',
         minWidth: 0,
         display: 'flex', flexDirection: 'column',
         background: 'var(--c-paper)',
-        borderRight: '1px solid var(--c-hairline)',
         position: 'relative',
       }}>
         {/* 스레드 스크롤 — 대화 영역 격자 배경 (다른 화면과 동일 24px 그리드) */}
@@ -592,16 +656,26 @@ function OpenCodeShell({
           <div style={{ flex: '0 0 auto', margin: '0 14px 0' }}>{dock}</div>
         )}
 
-        {/* composer — BlockSuite doc 표면 재현 */}
+        {/* composer — BlockSuite doc 표면 재현. 확대 시 폭이 미리보기 영역까지 확장(전체 폭). */}
         <div className="oc-composer" style={{
           flex: '0 0 auto',
           margin: '10px 14px 14px',
+          // 확대 시 컬럼을 벗어나 미리보기 위로 오버레이 → 전체 폭. 작은 상태는 컬럼 폭.
+          alignSelf: 'flex-start',
+          width: composerWidth,
+          position: 'relative',
+          zIndex: isBig ? 6 : 1,
           background: 'var(--c-canvas)',
           border: '1px solid var(--c-hairline-strong)',
           borderRadius: 10,
           display: 'flex', flexDirection: 'column',
           overflow: 'hidden',
-          boxShadow: '0 6px 22px rgba(15,15,20,0.06), 0 1px 2px rgba(15,15,20,0.04)',
+          boxShadow: isBig
+            ? '0 18px 48px rgba(15,15,20,0.18), 0 4px 12px rgba(15,15,20,0.10)'
+            : '0 6px 22px rgba(15,15,20,0.06), 0 1px 2px rgba(15,15,20,0.04)',
+          transition: (dragging || colDragging)
+            ? 'none'
+            : 'width var(--dur-base) var(--ease-decelerate), box-shadow var(--dur-base) var(--ease-standard)',
         }}>
           {/* 상단 리사이즈 핸들 (prompt-doc-resize-handle) — 드래그로 입력창 높이 조절 */}
           <div className={'oc-resize-handle' + (dragging ? ' is-dragging' : '')} title="입력창 높이 조절 (드래그)" aria-label="입력창 높이 조절" onMouseDown={onHandleDown}>
@@ -614,7 +688,8 @@ function OpenCodeShell({
             overflowY: 'auto',
             display: 'flex', flexDirection: 'column', gap: 9,
             cursor: 'text', outline: 'none',
-            transition: dragging ? 'none' : 'height var(--dur-base) var(--ease-standard)',
+            // 폭(composer width)과 동일 duration·easing → 코너가 직선 대각선으로 자연스럽게 확대/축소.
+            transition: (dragging || colDragging) ? 'none' : 'height var(--dur-base) var(--ease-decelerate)',
           }}>
             {composerRef}
             <div style={{
@@ -635,11 +710,41 @@ function OpenCodeShell({
             justifyContent: 'space-between', gap: 8,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {/* 이미지 추가 (드래그앤드롭/첨부) */}
-              <button className="oc-image-btn" aria-label="이미지 추가">
-                <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4.5" width="14" height="11" rx="2"/><circle cx="7.3" cy="8.6" r="1.3"/><path d="M4.5 14.5 8.5 10.5l2.5 2.5 2-2 2.5 2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                이미지
-              </button>
+              {/* 첨부 (+) — 클릭 시 위로 확장되는 이미지·캡처·파일 메뉴 (composer overflow 탈출 위해 fixed) */}
+              <div style={{ position: 'relative' }}>
+                {attachOpen && attachPos && (
+                  <>
+                    {/* 바깥 클릭 닫힘 — mousedown preventDefault 로 입력창 포커스 유지(닫아도 자동 확대 안 풀림) */}
+                    <div onMouseDown={(e) => e.preventDefault()} onClick={() => setAttachOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 20 }} />
+                    <div className="oc-attach-menu" role="menu" style={{ left: attachPos.left, bottom: attachPos.bottom }}>
+                      {/* 이미지·파일: 포커스 유지(선택해도 자동 확대 안 풀림) */}
+                      <button className="oc-attach-item" role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => setAttachOpen(false)}>
+                        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4.5" width="14" height="11" rx="2"/><circle cx="7.3" cy="8.6" r="1.3"/><path d="M4.5 14.5 8.5 10.5l2.5 2.5 2-2 2.5 2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        이미지
+                      </button>
+                      {/* 캡처: 화면 캡처를 위해 입력창 포커스 해제 → 자동 확대 풀림(유일 예외) */}
+                      <button className="oc-attach-item" role="menuitem" onClick={() => { setFocused(false); setAttachOpen(false); }}>
+                        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M6.5 5 7.7 3h4.6L13.5 5H16a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 16 16H4a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 4 5z" strokeLinejoin="round"/><circle cx="10" cy="10.3" r="2.8"/></svg>
+                        캡처
+                      </button>
+                      <button className="oc-attach-item" role="menuitem" onMouseDown={(e) => e.preventDefault()} onClick={() => setAttachOpen(false)}>
+                        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M11 2.5H5.5A1.5 1.5 0 0 0 4 4v12a1.5 1.5 0 0 0 1.5 1.5h9A1.5 1.5 0 0 0 16 16V7.5z" strokeLinejoin="round"/><path d="M11 2.5V7.5H16" strokeLinejoin="round"/></svg>
+                        파일
+                      </button>
+                    </div>
+                  </>
+                )}
+                <button
+                  ref={attachBtnRef}
+                  className={'oc-attach-btn' + (attachOpen ? ' is-open' : '')}
+                  aria-label="첨부 추가" aria-haspopup="menu" aria-expanded={attachOpen}
+                  title="이미지·캡처·파일 첨부"
+                  onMouseDown={(e) => e.preventDefault()}  /* 입력창 blur 방지 — 포커스 유지(자동 확대 깜빡임 제거) */
+                  onClick={toggleAttach}
+                >
+                  <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M10 4.5v11M4.5 10h11" strokeLinecap="round"/></svg>
+                </button>
+              </div>
               <span style={{ width: 1, height: 16, background: 'var(--c-hairline)', margin: '0 4px' }} />
               {/* 실행취소 / 다시실행 (프롬프트 내역) */}
               <button className="oc-icon-btn" aria-label="실행 취소" disabled>
@@ -664,17 +769,26 @@ function OpenCodeShell({
         </div>
       </div>
 
-      {/* ── 우측: 라이브 미리보기 ── */}
-      <div style={{
-        flex: 1, minWidth: 0,
-        display: 'flex', flexDirection: 'column',
-        background: 'var(--c-canvas)',
-      }}>
-        <SafariChrome url={previewUrl} tutorial={tutorial} />
-        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex' }}>
-          {previewNode}
-        </div>
+      {/* ── 좌/우 분할 핸들 (col-resize) — 드래그로 대화/미리보기 폭 조절 ── */}
+      <div
+        className={'oc-split-handle' + (colDragging ? ' is-dragging' : '')}
+        title="대화·미리보기 폭 조절 (드래그)"
+        aria-label="대화·미리보기 폭 조절"
+        role="separator"
+        aria-orientation="vertical"
+        onMouseDown={onColHandleDown}
+      >
+        <span className="oc-split-grip" />
       </div>
+
+      {/* ── 우측: 사파리형 미리보기 브라우저 (탐색기·탭·검색 — files 있을 때만 활성) ── */}
+      <OcBrowser
+        previewNode={<div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex' }}>{previewNode}</div>}
+        previewUrl={previewUrl}
+        tutorial={tutorial}
+        files={files}
+        active={previewState}
+      />
 
       {/* 짓다 오버레이 (팀 커서·코치마크·합의 등) */}
       {overlay}
@@ -944,7 +1058,6 @@ function OcPreviewHeader({ url = 'sapari.jitda.run', live = true }) {
 
 // 미리보기 미준비 — codle-preview-loader (86×70, 5블록 staggered) + 안내.
 function OcPreviewEmpty() {
-  const blocks = [0, 1, 2, 3, 4];
   return (
     <div style={{
       flex: 1, minWidth: 0,
@@ -952,24 +1065,13 @@ function OcPreviewEmpty() {
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center', gap: 18,
     }}>
-      <div style={{ width: 86, height: 60, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center', justifyContent: 'center', color: 'var(--c-ink-3)' }}>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {blocks.slice(0, 3).map((b) => (
-            <span key={b} className="oc-block-pulse" style={{ width: 22, height: 14, borderRadius: 4, background: 'var(--c-stone-2)', animationDelay: (b * 0.15) + 's' }} />
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {blocks.slice(3).map((b) => (
-            <span key={b} className="oc-block-pulse" style={{ width: 22, height: 14, borderRadius: 4, background: 'var(--c-stone-2)', animationDelay: (b * 0.15) + 's' }} />
-          ))}
-        </div>
-      </div>
+      <JitdaMascot size={72} />
       <span style={{ fontSize: 12.5, color: 'var(--c-muted)', fontFamily: 'var(--font-body)' }}>아직 미리보기가 준비되지 않았습니다</span>
     </div>
   );
 }
 
-// 미리보기 서버 기동 중 — SpawnLoading (스피너 + 안내).
+// 미리보기 서버 기동 중 — BLUEPRINT 마스코트(준비·검토 중) + 안내.
 function OcPreviewSpawning() {
   return (
     <div style={{
@@ -978,12 +1080,30 @@ function OcPreviewSpawning() {
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center', gap: 16,
     }}>
-      <div className="jt-spin" style={{ width: 30, height: 30, color: 'var(--c-ink-3)' }}>
-        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-6.2-8.56" strokeLinecap="round"/></svg>
-      </div>
+      <JitdaMascotBlueprint size={100} />
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
         <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--c-ink-2)' }}>작업 환경을 준비하고 있어요</span>
         <span style={{ fontSize: 11.5, color: 'var(--c-muted)' }}>잠시만 기다려 주세요 · 보통 10초 이내</span>
+      </div>
+    </div>
+  );
+}
+
+// 미리보기 생성 중 — AI가 사용자 프롬프트로 결과물을 능동 생성하는 순간(sending).
+// 짓다 브랜드 동사("짓다=생성")와 곡괭이질(DIG) 은유 일치 — 마스코트-애니메이션-가이드 §4 1순위.
+function OcPreviewGenerating() {
+  return (
+    <div style={{
+      flex: 1, minWidth: 0,
+      background: 'var(--c-canvas)',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: 14,
+      overflow: 'visible',
+    }}>
+      <JitdaMascotDig size={84} />
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+        <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--c-ink-2)' }}>AI가 화면을 만들고 있어요</span>
+        <span style={{ fontSize: 11.5, color: 'var(--c-muted)' }}>곡괭이질하듯 짓는 중이에요 · 잠시만 기다려 주세요</span>
       </div>
     </div>
   );
@@ -1020,6 +1140,261 @@ function OcDefaultPreview() {
 
 
 
+
+// ── 사파리형 미리보기 브라우저 (탐색기 사이드바 + 파일 탭 + 파일 검색) ───────────────
+//
+//  설계 의도: 참가자가 AI가 만든 컨테이너의 코드 베이스를 실제 사파리 창처럼 탐색.
+//   · 사이드바(좌측, 토글 개폐) = 파일 탐색기 (상단에 파일명 검색창)
+//   · 상단 탭 스트립(사파리형 둥근 탭) = 0번 미리보기(라이브 앱) 고정 + 파일은 새 탭으로
+//   · 기존 미리보기 기능 전부 유지 (주소창·새로고침·새 탭 열기·복사)
+//
+//  하위호환: files 없음 | tutorial | active!=='ready' → 기존 SafariChrome+미리보기와 동일하게 렌더.
+//   기본 상태(사이드바 닫힘·탭 1개)에선 탭 스트립을 숨겨 현재 화면과 픽셀 동일.
+
+// 트리를 평면 파일 목록으로 (검색 필터용)
+function ocFlattenFiles(nodes, out) {
+  out = out || [];
+  (nodes || []).forEach((n) => {
+    if (n.type === 'dir') ocFlattenFiles(n.children, out);
+    else out.push(n);
+  });
+  return out;
+}
+
+// 파일 확장자 → 배지 텍스트 (OcFileRow 어휘 재사용)
+function ocExtBadge(name) {
+  const ext = name.split('.').pop();
+  return ext.toUpperCase().slice(0, 3);
+}
+
+// 코드 뷰 — 줄번호 거터 + monospace, 주석 라인 muted 틴팅 (읽기 전용 미리보기).
+function OcCodeView({ path, content }) {
+  const lines = (content || '').replace(/\n$/, '').split('\n');
+  const isComment = (s) => {
+    const t = s.trim();
+    return t.startsWith('//') || t.startsWith('/*') || t.startsWith('*');
+  };
+  return (
+    <div style={{ flex: 1, minWidth: 0, minHeight: 0, overflow: 'auto', background: 'var(--c-canvas)', fontFamily: 'var(--font-mono)', fontSize: 12.5, lineHeight: 1.7 }}>
+      <div style={{ display: 'flex', minHeight: '100%' }}>
+        {/* 줄번호 거터 */}
+        <div style={{ flexShrink: 0, padding: '14px 0', textAlign: 'right', color: 'var(--c-ink-3)', opacity: 0.5, userSelect: 'none', background: 'var(--c-paper)', borderRight: '1px solid var(--c-hairline)' }}>
+          {lines.map((_, i) => (
+            <div key={i} style={{ padding: '0 12px' }}>{i + 1}</div>
+          ))}
+        </div>
+        {/* 코드 본문 */}
+        <pre style={{ flex: 1, margin: 0, padding: '14px 16px', whiteSpace: 'pre', color: 'var(--c-ink-2)', fontFamily: 'var(--font-mono)' }}>
+          {lines.map((ln, i) => (
+            <div key={i} style={{ color: isComment(ln) ? 'var(--c-slate)' : 'var(--c-ink-2)', minHeight: '1.7em' }}>{ln || ' '}</div>
+          ))}
+        </pre>
+      </div>
+    </div>
+  );
+}
+
+// 파일 탐색기 트리 (재귀) — 디렉터리 펼침/접힘, 파일 클릭→탭 오픈. 검색 시 평면 결과.
+function OcFileTree({ nodes, depth = 0, expanded, onToggleDir, onOpen, activePath }) {
+  return (
+    <>
+      {(nodes || []).map((n, i) => {
+        const key = (n.path || n.name) + i;
+        if (n.type === 'dir') {
+          const dirKey = n.name + '/' + depth + '/' + i;
+          const open = expanded[dirKey] !== false; // 기본 펼침
+          return (
+            <React.Fragment key={key}>
+              <button
+                className="oc-tree-row"
+                onClick={() => onToggleDir(dirKey)}
+                style={{ paddingLeft: 10 + depth * 14 }}
+              >
+                <svg width="9" height="9" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" style={{ flexShrink: 0, color: '#9b9ba3', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.12s ease' }}><polyline points="7 5 12 10 7 15" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                <svg width="13" height="13" viewBox="0 0 20 20" fill="#4aa3ff" stroke="#1a8cff" strokeWidth="0.8" style={{ flexShrink: 0 }}><path d="M2.5 5.5A1.5 1.5 0 0 1 4 4h3.2l1.4 1.6H16a1.5 1.5 0 0 1 1.5 1.5v7.4A1.5 1.5 0 0 1 16 16H4a1.5 1.5 0 0 1-1.5-1.5z" strokeLinejoin="round" /></svg>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--c-ink-2)' }}>{n.name}</span>
+              </button>
+              {open && (
+                <OcFileTree nodes={n.children} depth={depth + 1} expanded={expanded} onToggleDir={onToggleDir} onOpen={onOpen} activePath={activePath} />
+              )}
+            </React.Fragment>
+          );
+        }
+        const active = n.path === activePath;
+        return (
+          <button
+            key={key}
+            className={'oc-tree-row' + (active ? ' is-active' : '')}
+            onClick={() => onOpen(n)}
+            style={{ paddingLeft: 10 + (depth + 1) * 14 }}
+            title={n.path}
+          >
+            <span style={{
+              width: 16, height: 16, flexShrink: 0,
+              background: active ? '#eaf2fe' : '#eef0f4',
+              border: '1px solid ' + (active ? '#9cc6fb' : '#d6d8dd'), borderRadius: 3,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: active ? '#006ef5' : '#5b6270', fontFamily: 'var(--font-mono)', fontSize: 7, fontWeight: 700,
+            }}>{ocExtBadge(n.name)}</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: active ? '#006ef5' : 'var(--c-ink-2)', fontWeight: active ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.name}</span>
+          </button>
+        );
+      })}
+    </>
+  );
+}
+
+// 사파리형 탭 — 미리보기 탭은 닫기(×) 없음.
+function OcFileTab({ label, icon, active, onClick, onClose }) {
+  return (
+    <div
+      className={'oc-browser-tab' + (active ? ' is-active' : '')}
+      onClick={onClick}
+      role="tab"
+      aria-selected={active}
+    >
+      {icon}
+      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 11.5, fontFamily: 'var(--font-mono)' }}>{label}</span>
+      {onClose && (
+        <button
+          className="oc-browser-tab-close"
+          aria-label="탭 닫기"
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
+        >
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 4l8 8M12 4l-8 8" strokeLinecap="round" /></svg>
+        </button>
+      )}
+    </div>
+  );
+}
+
+function OcBrowser({ previewNode, previewUrl = 'sapari.jitda.run', tutorial = false, files, active = 'ready' }) {
+  // 파일 탐색기 토글·홈 버튼은 OpenCode 전 화면에서 항상 노출(파일 없음·튜토리얼·미준비 포함). 갤러리는 OcBrowser 미사용.
+  // hasFiles = 트리 데이터 유무 — 탐색기 콘텐츠·검색·파일 탭 활성 여부만 결정(토글 노출과 무관). 없으면 빈 상태 표시.
+  const hasFiles = !!(files && files.tree && files.tree.length);
+
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [query, setQuery] = React.useState('');
+  const [expanded, setExpanded] = React.useState({});
+  // 탭: 0번 = 미리보기(고정). 파일 탭은 path 로 식별.
+  const [tabs, setTabs] = React.useState([{ kind: 'preview' }]);
+  const [activeId, setActiveId] = React.useState('preview');
+
+  const activeTab = tabs.find((t) => (t.kind === 'preview' ? 'preview' : t.path) === activeId) || tabs[0];
+  const onFileTab = activeTab && activeTab.kind === 'file';
+  const address = onFileTab ? activeTab.path : previewUrl;
+
+  const openFile = (node) => {
+    setTabs((prev) => (prev.some((t) => t.path === node.path) ? prev : [...prev, { kind: 'file', path: node.path, name: node.name }]));
+    setActiveId(node.path);
+  };
+  const closeTab = (path) => {
+    setTabs((prev) => {
+      const idx = prev.findIndex((t) => t.path === path);
+      const next = prev.filter((t) => t.path !== path);
+      if (activeId === path) {
+        const fallback = next[Math.max(0, idx - 1)] || next[0];
+        setActiveId(fallback.kind === 'preview' ? 'preview' : fallback.path);
+      }
+      return next;
+    });
+  };
+  const toggleDir = (dirKey) => setExpanded((e) => ({ ...e, [dirKey]: e[dirKey] === false ? true : false }));
+
+  const flat = hasFiles ? ocFlattenFiles(files.tree) : [];
+  const matches = query ? flat.filter((f) => f.name.toLowerCase().includes(query.toLowerCase())) : null;
+  // 탭 스트립은 파일이 여러 개 열렸을 때(미리보기 + 파일 1개 이상)만 노출 — 사이드바 개폐와 무관.
+  const showStrip = hasFiles && tabs.length > 1;
+
+  return (
+    <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', background: 'var(--c-canvas)' }}>
+      {/* ── 상단 chrome — 공용 SafariChrome(디자인시스템). OpenCode는 파일 탐색기 토글 항상 노출. ── */}
+      <SafariChrome
+        address={address}
+        openUrl={previewUrl}
+        tutorial={tutorial}
+        onToggleSidebar={() => setSidebarOpen((v) => !v)}
+        sidebarOpen={sidebarOpen}
+        onHome={() => setActiveId('preview')}
+      />
+
+      {/* ── 본문: [사이드바 탐색기 (전체 높이)] + [탭 스트립 + 활성 탭 콘텐츠] ──
+           사파리 레퍼런스처럼 사이드바는 chrome 바로 아래부터 전체 높이를 차지하고,
+           탭 스트립은 우측 콘텐츠 컬럼 상단에만 위치 (사이드바와 겹치지 않음). */}
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
+        {sidebarOpen && (
+          <div className="oc-file-sidebar" style={{ width: 196, flexShrink: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#f9f9f9', borderRight: '1px solid #e7e7e9' }}>
+            {hasFiles ? (
+              <>
+                {/* 검색창 */}
+                <div style={{ padding: '8px 8px 6px', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, height: 26, padding: '0 8px', background: '#ffffff', border: '1px solid #d8d8dc', borderRadius: 7 }}>
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#86868b" strokeWidth="1.4" style={{ flexShrink: 0 }}><circle cx="7" cy="7" r="4.2" /><path d="M10.2 10.2 13.5 13.5" strokeLinecap="round" /></svg>
+                    <input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="파일 검색"
+                      style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--c-ink)' }}
+                    />
+                    {query && (
+                      <button className="oc-browser-tab-close" aria-label="검색 지우기" onClick={() => setQuery('')}>
+                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M4 4l8 8M12 4l-8 8" strokeLinecap="round" /></svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {/* 트리 / 검색결과 */}
+                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '2px 6px 10px' }}>
+                  {matches
+                    ? (matches.length
+                        ? matches.map((f, i) => {
+                            const fa = f.path === activeId;
+                            return (
+                            <button key={f.path + i} className={'oc-tree-row' + (fa ? ' is-active' : '')} onClick={() => openFile(f)} style={{ paddingLeft: 10 }} title={f.path}>
+                              <span style={{ width: 16, height: 16, flexShrink: 0, background: fa ? '#eaf2fe' : '#eef0f4', border: '1px solid ' + (fa ? '#9cc6fb' : '#d6d8dd'), borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', color: fa ? '#006ef5' : '#5b6270', fontFamily: 'var(--font-mono)', fontSize: 7, fontWeight: 700 }}>{ocExtBadge(f.name)}</span>
+                              <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0, alignItems: 'flex-start' }}>
+                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: fa ? '#006ef5' : 'var(--c-ink-2)', fontWeight: fa ? 600 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 150 }}>{f.name}</span>
+                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--c-ink-3)', opacity: 0.7 }}>{f.path}</span>
+                              </span>
+                            </button>
+                            );
+                          })
+                        : <div style={{ padding: '14px 10px', fontSize: 11.5, color: 'var(--c-muted)', fontFamily: 'var(--font-body)' }}>일치하는 파일이 없어요</div>)
+                    : <OcFileTree nodes={files.tree} expanded={expanded} onToggleDir={toggleDir} onOpen={openFile} activePath={onFileTab ? activeTab.path : null} />}
+                </div>
+              </>
+            ) : (
+              /* 파일 없음(아직 코드 생성 전·튜토리얼 초기 등) — 빈 상태 */
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '20px 16px', textAlign: 'center' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--c-ink-3)" strokeWidth="1.4" style={{ opacity: 0.5 }}><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l1.6 1.8H19.5A1.5 1.5 0 0 1 21 9.3v8.2A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z" strokeLinejoin="round" /></svg>
+                <span style={{ fontSize: 11.5, color: 'var(--c-muted)', fontFamily: 'var(--font-body)', lineHeight: 1.5 }}>아직 생성된 파일이 없어요<br />코드를 만들면 여기에 표시돼요</span>
+              </div>
+            )}
+          </div>
+        )}
+        {/* 우측 컬럼: 탭 스트립(콘텐츠 영역 상단만) + 활성 탭 콘텐츠 */}
+        <div style={{ flex: 1, minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          {showStrip && (
+            <div className="oc-browser-tabstrip" role="tablist">
+              {tabs.map((t) => (
+                t.kind === 'preview'
+                  ? <OcFileTab key="preview" label="미리보기" active={activeId === 'preview'} onClick={() => setActiveId('preview')}
+                      icon={<svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.2" style={{ flexShrink: 0, color: 'var(--c-slate)' }}><circle cx="8" cy="8" r="6" /><path d="M2 8h12M8 2c1.8 1.6 1.8 10.4 0 12M8 2c-1.8 1.6-1.8 10.4 0 12" /></svg>} />
+                  : <OcFileTab key={t.path} label={t.name} active={activeId === t.path} onClick={() => setActiveId(t.path)} onClose={() => closeTab(t.path)}
+                      icon={<span style={{ flexShrink: 0, fontFamily: 'var(--font-mono)', fontSize: 7, fontWeight: 700, color: '#5b6270', background: '#eef0f4', border: '1px solid #d6d8dd', borderRadius: 2, padding: '1px 3px' }}>{ocExtBadge(t.name)}</span>} />
+              ))}
+            </div>
+          )}
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', overflow: 'hidden' }}>
+            {onFileTab
+              ? <OcCodeView path={activeTab.path} content={(files.contents || {})[activeTab.path] || ''} />
+              : previewNode}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // 튜토리얼 진행 스텝퍼 — 노드는 전부, 라벨은 현재 단계만(4단계 폭 대응). tutorial 현재·mint 완료.
 function C2Stepper({ steps, step }) {
@@ -1380,6 +1755,64 @@ function C2Tutorial({ step: initialStep = 2 }) {
 }
 
 
+// ── Mock 코드 베이스 (정적) — OcBrowser 탐색기·코드 뷰용. 실제 앱 아님, 디자인 사양 더미. ──
+
+// C-3: 1인팀 음료 추천 앱 (defaultBody diff 3파일 + 골격)
+const C3_FILES = {
+  tree: [
+    { type: 'dir', name: 'src', children: [
+      { type: 'dir', name: 'components', children: [
+        { type: 'file', name: 'BrewList.tsx', path: 'src/components/BrewList.tsx' },
+      ] },
+      { type: 'file', name: 'App.tsx', path: 'src/App.tsx' },
+      { type: 'file', name: 'main.tsx', path: 'src/main.tsx' },
+      { type: 'file', name: 'styles.css', path: 'src/styles.css' },
+    ] },
+    { type: 'file', name: 'index.html', path: 'index.html' },
+    { type: 'file', name: 'package.json', path: 'package.json' },
+  ],
+  contents: {
+    'src/App.tsx': "import { BrewList } from './components/BrewList'\nimport './styles.css'\n\n// 코딩 단계마다 어울리는 음료를 추천하는 한 페이지 앱\nexport default function App() {\n  return (\n    <main className=\"app\">\n      <header>\n        <h1>오늘의 음료</h1>\n        <p>지금 작업에 어울리는 한 잔을 골라보세요</p>\n      </header>\n      <BrewList />\n    </main>\n  )\n}\n",
+    'src/components/BrewList.tsx': "type Brew = { name: string; desc: string }\n\nconst BREWS: Brew[] = [\n  { name: '에스프레소', desc: '집중력이 필요한 디버깅 시간에' },\n  { name: '카페라떼', desc: '느긋한 페어 프로그래밍에' },\n  { name: '아메리카노', desc: '긴 코드 리뷰 마라톤에' },\n  { name: '콜드브루', desc: '여름 오후의 산뜻한 리팩터' },\n]\n\nexport function BrewList() {\n  return (\n    <div className=\"grid\">\n      {BREWS.map((b) => (\n        <article key={b.name} className=\"card\">\n          <h3>{b.name}</h3>\n          <p>{b.desc}</p>\n        </article>\n      ))}\n    </div>\n  )\n}\n",
+    'src/styles.css': ":root {\n  --bg: #fdeed7;\n  --card: #fff7e8;\n  --line: #e8c98b;\n}\n.app { background: var(--bg); padding: 32px 40px; min-height: 100vh; }\n.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }\n.card {\n  background: var(--card);\n  border: 1px solid var(--line);\n  border-radius: 10px;\n  padding: 14px;\n}\n",
+    'src/main.tsx': "import React from 'react'\nimport { createRoot } from 'react-dom/client'\nimport App from './App'\n\ncreateRoot(document.getElementById('root')!).render(<App />)\n",
+    'index.html': "<!doctype html>\n<html lang=\"ko\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <title>오늘의 음료</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>\n",
+    'package.json': "{\n  \"name\": \"todays-brew\",\n  \"private\": true,\n  \"version\": \"0.1.0\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"vite build\"\n  },\n  \"dependencies\": {\n    \"react\": \"^18.3.1\",\n    \"react-dom\": \"^18.3.1\"\n  }\n}\n",
+  },
+};
+
+// C-4: 다인팀 OCR 일정봇 (화면에 노출된 3파일 + 골격)
+const C4_FILES = {
+  tree: [
+    { type: 'dir', name: 'src', children: [
+      { type: 'dir', name: 'pages', children: [
+        { type: 'file', name: 'UploadPage.tsx', path: 'src/pages/UploadPage.tsx' },
+      ] },
+      { type: 'dir', name: 'components', children: [
+        { type: 'file', name: 'EventCard.tsx', path: 'src/components/EventCard.tsx' },
+      ] },
+      { type: 'dir', name: 'lib', children: [
+        { type: 'file', name: 'mockOcr.ts', path: 'src/lib/mockOcr.ts' },
+      ] },
+      { type: 'file', name: 'App.tsx', path: 'src/App.tsx' },
+      { type: 'file', name: 'main.tsx', path: 'src/main.tsx' },
+      { type: 'file', name: 'styles.css', path: 'src/styles.css' },
+    ] },
+    { type: 'file', name: 'index.html', path: 'index.html' },
+    { type: 'file', name: 'package.json', path: 'package.json' },
+  ],
+  contents: {
+    'src/pages/UploadPage.tsx': "import { useState } from 'react'\nimport { EventCard } from '../components/EventCard'\nimport { mockOcr, type ScheduleEvent } from '../lib/mockOcr'\n\n// 강의 시간표 사진 업로드 → OCR 모킹 → 일정 카드 리스트\nexport function UploadPage() {\n  const [events, setEvents] = useState<ScheduleEvent[]>([])\n\n  async function handleUpload(file: File) {\n    const parsed = await mockOcr(file)\n    setEvents(parsed)\n  }\n\n  return (\n    <section className=\"upload\">\n      <input type=\"file\" accept=\"image/*\"\n        onChange={(e) => e.target.files && handleUpload(e.target.files[0])} />\n      <ul className=\"events\">\n        {events.map((ev) => <EventCard key={ev.id} event={ev} />)}\n      </ul>\n    </section>\n  )\n}\n",
+    'src/components/EventCard.tsx': "import type { ScheduleEvent } from '../lib/mockOcr'\n\nfunction dday(date: string): number {\n  const ms = new Date(date).getTime() - Date.now()\n  return Math.ceil(ms / 86_400_000)\n}\n\nexport function EventCard({ event }: { event: ScheduleEvent }) {\n  const d = dday(event.date)\n  const urgent = d <= 3\n  return (\n    <li className=\"event-card\">\n      <span className=\"title\">{event.title}</span>\n      <span className=\"date\">{event.date}</span>\n      {/* 시험 기간이 가까운 일정은 빨간 D-day 뱃지로 강조 */}\n      <span className={urgent ? 'dday urgent' : 'dday'}>D-{d}</span>\n    </li>\n  )\n}\n",
+    'src/lib/mockOcr.ts': "export type ScheduleEvent = {\n  id: string\n  title: string\n  date: string\n}\n\n// OCR API 는 우선 모킹으로 처리 — 추후 실제 OCR 연동\nexport async function mockOcr(_file: File): Promise<ScheduleEvent[]> {\n  await new Promise((r) => setTimeout(r, 400))\n  return [\n    { id: '1', title: '자료구조 중간고사', date: '2026-06-18' },\n    { id: '2', title: '운영체제 과제 제출', date: '2026-06-22' },\n    { id: '3', title: '데이터베이스 퀴즈', date: '2026-06-30' },\n  ]\n}\n",
+    'src/App.tsx': "import { UploadPage } from './pages/UploadPage'\nimport './styles.css'\n\nexport default function App() {\n  return (\n    <main className=\"app\">\n      <h1>AI 일정관리 봇</h1>\n      <UploadPage />\n    </main>\n  )\n}\n",
+    'src/main.tsx': "import React from 'react'\nimport { createRoot } from 'react-dom/client'\nimport App from './App'\n\ncreateRoot(document.getElementById('root')!).render(<App />)\n",
+    'src/styles.css': ".app { max-width: 640px; margin: 0 auto; padding: 32px 20px; }\n.events { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }\n.event-card { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid #e3e1da; border-radius: 10px; }\n.dday { margin-left: auto; font-weight: 700; }\n.dday.urgent { color: #e5484d; }\n",
+    'index.html': "<!doctype html>\n<html lang=\"ko\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <title>AI 일정관리 봇</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n    <script type=\"module\" src=\"/src/main.tsx\"></script>\n  </body>\n</html>\n",
+    'package.json': "{\n  \"name\": \"schedule-ocr-bot\",\n  \"private\": true,\n  \"version\": \"0.1.0\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"vite build\"\n  },\n  \"dependencies\": {\n    \"react\": \"^18.3.1\",\n    \"react-dom\": \"^18.3.1\"\n  }\n}\n",
+  },
+};
+
 // ─── C-3. 1인팀 코딩 환경 ───────────────────────────────────────
 // 짓다 툴바(원본 유지) + OpenCode minimal 임베드 셸. 1인팀은 즉시전송(합의 없음).
 // previewState 로 미리보기 3상태 분기: ready(완성앱)·empty(미준비)·spawning(서버 기동).
@@ -1389,6 +1822,7 @@ function C3PersonalCoding({ previewState = 'ready' }) {
         <JitdaToolbar status="hackathon_running" actions={<ParticipantCanvasActions />} />
         <OpenCodeShell
           previewState={previewState}
+          files={C3_FILES}
           composerRef={previewState === 'ready' ? <OcReferenceBlock name="App.tsx" path="src/App.tsx" lines="L12-28" /> : undefined}
         />
       </div>
@@ -1398,6 +1832,8 @@ function C3PersonalCoding({ previewState = 'ready' }) {
 function C3PersonalCodingEmpty() { return <C3PersonalCoding previewState="empty" />; }
 // 서버 기동 중 (SpawnLoading) — 페이지정의서 C-3 상태표 "서버 기동 중".
 function C3PersonalCodingSpawning() { return <C3PersonalCoding previewState="spawning" />; }
+// AI 생성 중 — sending 순간 미리보기 패널에 DIG 마스코트(마스코트-애니메이션-가이드 §4 1순위).
+function C3PersonalCodingGenerating() { return <C3PersonalCoding previewState="generating" />; }
 
 
 // ─── C-4. 다인팀 코딩 환경 ───────────────────────────────────────
@@ -1433,6 +1869,7 @@ function C4TeamCanvas() {
               }} />
             </span>
           }
+          files={C4_FILES}
           composerRef={<OcReferenceBlock name="UploadPage.tsx" path="src/pages/UploadPage.tsx" lines="L8-40" />}
           sendAction="request-send"
           dock={
@@ -1476,8 +1913,9 @@ function TeamCursor({ top, left, name, color }) {
 Object.assign(window, {
   // C-1 \ub300\uae30\uc2e4 (v1 \ud3d0\uae30 2026-05-29 \u2014 v2 \ub2e8\uc77c \ucc44\ud0dd). C1TeamRoomV2(state, team)\uc5d0 \uc9c1\uc811 props.
   C1RoomBeforeV2, C1RoomAfterTutorialV2, C1RoomEndedV2, C1TeamRoomV2,
-  C2Tutorial, C3PersonalCoding, C3PersonalCodingEmpty, C3PersonalCodingSpawning, C4TeamCanvas,
-  OpenCodeShell, OcReferenceBlock, OcPreviewEmpty, OcPreviewSpawning, JitdaToolbar, ParticipantCanvasActions,
+  C2Tutorial, C3PersonalCoding, C3PersonalCodingEmpty, C3PersonalCodingSpawning, C3PersonalCodingGenerating, C4TeamCanvas,
+  OpenCodeShell, OcReferenceBlock, OcPreviewEmpty, OcPreviewSpawning, OcPreviewGenerating, JitdaToolbar, ParticipantCanvasActions,
+  OcBrowser, OcFileTree, OcFileTab, OcCodeView,
   // MOCK \ud300 \ubcc0\ud615 \u2014 viewer edge case \ub4f1\ub85d\uc6a9
   MOCK_TEAM_STANDARD, MOCK_TEAM_LONG_NAME, MOCK_TEAM_MANY_MEMBERS,
 });
