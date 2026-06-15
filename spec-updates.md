@@ -4164,3 +4164,48 @@ paper 배경(#faf9f6) 위 흰색(#ffffff) 카드 → 명도 차이 1.5%. 카드 
 - cache-bust: `operator.jsx ?v=20260612pagecol3`. 검증: Playwright로 b2-started(토큰 zone 무 페이지네이션·손든/잠시멈춤 각 1/2·독립 페이징 동작)·b2-tutorial-running(완료 컬럼만 페이지네이션·좁은 컬럼 fit) 확인.
 - **B-2 ⑤ 활동 칸반 3 zone 카드 높이 통일** (`operator.jsx`): 손든 포스트잇(HandRaisedPostit)이 [해결] 버튼(22px) 때문에 토큰·잠시멈춤 카드보다 ~6px 높던 문제 수정. 세 카드(TokenTeamCard·HandRaisedPostit·AlertPostit) 모두 `height: 66`(border-box)로 고정 통일 + [해결] 버튼 22→18px·padding 0 9px로 축소해 66px 안에 안 잘리게 맞춤. 검증: 세 zone offsetHeight 전부 66, 클리핑 0.
 - cache-bust: `operator.jsx ?v=20260612cardh`.
+
+---
+
+## μ+5. 반응형(데스크탑 유동) 대응 — Phase 0 하니스 키스톤 (2026-06-15)
+
+**결정**(사용자 확정): 범위=**데스크탑 유동폭만(≥1024)**, 방식=**진짜 리플로우**(scale 아님), 산출물=**프로토타입 반응형화 + 화면상태정의서 부록 정식화 둘 다**. 전체 작업계획은 `RESPONSIVE-PLAN.md`(신규) 참조 — 7개 영역 라인레벨 감사 기반.
+
+**근본 원인**: 모든 화면이 `viewer.html` art-frame의 고정 `width:1280 height:820/920`에 렌더 + `tokens.css` 뷰포트 미디어쿼리 0개. 창을 줄여도 reflow 불가 → 로컬호스트 반응형 확인 자체가 안 됨.
+
+**Phase 0(완료·수정 반영)**: `viewer.html` art-frame을 데스크탑 유동폭으로 전환.
+- CSS `.art-frame`: `width: clamp(min(1024px, var(--frame-max,1680px)), 100%, var(--frame-max,1680px))` + `flex-shrink:0` + `height: var(--frame-h)` + `container-type:inline-size; container-name:artframe`. → 1024(하한)~100%(창)~1680(ultrawide 캡) **연속 유동**. 넓은 모니터에서 1280 고정 안 되고 창 따라 늘어남.
+- `#root` 신규 규칙: `flex:1 1 auto; min-width:0; display:flex; justify-content:center`. **(핵심 버그픽스)** 기존 #root는 shrink-to-fit(0폭)이라 art-frame `100%`가 0으로 붕괴→clamp가 1024 하한으로 고정됨. #root를 stage 전폭으로 채워 `%` 정상 해석.
+- `render()`: `style={{width,height}}` → `style={{'--frame-max':(w>=1024?1680:w)+'px','--frame-h':h+'px'}}`(좁은 설계화면<1024는 설계폭으로 캡, 과확장 방지).
+- 높이/aspect 내부 스크롤화는 회귀 방지 위해 영역별 후속(현재 설계높이 유지). `Renewal.html` DCArtboard(고정 캔버스)는 의도상 유지.
+- 검증(Playwright 실측 frame width): win 1800→1680(캡)·1600→1545·1280→1225·1024→1024(하한). d1 auto-fill 5열(와이드)↔3열(좁게) reflow, 콘솔 0(favicon 제외).
+- **수정 경위**: 1차 컷은 (a) 설계폭(1280)에 캡→넓은 모니터에서 "고정"으로 보임, (b) #root 0폭 붕괴 두 버그가 있었음. 사용자 "여전히 고정" 피드백으로 진단·수정. **브라우저 캐시 의심 시 하드 리프레시(⌘+Shift+R)**.
+- cache-bust 불필요(viewer.html 자체 편집). _serve.py(no-store)로 검증.
+
+**다음**: Phase 1(tokens 브레이크포인트·유틸) → Phase 2(shared ModalSurface 등) → Phase 3(A 인증 파일럿) → 영역별(D·E·F·C·B). 열린 질문: 칸반 좁은폭 전략(강등 vs 가로스크롤), 점수행렬 심사위원 N, 높이 적극성 — `RESPONSIVE-PLAN.md §열린 질문`.
+
+### 진행 로그 (2026-06-15)
+- **사용자 결정**: 높이=폭 우선·영역별 점진(키스톤 유지), 칸반 좁은폭=**zone 강등 reflow**(B 영역 b2-started·b2-tutorial-running 적용 예정 — sub-grid 2→1 + perPage 동적 재계산).
+- **Phase 3 — A 인증(완료)**: `auth.jsx` `AuthShell` 좌 브랜드 레일 `minmax(360px,0.9fr) 1.1fr` → `clamp(360px,45%,560px) minmax(0,1fr)`(1280 외형 유지·1024 reflow). 우 `<section>` `align/justify center` → `flex-direction:column + overflow-y:auto`, 카드 wrapper `margin:auto 0`(세로 중앙 + 짧은 창 스크롤, a4 signup 클립 대비). 검증: a1 1440 무회귀·a4 1024 2-pane reflow·콘솔 0. cache-bust `auth.jsx?v=20260615resp`.
+- **Phase 4 — D 갤러리(d2 핵심 완료)**: `gallery.jsx:595` 본문 2-pane `'1fr 400px'` → `'minmax(0,1fr) clamp(340px,30%,460px)'`. 우 정보 레일 유동-min(340~460), 라이브 패널 자유 축소. **d2 9개 상태 일괄**. ultrawide는 Phase 0 프레임 캡이 처리. d1 목록은 기존 auto-fill+프레임 캡으로 이미 reflow. 검증: d2 1024 레일 340 floor·라이브 패널 확장·콘솔 0. cache-bust `gallery.jsx?v=20260615resp`. (잔여 D: 툴바 제목 maxWidth:280 유동화, d1 gutter clamp — 후속.)
+- **viewer 라이브 폭 readout 추가**: 툴바에 `↔ 창 N · 프레임 Npx · dpr×` 실시간 표시(resize 갱신) — 반응형 확인용. CSS px(논리) vs 물리 px(×dpr) 혼동 방지.
+- **B 운영자 칸반 폭 불균등 픽스(사용자 지적)**: 프레임 유동화 후 좁은 폭에서 완료 컬럼만 안 줄고 넓게 남던 문제 — `repeat(5,1fr)`(=minmax(auto,1fr), 콘텐츠 최소폭에 걸림)을 **`repeat(5, minmax(0,1fr))`**로. TutorialKanban(`operator.jsx:961`)·ActivityKanban(`:1579`) 둘 다. 검증: 1024폭에서 5컬럼 전부 165~166px 균등. (zone 강등 reflow 본작업은 B 영역 별도.)
+- **B 운영자 영역 데스크탑 검증·정리(체계적 1차)**: b1 목록 그리드 `repeat(3,1fr)`→`repeat(auto-fill, minmax(280px,1fr))`(검증 1680=5열·1024=3열 적응, RosterGrid 패턴 일치). b2-started(활동 칸반)·b2-ended(요약 2단+SVG)·b2-tutorial-running 1024폭 실측 검증 — minmax 픽스로 칸반 균등, b2-ended 2단/KPI/곡선/포디움 무파손(손댈 것 없음). 잔여 B 폴리시: 칸반 span-2 zone sub-grid 1열 강등(좁은폭), 요약 2단 narrow 스택 — 깨짐 아닌 밀도 폴리시라 후속. cache-bust `operator.jsx?v=20260615resp2`.
+- **B 운영자 잔여 폴리시(Issue1 적용·Issue2 skip)**: 활동 칸반 span-2 zone(손든/잠시멈춤) 내부 sub-grid `repeat(cols,1fr)` → **`repeat(auto-fit, minmax(150px,1fr))`**(`operator.jsx:1845`). 카드 최소폭 150px 보장하며 zone 폭에 맞춰 자동 reflow — 실측 1024=2열(168px)·1680=3열(193px), 좁아도 뭉개짐 없음. cols prop은 pagination 행 계산 용도로 잔존(`perPage` 미변경, 카드는 페이지 내 reflow). DashboardShell sticky 헤더(`:535`)는 1024 실측 overflowX=0(가장 긴 tutorial_waiting 액션 클러스터 254px·플렉스 스페이서 309px 잔여)이라 **skip**(타이틀/액션 충돌·오버플로 없음). b2-ended 미변경. 검증: b2-started·b2-tutorial-waiting 1024 콘솔 0·무파손.
+
+### 진행 로그 (2026-06-15 후반 — C/F/E 마감 + 동적 페이지네이션 + 12줄 기준)
+- **C/F/E 병렬 reflow(워크플로) — ≥1024 실제 깨짐만 유동 CSS로**:
+  - C(`participant.jsx`): C1 포스트잇 `width:440 flexShrink:0`→`width:100% maxWidth:440 flexShrink:1`(@~162) + 본문 grid `3fr 2fr`→`minmax(0,3fr) minmax(0,2fr)`(@~320) + wrapper `width:100% minWidth:0`(@~392). OpenCodeShell은 1024서 프리뷰 ~558px(>360 floor)라 안 깨짐→skip(드래그 상태 보존).
+  - F(`judging.jsx`): F1JudgeDashboard 좌/우 레일 `0 0 256/376px`→`0 1 …+minWidth 200/300`(@90/@179)로 중앙 라이브앱 1024서 ~480px+ 확보. B3RubricSettings `300px 1fr 280px`→`minmax(220,300) minmax(0,1fr) minmax(220,280)`(@664). F2 특별상 `repeat(4,1fr)`→`repeat(auto-fit,minmax(150px,1fr))`(@474).
+  - E(`dialogs.jsx`): 데스크탑(프레임≥1024·높이820)서 모달·e4 ring 모두 fit → 방어적 `maxWidth:calc(100vw-48px)`만(e1/e1-unsaved/e5). e4 ring 반응형은 deferred.
+  - D(`gallery.jsx`): d2 제목 `maxWidth:280→min(280px,30cqw)`, d1 패딩 40→`clamp(20px,4vw,48px)`.
+  - 검증(단일 브라우저 Playwright 17화면@1024): 전부 렌더 정상·콘솔 0·art-frame 오버플로 0. c1/f1 시각 스팟체크 통과.
+- **동적 페이지네이션(사용자 요구)**: 신규 훅 `useGridColumns(ref,minCardPx,gapPx)`(ResizeObserver로 그리드 실제 열 수 측정). `ActivityKanbanZone`(손든/정체)에서 **perPage = 측정열 × ROWS_PER_PAGE** 동적 산정 — 폭↑→열↑→perPage↑→항상 꽉 찬 행. 실측: 1024=2열, 1680=3열.
+- **12줄 기준 + 사용량순위 12개(사용자 요청)**: `ROWS_PER_PAGE 10→12`(`operator.jsx:1564`) → 동적 perPage=열×12(3열=36)로 3열서도 꽉 차게. `TOKEN_TOP_N 10→12`(`:1565`) → AI 사용량 순위 12개 노출. 실측 1680: 손든 26·정체 28 전부 1페이지·토큰 12행, 3 zone 높이 균형. cache-bust `operator.jsx?v=20260615finish3`.
+- **동적 페이지네이션 잠재 케이스(미적용·문서화)**: RosterGrid(perPage 60, mock 30~32팀≤60)는 페이지네이션 비활성+정적이라 현재 불일치 없음(auto-fill로 이미 reflow). 중앙 DashboardShell 페이지네이션 리팩터 비용>효익이라 미적용 — 팀수>60 시 동일 `useGridColumns` 패턴 적용 필요. 갤러리 d1 페이지네이션도 정적 목업.
+- **⚠ 범위 외 발견(반응형 무관·플래그)**: e5 AI 투표 모달 헤더 모델명 'CLAUDE HAIKU 4.5' 노출 — '모델명 절대 노출 금지' 룰 위반. 미수정(별도 카피 작업 필요).
+- cache-bust 전체: viewer.html·Renewal.html에서 operator/participant/gallery/dialogs/judging `?v=20260615finish*`, auth `resp`로 갱신. 신규 산출물 `RESPONSIVE-PLAN.md`(전체 계획).
+
+### 진행 로그 (2026-06-15 마감 — e5 삭제 + 12행 채우기)
+- **e5(E-5 AI 선택지 투표) 화면 삭제(사용자 지시)** — 모델명 'CLAUDE HAIKU 4.5' 노출 이슈 화면. `dialogs.jsx` `E5AIChoiceVote` 함수(161줄)·Object.assign export·파일 헤더 주석 제거, `CanvasContextHeader` 주석 'E-4/E-5 공용'→'E-4 전용'. `viewer.html` SCREENS 항목·`Jitda Renewal.html` DCArtboard 제거. `STRUCTURE.md` §3 인덱스 행·§4 와이어링 제거 + §2 E 카운트 10→9. 검증: viewer 드롭다운 e5 미노출(hasE5=false)·총 80→79화면·e1/e4 콘솔 0(dialogs.jsx 정상 컴파일)·전역 e5 참조 0.
+- **활동 zone 12행 채우기(사용자 요청 "3열일 때도 꽉 차게")** — `STARTED_TEAMS`에 18팀 증원(손든 +10→36, 잠시멈춤 +8→36). 동적 perPage=열×12라 3열에서 36개=12행 꽉 참. 카운트는 전부 계산값(`raised`/`alerts`/`normalCount` 필터)이라 자동 갱신 — 실측 1680/3열: 손든 36·정체 36·토큰 12, 헤더 '48/88 순항'(정상48·주의25·위험11·불참4). 신규 팀명 2건(패리티 비트·페이지 폴트) 기존 중복 → 패리티 체크·페이지 스왑으로 리네임(React key 중복 해소). 검증 콘솔 0. cache-bust `operator.jsx?v=20260615final`·`dialogs.jsx?v=20260615final`.

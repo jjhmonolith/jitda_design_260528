@@ -87,7 +87,7 @@ function F1JudgeDashboard({ stateVariant = 'scoring', tab = 'process' }) {
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         {/* ── 좌: 심사 큐 ───────────────────────────────── */}
-        <aside style={{ flex: '0 0 256px', background: 'var(--c-canvas)', borderRight: '1px solid var(--c-hairline)', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <aside style={{ flex: '0 1 256px', minWidth: 200, background: 'var(--c-canvas)', borderRight: '1px solid var(--c-hairline)', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <div style={{ padding: '13px 16px 11px', borderBottom: '1px solid var(--c-hairline)' }}>
             <div className="jt-eyebrow" style={{ fontSize: 10, marginBottom: 5 }}>내 심사 분담</div>
             <h3 style={{ fontSize: 14, fontFamily: 'var(--font-display)', fontWeight: 700 }}>프로젝트 {total}개</h3>
@@ -176,7 +176,7 @@ function F1JudgeDashboard({ stateVariant = 'scoring', tab = 'process' }) {
         </section>
 
         {/* ── 우: 루브릭 채점 ───────────────────────────── */}
-        <aside style={{ flex: '0 0 376px', background: 'var(--c-canvas)', borderLeft: '1px solid var(--c-hairline)', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <aside style={{ flex: '0 1 376px', minWidth: 300, background: 'var(--c-canvas)', borderLeft: '1px solid var(--c-hairline)', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
           <div style={{ padding: '14px 20px 12px', borderBottom: '1px solid var(--c-hairline)' }}>
             <div className="jt-eyebrow" style={{ fontSize: 10.5, marginBottom: 5 }}>심사 · 과정 가중 루브릭</div>
             <h3 style={{ fontSize: 16, fontFamily: 'var(--font-display)' }}>점수 매기기</h3>
@@ -471,7 +471,7 @@ function F2AwardCeremony() {
             <span className="jt-eyebrow" style={{ fontSize: 10.5 }}>특별상</span>
             <div style={{ flex: 1, height: 1, background: 'var(--c-hairline)' }} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
             {specials.map((s, i) => (
               <div key={i} className="jt-postit-card" style={{ '--postit-rot': `${i % 2 ? 1.2 : -1.0}deg`, '--postit-tint': s.tint, padding: '14px 12px' }}>
                 <div style={{ fontSize: 26 }}>{s.icon}</div>
@@ -661,7 +661,7 @@ function B3RubricSettings() {
         <p style={{ fontSize: 13, color: 'var(--c-slate)', marginTop: 4 }}>심사 항목과 배점을 정합니다. 바이브코딩은 결과물보다 <b style={{ color: 'var(--c-ink-2)' }}>과정</b>에 무게를 두는 기본 프리셋을 권합니다.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr 280px', gap: 18, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 300px) minmax(0, 1fr) minmax(220px, 280px)', gap: 18, alignItems: 'start' }}>
         {/* 좌 — 프리셋 */}
         <div>
           <div className="jt-eyebrow" style={{ fontSize: 10, marginBottom: 8 }}>프리셋</div>

@@ -12,7 +12,8 @@ function AuthShell({ children, variant = 'site', leftHeadline, leftTag, leftBody
       width: '100%',
       height: '100%',
       display: 'grid',
-      gridTemplateColumns: tabletMode ? '1fr' : 'minmax(360px, 0.9fr) 1.1fr',
+      /* 2026-06-15 반응형: 좌 브랜드 레일을 clamp 유동(360~560, 기본 45%)으로 — 1280 외형 유지하며 1024까지 reflow */
+      gridTemplateColumns: tabletMode ? '1fr' : 'clamp(360px, 45%, 560px) minmax(0, 1fr)',
       background: 'var(--c-paper)'
     }}>
         {!tabletMode && (isBlueprint ? (
@@ -126,8 +127,8 @@ function AuthShell({ children, variant = 'site', leftHeadline, leftTag, leftBody
         {/* 우측 폼 카드 — variant 공통 (paper + 살짝 격자) */}
         <section style={{
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        flexDirection: 'column',
+        overflowY: 'auto',
         padding: '40px 48px',
         background: 'var(--c-paper)',
         position: 'relative'
@@ -138,7 +139,8 @@ function AuthShell({ children, variant = 'site', leftHeadline, leftTag, leftBody
           backgroundSize: '24px 24px',
           pointerEvents: 'none'
         }} />
-          <div style={{ position: 'relative', zIndex: 1, width: '100%', display: 'flex', justifyContent: 'center' }}>
+          {/* 2026-06-15 반응형: margin auto로 세로 중앙 + 짧은 창에선 section overflow-y로 스크롤(클립 방지, a4 signup 등 긴 폼) */}
+          <div style={{ position: 'relative', zIndex: 1, width: '100%', margin: 'auto 0', display: 'flex', justifyContent: 'center' }}>
             {children}
           </div>
         </section>

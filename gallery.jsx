@@ -348,7 +348,7 @@ function D1GalleryList() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: GRID_BG }}>
       <GalleryHeader count={visible.length} role="participant" user={PARTICIPANT_USER} />
 
-      <div style={{ flex: 1, padding: '24px 40px', overflow: 'auto' }}>
+      <div style={{ flex: 1, padding: '24px clamp(20px, 4vw, 48px)', overflow: 'auto' }}>
         <GallerySubHeader status="running" total={visible.length} backLabel="바이브코딩으로" />
         <GalleryGrid projects={visible} mineTeam="터미널 사파리" />
         <Pagination page={1} perPage={8} total={visible.length} prevDisabled nextDisabled />
@@ -369,7 +369,7 @@ function D1GalleryListEnded({ role = 'participant' } = {}) {
         user={isOperator ? undefined : PARTICIPANT_USER}
         breadcrumb={['갤러리']} />
 
-      <div style={{ flex: 1, padding: '24px 40px', overflow: 'auto' }}>
+      <div style={{ flex: 1, padding: '24px clamp(20px, 4vw, 48px)', overflow: 'auto' }}>
         <GallerySubHeader
           status="ended"
           total={12}
@@ -390,7 +390,7 @@ function D1GalleryEmpty() {
       <GalleryHeader count={0} role="participant" user={PARTICIPANT_USER} />
 
       <div style={{
-        flex: 1, padding: '24px 40px', overflow: 'auto',
+        flex: 1, padding: '24px clamp(20px, 4vw, 48px)', overflow: 'auto',
         display: 'flex', flexDirection: 'column'
       }}>
         <GallerySubHeader status="running" total={0} backLabel="바이브코딩으로" />
@@ -440,7 +440,7 @@ function D1GalleryLoading() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: GRID_BG }}>
       <GalleryHeader count={null} role="participant" user={PARTICIPANT_USER} />
 
-      <div style={{ flex: 1, padding: '24px 40px', overflow: 'auto' }}>
+      <div style={{ flex: 1, padding: '24px clamp(20px, 4vw, 48px)', overflow: 'auto' }}>
         {/* 로딩 중에도 BackLink 동일 위치 */}
         <div style={{ marginBottom: 12 }}><BackLink label="바이브코딩으로" /></div>
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -557,7 +557,7 @@ function D2Shell({ idx, mine, previewState = 'loaded', tab = 'info', commentsSta
           <h2 style={{
             fontSize: 16, fontWeight: 700, lineHeight: 1.2, margin: 0,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            maxWidth: 280
+            maxWidth: 'min(280px, 30cqw)'
           }}>{project.title}</h2>
           {mine &&
           <span style={{
@@ -591,8 +591,8 @@ function D2Shell({ idx, mine, previewState = 'loaded', tab = 'info', commentsSta
           prevDisabled={prevDisabled} nextDisabled={nextDisabled} />
       </div>
 
-      {/* 본문 — 2-pane */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 400px', minHeight: 0 }}>
+      {/* 본문 — 2-pane · 2026-06-15 반응형: 우 정보 레일 고정 400px → clamp 유동(340~460), 라이브 패널은 minmax(0,1fr)로 자유 축소. d2 9개 상태 일괄 (프레임 캡이 ultrawide 처리) */}
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) clamp(340px, 30%, 460px)', minHeight: 0 }}>
         <DetailLivePane project={project} state={previewState} />
         <DetailInfoPane project={project} mine={mine} tab={tab} commentsState={commentsState} composeOpen={composeOpen} threadOpenIdx={threadOpenIdx} threadReplyComposeOpen={threadReplyComposeOpen} menuOpenIdx={menuOpenIdx} editIdx={editIdx} deleteIdx={deleteIdx} />
       </div>

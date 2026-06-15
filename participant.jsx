@@ -159,7 +159,7 @@ function TeamPostitV2({ team, ended }) {
       className="jt-postit-card jt-postit-card-static jt-postit-tape-lg"
       tabIndex={0}
       style={{
-        width: 440, flexShrink: 0,
+        width: '100%', maxWidth: 440, flexShrink: 1,
         display: 'flex', flexDirection: 'column',
         borderRadius: 'var(--r-xs)',
         opacity: ended ? 0.92 : 1,
@@ -317,7 +317,7 @@ function C1TeamRoomV2({ state = 'roomBefore', team = MOCK_TEAM_STANDARD }) {
       <main style={{
         flex: 1, minHeight: 0,
         display: 'grid',
-        gridTemplateColumns: '3fr 2fr',
+        gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 2fr)',
         gap: 32,
         padding: '40px 56px 40px 80px',
         alignItems: 'center',
@@ -389,7 +389,7 @@ function C1TeamRoomV2({ state = 'roomBefore', team = MOCK_TEAM_STANDARD }) {
         </section>
 
         {/* 우측: 세로형 팀 포스트잇 — 컬럼 좌측 정렬(2026-05-29 사용자 결정 "너무 오른쪽 치우침"). */}
-        <div style={{ justifySelf: 'start' }}>
+        <div style={{ justifySelf: 'start', width: '100%', minWidth: 0 }}>
           <TeamPostitV2 team={team} ended={s.ended} />
         </div>
       </main>

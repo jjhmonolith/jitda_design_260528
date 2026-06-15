@@ -448,11 +448,29 @@
       display: flex; justify-content: center; align-items: flex-start;
       min-height: calc(100vh - 60px);
     }
+    /* 2026-06-15 반응형: #root가 stage 전체 폭을 채우게 해야 art-frame의 width:100%가 올바로 해석됨
+       (이전엔 #root가 shrink-to-fit(0폭)이라 100%가 0으로 붕괴 → clamp가 1024 하한으로 떨어짐) */
+    #root {
+      flex: 1 1 auto; min-width: 0;
+      display: flex; justify-content: center; align-items: flex-start;
+    }
     .art-frame {
       background: var(--c-paper);
       box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05);
       position: relative;
       overflow: hidden;
+      /* ── 2026-06-15 반응형 키스톤: 고정 1280px 폭 → 데스크탑 유동 폭 ──
+         근본 원인이던 'width 고정'을 풀어, 창 너비에 따라 프레임이 같이 커지고/줄어들게 함.
+         폭: 1024(하한) ~ 100%(창) ~ --frame-max(1680, ultrawide 캡) 사이에서 연속 유동.
+         → 넓은 모니터에선 1280에 고정돼 보이지 않고 창을 따라 늘어나고(앱 셸 풀폭), 좁히면 1024까지 reflow.
+         좁은 설계 화면(README 등 <1024)은 --frame-max를 설계폭으로 낮춰 과확장 방지.
+         높이(--frame-h)는 설계값 유지(회귀 방지) — 세로/aspect 내부 스크롤화는 영역별 후속 단계. */
+      width: clamp(min(1024px, var(--frame-max, 1680px)), 100%, var(--frame-max, 1680px));
+      flex-shrink: 0; /* #root(flex) 안에서 clamp 하한(1024) 밑으로 안 줄게 — 1024 미만은 가로 스크롤(데스크탑 무결성) */
+      height: var(--frame-h, 820px);
+      /* 화면이 뷰포트가 아닌 '프레임 폭'에 반응하도록 컨테이너 쿼리 컨텍스트 수립 (영역별 @container 기반) */
+      container-type: inline-size;
+      container-name: artframe;
     }
     .art-frame .id-badge {
       position: absolute; top: 8px; right: 8px; z-index: 9999;
@@ -629,6 +647,7 @@
     <button id="next" class="nav" title="다음 화면 (→)">→</button>
     <select id="screen-select" title="화면 선택"></select>
     <span class="meta" id="meta">—</span>
+    <span class="meta" id="vw-readout" title="창(CSS px) / 프레임 폭(CSS px) — 반응형 확인용. dpr=레티나 배율">—</span>
     <div class="spacer"></div>
     <button id="comment-toggle" class="comment-btn" title="댓글 모드 토글 (C)">💬 댓글<span id="comment-count" class="comment-count" hidden>0</span></button>
     <button id="comment-export" class="comment-btn" title="JSON 내보내기">⬇</button>
@@ -648,13 +667,13 @@
 
   <!-- JSX 컴포넌트 (shared 먼저 로드) — ?v= 토큰: 브라우저 메모리 캐시 무효화 (dev only) -->
   <script type="text/babel" src="shared.jsx?v=20260612digclip2"></script>
-  <script type="text/babel" src="auth.jsx?v=20260612mascot"></script>
-  <script type="text/babel" src="operator.jsx?v=20260612cardh"></script>
-  <script type="text/babel" src="participant.jsx?v=20260612mascot2"></script>
-  <script type="text/babel" src="gallery.jsx?v=20260612mascot"></script>
-  <script type="text/babel" src="dialogs.jsx?v=20260601g"></script>
+  <script type="text/babel" src="auth.jsx?v=20260615resp"></script>
+  <script type="text/babel" src="operator.jsx?v=20260615final"></script>
+  <script type="text/babel" src="participant.jsx?v=20260615finish"></script>
+  <script type="text/babel" src="gallery.jsx?v=20260615finish"></script>
+  <script type="text/babel" src="dialogs.jsx?v=20260615final"></script>
   <!-- 심사 영역 통합 (2026-06-10): judge.jsx → judging.jsx (심사위원·참여자·운영자 전 화면) -->
-  <script type="text/babel" src="judging.jsx?v=20260610judge3"></script>
+  <script type="text/babel" src="judging.jsx?v=20260615finish"></script>
 
   <script type="text/babel" data-presets="react">
     // ──────────────────────────────────────────────────────────────
@@ -892,7 +911,6 @@
       { id: 'e4-waiting-v2-large',   section: 'E. 다이얼로그', label: 'E-4 v2 · 응답 대기 (10인 · 큰 팀)',                    render: () => <E4ConsensusVote stateVariant="waiting-v2" teamSize="large" /> },
       { id: 'e4-rejected-v2',        section: 'E. 다이얼로그', label: 'E-4 v2 · 합의 무산 (4인)',                            render: () => <E4ConsensusVote stateVariant="rejected-v2" /> },
       { id: 'e4-rejected-v2-large',  section: 'E. 다이얼로그', label: 'E-4 v2 · 합의 무산 (10인 · 큰 팀)',                    render: () => <E4ConsensusVote stateVariant="rejected-v2" teamSize="large" /> },
-      { id: 'e5',                    section: 'E. 다이얼로그', label: 'E-5 · AI 선택지 투표 (3안 + 기타)',              render: () => <E5AIChoiceVote /> },
       // E-6 폐기 (2026-05-29): 일시정지 기능 제거
       // E-7 폐기 (2026-05-27): 참가자 종료 예고 없음 정책 — 운영자 b2-end-countdown 만료 시 곧바로 c1-ended로 전환.
 
@@ -1058,7 +1076,7 @@
       const h = screen.h || DEFAULT_H;
 
       reactRoot.render(
-        <div className="art-frame jt-art" style={{ width: w, height: h }}>
+        <div className="art-frame jt-art" style={{ '--frame-max': (w >= 1024 ? 1680 : w) + 'px', '--frame-h': h + 'px' }}>
           <div className="id-badge">{screen.id}{wireMark}</div>
           {screen.render()}
         </div>
@@ -1067,8 +1085,18 @@
       document.body.classList.add('ready');
 
       // 핀 레이어는 React 트리 밖에서 관리 — render commit 후 다음 tick에 동기화
-      setTimeout(() => window.__viewerComments && window.__viewerComments.syncForScreen(screen.id), 0);
+      setTimeout(() => { window.__viewerComments && window.__viewerComments.syncForScreen(screen.id); updateVwReadout(); }, 0);
     }
+
+    // 반응형 확인용 — 현재 창(CSS px) / 프레임 실측 폭(CSS px) / 레티나 배율 라이브 표시
+    function updateVwReadout() {
+      const el = document.getElementById('vw-readout');
+      const f = document.querySelector('#root .art-frame');
+      if (!el) return;
+      const fw = f ? Math.round(f.getBoundingClientRect().width) : 0;
+      el.textContent = `↔ 창 ${window.innerWidth} · 프레임 ${fw}px · ${window.devicePixelRatio}×`;
+    }
+    window.addEventListener('resize', updateVwReadout);
 
     // ──────────────────────────────────────────────────────────────
     //  클릭 위임 — [data-action="..."] 요소 클릭 시 ACTIONS 맵에서 이동

@@ -61,7 +61,7 @@ function B1HackathonList() {
 
         {/* key 변경으로 그리드 remount → 카드 settle 재실행 (필터 시 재정렬 어휘 일관) */}
         {/* gap 14 → 22: 포스트잇 회전(±1.4°) 옆 돌출(~10px) 흡수 + tape 가시성. paddingTop 6: 첫 행 tape clearance */}
-        <div key={activeFilter} style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 22, paddingTop: 6 }}>
+        <div key={activeFilter} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 22, paddingTop: 6 }}>
           {filtered.map((h, i) => <HackathonCard key={`${activeFilter}-${i}`} h={h} />)}
         </div>
 
@@ -391,7 +391,26 @@ const STARTED_TEAMS = [
 { name: '프리페치', members: 1, solo: true, idleMin: 12, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 2640 },
 { name: '워치독', members: 2, idleMin: 11, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 3920 },
 { name: '배럴 파일', members: 3, idleMin: 10, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 4850 },
-{ name: '사이드 이펙트', members: 2, idleMin: 10, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 3540 }];
+{ name: '사이드 이펙트', members: 2, idleMin: 10, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 3540 },
+// 2026-06-15: 12행 기준(3열=36) 꽉 채우기용 증원 — 손든 +10 (26→36), 잠시 멈춤 +8 (28→36). 카운트는 전부 계산값이라 자동 갱신.
+{ name: '패리티 체크', members: 2, idleMin: 0, firstActivity: true, handRaisedSec: 112, published: true, tokensUsed: 6200 },
+{ name: '셰이더 뱅크', members: 3, idleMin: 1, firstActivity: true, handRaisedSec: 96, published: false, tokensUsed: 8400 },
+{ name: '람다 폴드', members: 4, idleMin: 0, firstActivity: true, handRaisedSec: 81, published: true, tokensUsed: 9300 },
+{ name: '토큰 링', members: 2, idleMin: 2, firstActivity: true, handRaisedSec: 70, published: false, tokensUsed: 5100 },
+{ name: '픽셀 펀치', members: 1, solo: true, idleMin: 0, firstActivity: true, handRaisedSec: 55, published: true, tokensUsed: 3300 },
+{ name: '스왑 파일', members: 3, idleMin: 3, firstActivity: true, handRaisedSec: 44, published: false, tokensUsed: 7600 },
+{ name: '큐빗 크루', members: 4, idleMin: 0, firstActivity: true, handRaisedSec: 33, published: true, tokensUsed: 9100 },
+{ name: '노드 워커', members: 2, idleMin: 1, firstActivity: true, handRaisedSec: 27, published: false, tokensUsed: 6900 },
+{ name: '리듀스 잼', members: 1, solo: true, idleMin: 0, firstActivity: true, handRaisedSec: 18, published: true, tokensUsed: 2700 },
+{ name: '패치 노트', members: 3, idleMin: 2, firstActivity: true, handRaisedSec: 9, published: false, tokensUsed: 8800 },
+{ name: '콜드 캐시', members: 2, idleMin: 24, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 4100 },
+{ name: '무한 루프', members: 3, idleMin: 22, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 5600 },
+{ name: '타임아웃', members: 1, solo: true, idleMin: 20, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 1900 },
+{ name: '스로틀러', members: 4, idleMin: 17, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 7200 },
+{ name: '백오프', members: 2, idleMin: 15, firstActivity: true, handRaisedSec: null, published: true, tokensUsed: 5300 },
+{ name: '페이지 스왑', members: 3, idleMin: 13, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 6100 },
+{ name: '세션 드롭', members: 2, idleMin: 11, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 4800 },
+{ name: '버퍼 언더런', members: 4, idleMin: 10, firstActivity: true, handRaisedSec: null, published: false, tokensUsed: 8300 }];
 
 
 // ── B-2. 대시보드 (튜토리얼 대기) ──────────────────────────
@@ -958,7 +977,9 @@ function TutorialKanban({ columns }) {
     <div>
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(5, 1fr)',
+        /* 2026-06-15 반응형: 1fr(=minmax(auto,1fr))은 콘텐츠 최소폭 밑으로 안 줄어 완료 컬럼만 넓게 남음 →
+           minmax(0,1fr)로 5컬럼이 콘텐츠 무관하게 균등 축소(팀명 ellipsis로 흡수). */
+        gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
         gap: 0
       }}>
         {columns.map((col, i) =>
@@ -1559,10 +1580,10 @@ function ActivityDistributionBar({ segments, totalTeams }) {
 //   잠시 멈춤 zone(span 2): 2col sub-grid × 10행 = 20 카드/페이지
 // 페이지당 10행 (2026-06-12 갱신): 토큰 zone 상위 10팀 높이와 맞춰 2col zone도 페이지당 20카드(10행)로 채움.
 //   → 카드가 컬럼 높이를 채워 페이지네이션이 바로 아래 붙음(빈 공백 + 바닥 페이지네이션의 "헷갈림" 해소).
-const ROWS_PER_PAGE = 10;
-const TOKEN_TOP_N = 10; // 토큰 순위 상위 노출 수 (페이지네이션 대신 상위 N만 고정 노출)
-const HAND_RAISED_PER_PAGE = ROWS_PER_PAGE * 2; // 2col × 10행 = 20
-const ALERTS_PER_PAGE = ROWS_PER_PAGE * 2; // 2col × 10행 = 20
+const ROWS_PER_PAGE = 12; // 2026-06-15: 10→12행. 동적 perPage=열×12 → 3열일 때도(36) 꽉 차게 (사용자 요청)
+const TOKEN_TOP_N = 12; // 토큰 순위 상위 노출 수 (10→12, 사용량순위도 12개 노출 — 사용자 요청)
+const HAND_RAISED_PER_PAGE = ROWS_PER_PAGE * 2; // (레거시 상수 — 동적 perPage 도입으로 미사용)
+const ALERTS_PER_PAGE = ROWS_PER_PAGE * 2; // (레거시 상수 — 동적 perPage 도입으로 미사용)
 
 // 페이지네이션 (2026-06-12 사용자 룰): zone별 *독립* 페이지네이션.
 //   각 zone(토큰·손든·잠시 멈춤)이 자체 페이지 상태를 가짐 — 해당 zone이 perPage 초과일 때만 그 zone 하단에 노출.
@@ -1574,7 +1595,8 @@ function ActivityKanban({ tokenRanked, handRaised, alerts, onResolveHandRaise })
     <div>
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(5, 1fr)',
+        /* 2026-06-15 반응형: minmax(0,1fr)로 zone(토큰1·손든2·정체2)이 콘텐츠 최소폭에 안 걸리고 균등 축소 */
+        gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
         gap: 0
       }}>
         {/* 토큰 zone — 단일 col 카드 적층 (각 카드 안에 막대 그래프 통합). zone 내부에서 자체 페이지네이션. */}
@@ -1765,8 +1787,12 @@ function TokenTeamCard({ team, rank, max }) {
 // span: 외부 5컬럼 grid에서 차지하는 column 수.
 // info: sub 옆에 (i) 아이콘 + native title 툴팁. 정체 기준 같이 명확화 필요할 때.
 function ActivityKanbanZone({ span, cols, accent, bg, icon, label, sub, info, count, countColor, isLast, emptyMessage, emptyMint, items, perPage, renderItem }) {
-  // zone 자체 페이지네이션 (2026-06-12) — items를 perPage 단위로 슬라이스, 해당 zone 하단에만 노출.
-  const { paged, page, totalPages, onPrev, onNext } = useColumnPaging(items, perPage);
+  // zone 자체 페이지네이션 — items를 perPage 단위로 슬라이스, 해당 zone 하단에만 노출.
+  // 2026-06-15 반응형: auto-fit 그리드의 실제 열 수를 측정해 perPage = 열 × ROWS_PER_PAGE 로 동적 산정.
+  //   고정 perPage(20=2열×10행 가정)가 폭 변화로 열이 바뀌면 어긋나므로. (perPage prop은 더 이상 미사용.)
+  const gridRef = React.useRef(null);
+  const measuredCols = useGridColumns(gridRef, 150, 20); // 그리드 minmax(150,1fr) + columnGap 20 과 동일 인자
+  const { paged, page, totalPages, onPrev, onNext } = useColumnPaging(items, Math.max(1, measuredCols) * ROWS_PER_PAGE);
   const isEmpty = items.length === 0;
   const childArr = paged.map((t) => renderItem(t));
   // FLIP — 자식 카드(React key=팀명) 위치 변경 시 부드럽게 보간.
@@ -1835,9 +1861,12 @@ function ActivityKanbanZone({ span, cols, accent, bg, icon, label, sub, info, co
       {isEmpty ?
       <KanbanEmpty message={emptyMessage} mint={emptyMint} /> :
 
-      <div style={{
+      <div ref={gridRef} style={{
         display: 'grid',
-        gridTemplateColumns: `repeat(${cols}, 1fr)`,
+        // 2026-06-15 반응형: 고정 repeat(cols,1fr)→auto-fit. zone 폭에 맞춰 카드 최소폭 150px 보장하며 열 수 자동 산정.
+        // 좁을 땐(@1024 zone~357px) 2열, 넓을 땐(@1680 zone~619px) 3열로 그레이스풀하게 reflow — 카드가 좁아 뭉개지지 않음.
+        // cols prop은 의미·pagination 행 계산 용도로 잔존(그리드 열 수는 더 이상 cols에 묶이지 않음).
+        gridTemplateColumns: `repeat(auto-fit, minmax(150px, 1fr))`,
         // columnGap = zone padding의 2배 → 토큰 zone(single col) 카드 폭과 동일 정렬.
         // v9: padding 10 → columnGap 20 (직전 32에서 축소).
         columnGap: 20,
@@ -1880,6 +1909,28 @@ function KanbanEmpty({ message, mint = false }) {
 // ── 칸반 컬럼별 페이지네이션 hook (2026-06-12 사용자 룰) ─────────────
 // 각 칸반 컬럼/zone이 독립 페이지 상태를 가짐 (전체 칸 합산 페이지네이션 폐기).
 // 컬럼마다 팀 수가 달라도 다른 컬럼에 영향 없이 해당 컬럼만 페이지 이동.
+// 반응형 페이지네이션 보조 (2026-06-15) — auto-fit/auto-fill 그리드의 실제 열 수를 측정(컨테이너 clientWidth ÷ (카드최소폭+gap)).
+// 폭이 커져 열이 늘면 호출부가 perPage = cols × rows 로 동적 산정 → 페이지가 항상 꽉 찬 행으로 채워지고
+// 고정 perPage(열 수 가정에 묶임)가 폭 변화로 어긋나던 문제(빈 행·과길이)를 해소한다.
+function useGridColumns(ref, minCardPx, gapPx) {
+  const [cols, setCols] = React.useState(1);
+  React.useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const measure = () => {
+      const w = el.clientWidth;
+      if (!w) return;
+      const c = Math.max(1, Math.floor((w + gapPx) / (minCardPx + gapPx)));
+      setCols((prev) => (prev === c ? prev : c));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref, minCardPx, gapPx]);
+  return cols;
+}
+
 function useColumnPaging(items, perPage) {
   const [page, setPage] = React.useState(1);
   const totalPages = Math.max(1, Math.ceil(items.length / perPage));

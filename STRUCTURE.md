@@ -42,7 +42,7 @@
 | **B 운영자** | 18 | `operator.jsx` — 5상태 + 확인 모달 6종 + 팀 상세 모달 1종(2026-05-27) · b2-paused 폐기(2026-05-29) · **B-3 심사 4종**(루브릭·심사위원 관리·집계) + b2-ended 진입 CTA — **컴포넌트는 judging.jsx로 이동(2026-06-10)**, operator는 SummaryView의 JudgingEntryBanner 참조만 유지(2026-06-12: b2-ended 기본은 배너 미노출 — `judgingEntry` prop true일 때만, F.심사 `b2-ended-judging` 화면 전용) | §B (L155~277) | §6·§7 | §B (L110~173) |
 | **C 참가자** | 14 | `participant.jsx` — c1-paused 폐기(2026-05-26) · c1-v2/c1-after-tutorial-v2/c1-ended-v2 신설(2026-05-29) · **C-5 산출물 제출 + C-결과 결과 뷰** — **컴포넌트는 judging.jsx로 이동(2026-06-10)** · c3-generating 신설(2026-06-12: AI 생성 중 DIG 마스코트) | §C (L278~474) | §5-2·§7 | §C (L175~242) |
 | **D 갤러리** | 12 | `gallery.jsx` — d2-comments-replies·d2-comments-reply-compose 신설(2026-06-01: 대댓글 1단계 디자인 — 들여쓰기 + 답글 액션, 대대댓글 차단) | §D (L475~584) | §8·§9 | §D (L244~289) |
-| **E 다이얼로그** | 10 | `dialogs.jsx` — E-4 게임 수락 단순화 · E-7 폐기(2026-05-27) · e4-waiting 신설(2026-05-27) · **e4-v2/e4-waiting-v2 신설**(2026-05-27: 매치 수락 어휘 alternate 세트) · **E-6 일시정지 폐기(2026-05-29)** | §E (L585~716) | §7-5·§9-5 (일부) | §E (L290~305) ⚠️ |
+| **E 다이얼로그** | 9 | `dialogs.jsx` — E-4 게임 수락 단순화 · E-7 폐기(2026-05-27) · e4-waiting 신설(2026-05-27) · **e4-v2/e4-waiting-v2 신설**(2026-05-27: 매치 수락 어휘 alternate 세트) · **E-6 일시정지 폐기(2026-05-29)** | §E (L585~716) | §7-5·§9-5 (일부) | §E (L290~305) ⚠️ |
 | **F 심사 (전 역할 통합)** | 13 | **`judging.jsx`** — 2026-06-10 심사 전 화면 단일 파일 통합. 심사위원(f1-rubric·f1·f1-completed·f2) + 참여자(c5-submit·c5-submitted·c-result·c-result-private) + 운영자(b2-ended-judging·b3-rubric-settings·b3-judge-management·b3-judge-assign·b3-results-tally). `b2-ended-judging`은 operator.jsx의 `B2DashboardEnded judgingEntry`(종료 대시보드 + JudgingEntryBanner) — 심사 진입 화면(2026-06-12). viewer/Renewal에서도 단일 "F. 심사" 섹션. judge.jsx 삭제. JudgingEntryBanner는 judging.jsx 정의·operator SummaryView가 참조(전역). | §F (L717~768) | ❌ | 기획 `03-planning/product/2026-06-10_심사-평가-기능-기획.md` |
 | 공용 | - | `shared.jsx` (491줄) | §전체 페이지 맵 (L769~) | §10 공통 컴포넌트 | - |
 
@@ -159,7 +159,6 @@
 | `e4-waiting-v2` | 응답 대기 (매치 수락 어휘 · 거대 ring + 동의 완료 pill) | `E4ConsensusVote stateVariant="waiting-v2"` | dialogs.jsx | L825 | 동의 클릭 시 e4-v2 → 본 화면 |
 | `e4-rejected-v2` | 합의 무산 (정지 safety ring + 84px X + 패자 outcome row + 자동 복귀 카운트다운) | `E4ConsensusVote stateVariant="rejected-v2"` | dialogs.jsx | L949 | 거절·타임아웃 시 (이름 미명시, 2026-06-01 정본) |
 | ~~`e4-rejected`~~ | ~~합의 무산 v1 (4 칩 포트레이트 + primary CTA)~~ | — | — | — | **2026-06-01 폐기**: v2 정본 채택 |
-| `e5` | AI 선택지 투표 (3안 + 기타) | `E5AIChoiceVote` | dialogs.jsx | L693 | C-3/C-4 캔버스 AI 응답 시 |
 | ~~`e6-paused`~~ | ~~일시정지 오버레이~~ | — | — | — | **2026-05-29 폐기**: 일시정지 기능 자체를 제거. 진행 중 휴식은 운영자 구두 안내로 처리(작업물은 자동 저장). |
 | ~~`e7-ending`~~ | ~~해커톤 종료 카운트다운 오버레이~~ | — | — | — | **2026-05-27 폐기**: 참가자에게 종료 예고 없음 정책. 운영자 30초 유예 만료 시 C-3/C-4 → c1-ended 직접 전환. |
 
@@ -181,7 +180,6 @@
 ### 오버레이 중첩 (Z-축)
 - `e1`, `e1-saving`, `e1-saved`, `e1-unsaved-close` → `c3`/`c4` 위에 모달
 - `e4-v2`, `e4-waiting-v2`, `e4-rejected-v2` → `c4` 위에 모달 (다인팀 전용, 풀스크린 오버레이)
-- `e5` → `c3`/`c4` 위에 모달
 
 ### 자동 전이 (참가자 — 진입 버튼 없음, "참가자-로그인 v8")
 ```

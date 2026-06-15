@@ -1,7 +1,6 @@
 /* E. 공통 다이얼로그/오버레이
    E-1. 프로젝트 설정 다이얼로그 — 코딩 환경에서 "내 프로젝트" 클릭 시
    E-4. 합의 투표 — 팀 캔버스에서 "전송 요청" 클릭 시
-   E-5. AI 선택지 투표 — AI가 선택지를 제시했을 때
 */
 
 // ── AI 자동 채우기 버튼 ─────────────────────────────────
@@ -90,6 +89,7 @@ function E1ProjectSettings({ stateVariant = 'editing' }) {
           top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
           width: 560,
+          maxWidth: 'calc(100vw - 48px)',
           background: 'var(--c-canvas)',
           borderRadius: 10,
           boxShadow: 'var(--shadow-modal)',
@@ -395,7 +395,7 @@ function E4ConsensusVote({ stateVariant = 'voting-v2', teamSize = 'small' }) {
   );
 }
 
-// ── 캔버스 컨텍스트 헤더 — E-4 / E-5 공용 ────────
+// ── 캔버스 컨텍스트 헤더 — E-4 전용 ────────
 // 참가자 GNB(`JitdaToolbar` from participant.jsx)로 통일 — C-3와 동일.
 // [내 프로젝트][갤러리 보기] 액션 + 우측 계정정보.
 function CanvasContextHeader() {
@@ -1128,166 +1128,6 @@ function CanvasBackdrop() {
 }
 
 
-// ── E-5. AI 선택지 투표 ───────────────────────────────────────
-// AI가 여러 선택지를 제시했을 때 팀 모드 투표
-function E5AIChoiceVote() {
-  const choices = [
-    { id: 'A', label: '카드 리스트', desc: '각 일정을 큰 카드로 보여주고 좌우 스와이프로 D-day 정렬', votes: ['김민준'], color: 'var(--c-helmet)' },
-    { id: 'B', label: '캘린더 뷰', desc: '월별 캘린더에 점으로 표시. 클릭하면 상세 일정 모달', votes: ['이서윤', '박지호'], color: 'var(--c-blue)' },
-    { id: 'C', label: '타임라인', desc: '오늘부터 시간 순으로 위→아래 정렬. 시험 D-7 자동 강조', votes: [], color: 'var(--c-mint)' },
-    { id: 'D', label: '기타 (직접 작성)', desc: '선택하면 캔버스로 돌아가서 직접 프롬프트를 다듬어요', votes: [], color: 'var(--c-muted)', isOther: true },
-  ];
-
-  return (
-    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: '#f5f3ee' }}>
-      {/* GNB — C-3과 동일 (참가자 통합 JitdaToolbar) */}
-      <CanvasContextHeader />
-
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        <CanvasBackdrop />
-        <div className="jt-modal-backdrop is-soft" />
-
-        <div role="dialog" aria-modal="true" aria-label="AI 선택지 합의 투표" style={{
-          position: 'absolute',
-          top: '50%', left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: 'var(--modal-w-lg)',
-          maxHeight: '88%',
-          background: 'var(--c-canvas)',
-          border: '1px solid var(--c-ink)',
-          borderRadius: 'var(--r-md)',
-          boxShadow: 'var(--shadow-modal)',
-          display: 'flex', flexDirection: 'column',
-          overflow: 'hidden',
-          animation: 'jt-modal-pop-in var(--dur-base) var(--ease-standard)',
-        }}>
-          {/* 상단 AI 출처 표시 */}
-          <div style={{
-            background: '#17171c',
-            color: '#fff',
-            padding: '14px 22px',
-            display: 'flex', alignItems: 'center', gap: 12,
-          }}>
-            <div style={{
-              width: 28, height: 28, borderRadius: 6,
-              background: 'var(--c-helmet)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'var(--c-ink)', fontWeight: 800,
-              fontFamily: 'var(--font-mono)',
-              fontSize: 13,
-            }}>AI</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 12, opacity: 0.65, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em' }}>OPENCODE · CLAUDE HAIKU 4.5</div>
-              <div style={{ fontSize: 13, marginTop: 2 }}>일정을 어떻게 보여줄지 3가지 방향을 떠올렸어요. 팀이 골라주면 그 방향으로 만들어 갈게요.</div>
-            </div>
-          </div>
-
-          {/* 본문 */}
-          <div style={{ padding: '18px 22px', overflow: 'auto', flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
-              <h2 style={{ fontSize: 20 }}>어떤 방식으로 보여줄까요?</h2>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, color: 'var(--c-slate)' }}>
-                투표 3 / 4명 · 과반 통과
-              </span>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {choices.map((c, i) => {
-                const myChoice = c.id === 'B'; // 박지호가 B를 골랐다고 가정
-                const isLeading = c.votes.length === 2;
-                return (
-                  <div key={i} style={{
-                    border: `1px solid ${myChoice ? 'var(--c-ink)' : 'var(--c-hairline)'}`,
-                    borderLeft: `4px solid ${isLeading ? 'var(--c-helmet)' : myChoice ? 'var(--c-ink)' : c.color}`,
-                    borderRadius: 4,
-                    padding: '12px 14px',
-                    background: c.isOther ? 'var(--c-stone)' : myChoice ? 'var(--c-helmet-soft)' : 'var(--c-canvas)',
-                    display: 'flex', gap: 14, alignItems: 'flex-start',
-                    cursor: 'pointer',
-                  }}>
-                    <div style={{
-                      width: 32, height: 32,
-                      borderRadius: 4,
-                      border: `1px solid ${myChoice ? 'var(--c-ink)' : 'var(--c-hairline-strong)'}`,
-                      background: myChoice ? 'var(--c-ink)' : 'var(--c-canvas)',
-                      color: myChoice ? '#fff' : 'var(--c-ink-2)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 14,
-                      flexShrink: 0,
-                    }}>{c.id}</div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 3 }}>
-                        <span style={{ fontSize: 14, fontWeight: 700 }}>{c.label}</span>
-                        {isLeading && (
-                          <span className="jt-pill" style={{
-                            background: 'var(--c-helmet)', color: 'var(--c-ink)',
-                            fontSize: 10, padding: '2px 6px',
-                          }}>리딩</span>
-                        )}
-                        {myChoice && (
-                          <span style={{ fontSize: 10.5, fontFamily: 'var(--font-mono)', color: 'var(--c-ink)' }}>내가 선택함</span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--c-slate)', lineHeight: 1.5 }}>{c.desc}</div>
-                    </div>
-                    {/* 투표한 사람들 */}
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, minWidth: 80 }}>
-                      {c.votes.length > 0 ? (
-                        <>
-                          <div style={{ display: 'flex' }}>
-                            {c.votes.map((v, j) => (
-                              <div key={j} className="jt-avatar" style={{
-                                width: 22, height: 22, fontSize: 9,
-                                fontFamily: 'var(--font-body)', fontWeight: 700, letterSpacing: '-0.04em',
-                                background: ['var(--c-helmet)', 'var(--c-blue)', 'var(--c-mint)', 'var(--c-amber)'][['김민준', '이서윤', '박지호', '최유나'].indexOf(v)],
-                                color: '#fff', marginLeft: j > 0 ? -6 : 0,
-                                border: '2px solid var(--c-canvas)',
-                              }}>{v.length >= 2 ? v.slice(-2) : v}</div>
-                            ))}
-                          </div>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--c-slate)' }}>{c.votes.length}표</span>
-                        </>
-                      ) : (
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, color: 'var(--c-muted)' }}>0표</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* 미투표 알림 */}
-            <div style={{
-              marginTop: 14,
-              padding: '10px 14px',
-              background: 'var(--c-stone)',
-              borderRadius: 4,
-              display: 'flex', alignItems: 'center', gap: 10,
-              fontSize: 12, color: 'var(--c-ink-3)',
-            }}>
-              <span style={{ color: 'var(--c-amber)' }}>{Icon.info(13)}</span>
-              <span><strong style={{ color: 'var(--c-amber)' }}>최유나</strong>님이 아직 투표하지 않았어요</span>
-              <div style={{ flex: 1 }} />
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-muted)' }}>과반 충족 시 자동 확정</span>
-            </div>
-          </div>
-
-          <div style={{
-            padding: '12px 22px',
-            background: 'var(--c-paper)',
-            borderTop: '1px solid var(--c-hairline)',
-            display: 'flex', alignItems: 'center', gap: 10,
-          }}>
-            <span style={{ fontSize: 11, color: 'var(--c-muted)', fontFamily: 'var(--font-mono)' }}>
-              결정은 과반(3명) 충족 시 자동 확정 · "기타" 선택 시 캔버스로 복귀
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ── E-1b. 변경사항 미저장 종료 경고 ────────────────────────────
 // E-1 위에 떠 있는 confirm 다이얼로그. 트리거: [취소] / esc — hasUnsaved 일 때만 노출
 //
@@ -1310,6 +1150,7 @@ function E1UnsavedCloseConfirm() {
           top: '50%', left: '50%',
           transform: 'translate(-50%, -50%)',
           width: 480,
+          maxWidth: 'calc(100vw - 48px)',
           background: 'var(--c-canvas)',
           borderRadius: 10,
           boxShadow: 'var(--shadow-modal)',
@@ -1351,4 +1192,4 @@ function E1UnsavedCloseConfirm() {
 // 30초 유예는 운영자 전용이며, 종료 확정 시 참가자 화면은 C-3/C-4 → 대기실 ③(c1-ended)로 직접 전환.
 // 참가자-로그인-기획.md §자동 전환 매트릭스 "[해커톤 종료] → 대기실 ③"와 정합.
 
-Object.assign(window, { E1ProjectSettings, E1UnsavedCloseConfirm, E4ConsensusVote, E5AIChoiceVote });
+Object.assign(window, { E1ProjectSettings, E1UnsavedCloseConfirm, E4ConsensusVote });
