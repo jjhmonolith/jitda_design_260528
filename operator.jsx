@@ -440,37 +440,20 @@ function B2DashboardEnded({ judgingEntry = false }) {
   return <DashboardShell status="hackathon_ended" teams={STARTED_TEAMS} mode="summary" judgingEntry={judgingEntry} />;
 }
 
-// ── 실시간 데이터 상태 인디케이터 ──────────────────────────────
-// sticky 헤더 우측 클러스터. 정상=mint pulse dot, hover/stale 시 추가 정보. 새로고침 버튼 동반.
-// (2026-05-29 B-1 옵션) 운영자 모든 활성 상태(waiting·running) 공통, ended에선 미노출.
-function LiveStatus() {
+// ── 새로고침 버튼 ──────────────────────────────────────────────
+// 2026-06-22: LiveStatus(초록 pulse dot + 새로고침) 폐기.
+//   · 초록 도트 전면 삭제 (사용자 결정).
+//   · 새로고침은 sticky 헤더가 아닌 각 본문 뷰 헤더(섹션 제목 옆)로 이관 — 운영자 전 대시보드 공통.
+// 본문 섹션 제목 우측에 두는 컴팩트 ghost 아이콘 버튼. data-action="refresh" 와이어링 유지.
+function RefreshButton() {
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }} title="실시간 연결됨 · 방금 갱신">
-      <span style={{
-        position: 'relative',
-        display: 'inline-block',
-        width: 14, height: 14,
-        flexShrink: 0
-      }}>
-        {/* halo — scale·fade out, 1.8s 무한 반복 */}
-        <span className="jt-status-pulse" style={{
-          position: 'absolute', inset: 2,
-          background: 'var(--c-mint)', borderRadius: '50%'
-        }} />
-        {/* solid 코어 */}
-        <span style={{
-          position: 'absolute', inset: 4,
-          background: 'var(--c-mint)', borderRadius: '50%'
-        }} />
-      </span>
-      <button
-        data-action="refresh"
-        title="새로고침"
-        className="jt-btn jt-btn-ghost jt-btn-sm"
-        style={{ padding: '4px 6px', minHeight: 0, lineHeight: 1, color: 'var(--c-slate)' }}>
-        {Icon.refresh(13)}
-      </button>
-    </span>);
+    <button
+      data-action="refresh"
+      title="새로고침"
+      className="jt-btn jt-btn-ghost jt-btn-sm"
+      style={{ padding: '4px 6px', minHeight: 0, lineHeight: 1, color: 'var(--c-slate)', flexShrink: 0 }}>
+      {Icon.refresh(13)}
+    </button>);
 
 }
 
@@ -533,8 +516,8 @@ function DashboardShell({ status, runtime, teams, mode, live, page = 1, perPage,
 
   const multiCount = teams.filter((t) => !t.solo).length;
   const soloCount = teams.filter((t) => t.solo).length;
-  // sticky 헤더는 보편 메타데이터(phase·runtime·실시간·actions)만 — 접속 N/M은 결정 지표가 분명한 RosterView 헤더로 이관 (2026-05-29 B-1).
-  const showLiveStatus = status !== 'hackathon_ended';
+  // sticky 헤더는 보편 메타데이터(phase·runtime·참가자 관리·actions)만 — 접속 N/M은 결정 지표가 분명한 RosterView 헤더로 이관 (2026-05-29 B-1).
+  // 2026-06-22: 초록 도트(LiveStatus) 삭제, 새로고침은 본문 뷰 헤더로 이관 → showLiveStatus 불필요.
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'linear-gradient(rgba(45,42,36,0.04) 1px, transparent 1px) 0 0 / 24px 24px, linear-gradient(90deg, rgba(45,42,36,0.04) 1px, transparent 1px) 0 0 / 24px 24px, var(--c-paper)' }}>
@@ -566,9 +549,16 @@ function DashboardShell({ status, runtime, teams, mode, live, page = 1, perPage,
         </div>
 
         <div style={{ flex: 1 }} />
-        {/* 데이터 상태 cluster — 모든 활성 상태에서 동일. ended에선 미노출. */}
-        {showLiveStatus && <LiveStatus />}
-        {showLiveStatus && statusActions && <span style={{ width: 1, alignSelf: 'stretch', background: 'var(--c-hairline)', margin: '0 4px' }} />}
+        {/* 참가자 관리 — sub GNB 상시 노출(모든 상태: ended 포함). 개인별 접속정보(이름+코드) 명함 디렉터리 진입.
+            2026-06-22: 본문 RosterView 헤더 → sub GNB로 이동. 새로고침/초록도트 자리 대체.
+            GNB 레벨 운영 유틸이므로 5상태 전체에서 동일 위치 노출(코드 분실자 안내는 행사 내내 발생). */}
+        <button
+          data-action="open-directory"
+          className="jt-btn jt-btn-secondary jt-btn-sm"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          {Icon.users(13)} 참가자 관리
+        </button>
+        {statusActions && <span style={{ width: 1, alignSelf: 'stretch', background: 'var(--c-hairline)', margin: '0 4px' }} />}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>{statusActions}</div>
       </div>
 
@@ -739,6 +729,8 @@ function RosterView({ teams, live, multiCount, soloCount, pagedTeams, totalTeams
               <span style={{ fontSize: 11.5, color: 'var(--c-slate)' }}>명</span>
             </span>
           </span>
+          {/* 새로고침 — sticky 헤더 LiveStatus에서 본문 제목 옆으로 이관 (2026-06-22). alignSelf center로 baseline 보정. */}
+          <span style={{ alignSelf: 'center' }}><RefreshButton /></span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
           {/* 미접속만 보기 — `.jt-switch` 정식 primitive (§18-10). 작동 토글 (§18-11).
@@ -848,7 +840,7 @@ function TutorialProgressView({ teams, live }) {
 
   return (
     <>
-      {/* 헤더 — 큰 숫자 메트릭 한 줄. live/refresh는 sticky 헤더 LiveStatus로 이관. */}
+      {/* 헤더 — 큰 숫자 메트릭 한 줄. 새로고침은 제목 옆(본문)으로 이관 (2026-06-22, 초록 도트 삭제). */}
       <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 8 }}>
         <h3 style={{ fontSize: 16, lineHeight: 1.2, margin: 0 }}>튜토리얼 진행률</h3>
         <span style={{ fontSize: 12.5, color: 'var(--c-slate)', display: 'inline-flex', alignItems: 'baseline', gap: 4 }}>
@@ -857,6 +849,7 @@ function TutorialProgressView({ teams, live }) {
           </span>
           <span style={{ fontSize: 11.5, color: 'var(--c-slate)' }}>팀 완료</span>
         </span>
+        <span style={{ alignSelf: 'center' }}><RefreshButton /></span>
       </div>
 
       {/* 5-단계 stacked 진행률 바 — 컬럼 색과 정합, hover로 단계별 팀 수 노출. width 전환으로 실시간 이동 시 부드러운 흐름. */}
@@ -1434,6 +1427,8 @@ function ActivityHeader({ normalCount, totalTeams, absentCount, onAbsentClick })
         </span>
         <span style={{ fontSize: 11.5, color: 'var(--c-slate)' }}>순항</span>
       </span>
+      {/* 새로고침 — sticky 헤더에서 본문 제목 옆으로 이관 (2026-06-22, 초록 도트 삭제). */}
+      <span style={{ alignSelf: 'center' }}><RefreshButton /></span>
       <span style={{ flex: 1 }} />
       {absentCount > 0 &&
       <button
@@ -2297,7 +2292,6 @@ function SummaryView({ teams, totalTeams, judgingEntry = false }) {
         {/* 좌 — 운영 결산: AI 사용량 (행사 종료 시점 확정) */}
         <SummaryBlock
           eyebrow="운영 결산"
-          eyebrowDot="var(--c-ink)"
           title="AI 사용량"
           titleIcon={<span style={{ color: 'var(--c-tutorial)', display: 'inline-flex' }}>{Icon.bolt(14)}</span>}>
           <SummaryAiUsage
@@ -2309,7 +2303,6 @@ function SummaryView({ teams, totalTeams, judgingEntry = false }) {
         {/* 우 — 갤러리 호응: 좋아요·댓글 (라이브 누적) */}
         <SummaryBlock
           eyebrow="갤러리 호응"
-          eyebrowDot="var(--c-mint)"
           eyebrowNote={<SummaryLiveLabel />}
           title="좋아요 · 댓글"
           titleIcon={<span style={{ color: 'var(--c-safety)', display: 'inline-flex' }}>{Icon.heart(13)}</span>}
@@ -3592,6 +3585,215 @@ function B2RosterDetail() {
 
 }
 
+// ── B-2 참가자 접속정보 디렉터리 (2026-06-22) ────────────────────────────
+// 목적: 운영자가 코드 분실 참가자에게 현장에서 접속 코드를 안내하기 위한 **조회 전용** 화면.
+//   실제 관리(수정·삭제·재발급) 액션은 없음 — 검색·열람만 제공.
+// 진입: RosterView 헤더 "참가자 관리" 버튼 → 복귀: 헤더 뒤로가기 → b2-tutorial-waiting.
+// 구조: 팀별 그룹(팀명 헤더) + 개인 명함(이름 + 6자리 접속 코드 + 접속 상태). 상단 검색(이름·팀·코드 부분일치).
+
+// 결정적 접속 코드 — 이름 기반 6자리. 혼동 문자(O/0/I/1) 제외한 32자 charset.
+// ⚠ mock 시연용 결정적 값. 실제 앱은 서버가 발급한 1회성 코드를 사용 (auth.jsx A-1 "6자리 영문 대문자·숫자").
+const DIRECTORY_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function participantCode(name) {
+  // FNV-1a 해시 → 위치마다 xorshift avalanche로 잘 섞은 뒤 charset 매핑.
+  // (단순 h%32는 하위 비트만 써서 한글 charcode 잔차가 겹치면 코드 충돌 → avalanche 필수.)
+  let h = 0x811c9dc5;
+  for (let j = 0; j < name.length; j++) {
+    h ^= name.charCodeAt(j);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  let out = '';
+  for (let i = 0; i < 6; i++) {
+    h ^= h >>> 15; h = Math.imul(h, 2246822507) >>> 0;
+    h ^= h >>> 13; h = Math.imul(h, 3266489909) >>> 0;
+    h = (h ^ h >>> 16) >>> 0;
+    out += DIRECTORY_CODE_CHARS[h % DIRECTORY_CODE_CHARS.length];
+  }
+  return out;
+}
+
+// 개인 명함 — 이름·접속 상태·접속 코드(명함 핵심). 코드는 mono 대형 + 자간으로 또렷이.
+// 복사 버튼은 데코(클릭 와이어링 없음) — 화면 자체가 조회 전용임을 시각적으로 유지.
+function ParticipantCard({ name, on }) {
+  const code = participantCode(name);
+  return (
+    <div style={{
+      background: 'var(--c-canvas)',
+      border: '1px solid var(--c-hairline-strong)',
+      borderRadius: 'var(--r-md)',
+      padding: '13px 15px',
+      display: 'flex', flexDirection: 'column', gap: 11,
+      boxShadow: '0 1px 2px rgba(20,19,15,0.05)'
+    }}>
+      {/* 상단 — 아바타 + 이름 + 접속 상태 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{
+          width: 34, height: 34, borderRadius: '50%',
+          background: on ? rosterAvatarColor(name) : 'var(--c-stone)',
+          color: on ? '#fff' : 'var(--c-muted)',
+          border: on ? 'none' : '1px dashed var(--c-hairline-strong)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: 'var(--font-body)', fontSize: 12, fontWeight: 700, letterSpacing: '-0.04em',
+          flexShrink: 0, opacity: on ? 1 : 0.75
+        }}>{rosterAvatarLabel(name)}</div>
+        <span style={{
+          flex: 1, minWidth: 0,
+          fontSize: 15, fontWeight: 700, lineHeight: 1.2,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+        }}>{name}</span>
+        <span style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0,
+          fontSize: 10.5, fontFamily: 'var(--font-mono)',
+          color: on ? 'var(--c-mint)' : 'var(--c-muted)'
+        }}>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: on ? 'var(--c-mint)' : '#c94560' }} />
+          {on ? '접속' : '미접속'}
+        </span>
+      </div>
+      {/* 코드 필드 — 명함의 핵심. mono 대형 + 넓은 자간. */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+        background: 'var(--c-paper)',
+        border: '1px solid var(--c-hairline)',
+        borderRadius: 'var(--r-sm)',
+        padding: '8px 8px 8px 11px'
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+          <span className="jt-mono" style={{ fontSize: 9, letterSpacing: '0.12em', color: 'var(--c-muted)', textTransform: 'uppercase' }}>접속 코드</span>
+          <span className="jt-mono" style={{ fontSize: 19, fontWeight: 700, letterSpacing: '0.2em', color: 'var(--c-ink)' }}>{code}</span>
+        </div>
+        <button className="jt-icon-btn" title="코드 복사" style={{ flexShrink: 0, color: 'var(--c-slate)' }}>{Icon.copy(14)}</button>
+      </div>
+    </div>);
+
+}
+
+function B2ParticipantDirectory() {
+  const [q, setQ] = React.useState('');
+  const query = q.trim().toLowerCase();
+
+  // 전체 참가자를 팀 순서 보존하며 평탄화 (PENDING_TEAMS: members = [name, state]).
+  const teams = PENDING_TEAMS.map((t) => ({
+    name: t.name,
+    members: t.members.map(([name, state]) => ({ name, on: state === 'on', code: participantCode(name) }))
+  }));
+  const totalMembers = teams.reduce((n, t) => n + t.members.length, 0);
+
+  // 검색: 이름·팀명·코드 부분 일치. 일치 멤버만 남기고 빈 팀 제거.
+  const filtered = query ?
+    teams.map((t) => ({
+      name: t.name,
+      members: t.members.filter((m) =>
+        m.name.toLowerCase().includes(query) ||
+        t.name.toLowerCase().includes(query) ||
+        m.code.toLowerCase().includes(query))
+    })).filter((t) => t.members.length > 0) :
+    teams;
+  const shownMembers = filtered.reduce((n, t) => n + t.members.length, 0);
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--c-paper)' }}>
+      <AppHeader user={OPERATOR_USER} />
+
+      {/* 서브 툴바 — D-2 갤러리 상세 헤더(gallery.jsx GallerySubHeader·BackLink)와 동일 어휘.
+          단일 행(디자인 시스템: 헤더 2줄 금지): BackLink(무테 ghost) | 세로 구분선 | 제목 16px + 조회전용 칩 … 검색.
+          안내 문구("코드 분실자 …")는 본문 카운트 줄로 이관해 2줄 헤더를 회피. */}
+      <div style={{
+        flex: '0 0 auto',
+        background: 'var(--c-canvas)',
+        borderBottom: '1px solid var(--c-hairline)',
+        padding: '6px 24px 6px 16px',
+        display: 'flex', alignItems: 'center', gap: 10,
+        minHeight: 44
+      }}>
+        {/* BackLink 어휘(gallery.jsx L117) 동일 — ghost sm, 무테, 본문 가장자리 정렬(marginLeft -8) */}
+        <button
+          data-action="back"
+          className="jt-btn jt-btn-ghost jt-btn-sm"
+          style={{ padding: '4px 8px 4px 4px', gap: 4, fontSize: 12, color: 'var(--c-slate)', marginLeft: -8 }}>
+          {Icon.arrowLeft(12)} 접속 현황
+        </button>
+        <div style={{ width: 1, height: 24, background: 'var(--c-hairline-strong)', margin: '0 4px' }} />
+
+        {/* 제목 — 단일 행 16px (D-2와 동일) + 조회 전용 칩 */}
+        <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.2, margin: 0, whiteSpace: 'nowrap' }}>참가자 접속 정보</h2>
+          <span className="jt-mono" style={{
+            flexShrink: 0,
+            fontSize: 9.5, letterSpacing: '0.08em', textTransform: 'uppercase',
+            padding: '2px 6px', borderRadius: 2,
+            color: 'var(--c-muted)', border: '1px solid var(--c-hairline-strong)', fontWeight: 600
+          }}>조회 전용</span>
+        </div>
+
+        <div style={{ flex: 1 }} />
+
+        {/* 검색 — GallerySubHeader 슬림 입력 어휘(height 32) 동일. Icon.search prefix + 지우기(x) suffix */}
+        <div style={{ position: 'relative', width: 260, flexShrink: 0 }}>
+          <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--c-muted)', display: 'inline-flex', pointerEvents: 'none' }}>{Icon.search(13)}</span>
+          <input
+            className="jt-input"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="이름 · 팀 · 코드 검색"
+            style={{ padding: '6px 12px 6px 30px', fontSize: 12.5, height: 32, paddingRight: q ? 30 : 12 }} />
+          {q &&
+          <button
+            onClick={() => setQ('')}
+            title="지우기"
+            className="jt-icon-btn"
+            style={{ position: 'absolute', right: 3, top: '50%', transform: 'translateY(-50%)', width: 24, height: 24, color: 'var(--c-muted)' }}>
+            {Icon.x(13)}
+          </button>
+          }
+        </div>
+      </div>
+
+      {/* 본문 — 팀별 그룹 + 명함 그리드 */}
+      <div style={{ flex: 1, overflow: 'auto', padding: '18px 32px 32px' }}>
+        {/* 카운트 + 안내 줄 (헤더에서 이관된 안내 문구) */}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+          <span className="jt-mono" style={{ fontSize: 12, color: 'var(--c-slate)' }}>
+            {query ?
+              <>검색 결과 <b style={{ color: 'var(--c-ink)' }}>{shownMembers}</b>명 / 전체 {totalMembers}명</> :
+              <>전체 <b style={{ color: 'var(--c-ink)' }}>{totalMembers}</b>명 · {teams.length}개 팀</>}
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--c-muted)' }}>코드를 잊은 참가자를 이름으로 찾아 접속 코드를 안내하세요.</span>
+        </div>
+
+        {filtered.length === 0 ?
+          <div style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            gap: 12, color: 'var(--c-muted)', padding: '80px 20px'
+          }}>
+            <span style={{ color: 'var(--c-hairline-strong)' }}>{Icon.search(30)}</span>
+            <div style={{ fontSize: 14 }}>‘{q}’에 해당하는 참가자가 없습니다.</div>
+          </div> :
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            {filtered.map((team) => {
+              const onCount = team.members.filter((m) => m.on).length;
+              return (
+                <section key={team.name}>
+                  <div style={{
+                    display: 'flex', alignItems: 'baseline', gap: 10,
+                    marginBottom: 11, paddingBottom: 8,
+                    borderBottom: '1px solid var(--c-hairline)'
+                  }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, lineHeight: 1.2 }}>{team.name}</h3>
+                    <span className="jt-mono" style={{ fontSize: 11.5, color: 'var(--c-muted)' }}>{onCount}/{team.members.length} 접속</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: 12 }}>
+                    {team.members.map((m) => <ParticipantCard key={m.name + m.code} name={m.name} on={m.on} />)}
+                  </div>
+                </section>);
+
+            })}
+          </div>}
+      </div>
+    </div>);
+
+}
+
 Object.assign(window, {
   B1HackathonList, B1Empty,
   B2DashboardTutorialWaiting, B2DashboardTutorialRunning,
@@ -3600,6 +3802,7 @@ Object.assign(window, {
   B2EndModal, B2EndModalCountdown, B2SkipTutorialModal,
   B2TutorialStartConfirm, B2TutorialEndConfirm, B2HackathonStartConfirm,
   B2RosterDetail, RosterTeamDetailModal,
+  B2ParticipantDirectory, ParticipantCard, participantCode,
   // 갤러리 D-1 카드(postit) 어휘 재사용 — 운영자 RosterRow와 동일 회전 hash + LivePreview 썸네일
   postitRotation, LivePreview
 });

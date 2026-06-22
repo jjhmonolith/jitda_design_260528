@@ -779,6 +779,14 @@ const Icon = {
   activity: (s = 14) => (
     <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
   ),
+  // 검색 — lucide Search. B-2 참가자 접속정보 디렉터리 검색 필드.
+  search: (s = 14) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+  ),
+  // 접속 코드 — lucide Key. 명함 코드 필드 보조 아이콘.
+  key: (s = 14) => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>
+  ),
 };
 
 // 디자인 시스템 — 아바타 라벨: 한글 이름 뒤 2글자 ("김민준" → "민준", "최유나" → "유나").
@@ -794,9 +802,9 @@ function avatarLabel(name) {
 //     · 좌·우 그룹을 동일 flex로 → 주소창이 바 정중앙. pill 내부도 좌(홈)·우(새로고침) 18px 대칭 → 주소 텍스트 정중앙.
 //     · 좌: 트래픽 라이트 + (파일 탐색기 토글: onToggleSidebar 있을 때만) + 뒤로/앞으로
 //     · 중앙: 주소 pill — 홈(항상) · 주소 · 새로고침(스핀)
-//     · 우: 새 탭에서 열기 + 주소 복사(tutorial 시 숨김)
+//     · 우: 새 탭에서 열기 + 주소 복사(둘 다 tutorial 시 숨김 — 연습 환경 외부 이탈·공유 차단)
 //   props: url|address(주소 텍스트) · openUrl(새 탭 대상) · onRefresh · onHome(홈 클릭, 없으면 데코) ·
-//          onToggleSidebar+sidebarOpen(파일 탐색기 토글) · tutorial(복사 숨김)
+//          onToggleSidebar+sidebarOpen(파일 탐색기 토글) · tutorial(새 탭 열기·복사 숨김)
 //   ⚠ 홈은 항상 노출(OpenCode·갤러리 공통). 파일 탐색기 토글만 OpenCode 전용 — 갤러리(D-2)는 onToggleSidebar 미전달 → 소스 버튼 없음.
 function SafariChrome({ url, address, onRefresh, onHome, onToggleSidebar, sidebarOpen = false, openUrl, tutorial = false }) {
   const [spin, setSpin] = React.useState(false);
@@ -859,11 +867,13 @@ function SafariChrome({ url, address, onRefresh, onHome, onToggleSidebar, sideba
           </button>
         </div>
       </div>
-      {/* ── 우 그룹 (flex:1) — 새 탭에서 열기 + 주소 복사(튜토리얼 숨김) ── */}
+      {/* ── 우 그룹 (flex:1) — 새 탭에서 열기 + 주소 복사(둘 다 튜토리얼 숨김) ── */}
       <div style={{ flex: '1 1 0', display: 'flex', alignItems: 'center', gap: 4, justifyContent: 'flex-end' }}>
-        <button onClick={doOpen} className="safari-chrome-btn" title="새 탭에서 열기" aria-label="새 탭에서 열기">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M9.5 2.8h3.7v3.7M13.2 2.8 7.6 8.4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" /><path d="M12 9.2v2.6a1.6 1.6 0 0 1-1.6 1.6H4.2a1.6 1.6 0 0 1-1.6-1.6V5.6A1.6 1.6 0 0 1 4.2 4h2.6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" /></svg>
-        </button>
+        {!tutorial && (
+          <button onClick={doOpen} className="safari-chrome-btn" title="새 탭에서 열기" aria-label="새 탭에서 열기">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M9.5 2.8h3.7v3.7M13.2 2.8 7.6 8.4" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" /><path d="M12 9.2v2.6a1.6 1.6 0 0 1-1.6 1.6H4.2a1.6 1.6 0 0 1-1.6-1.6V5.6A1.6 1.6 0 0 1 4.2 4h2.6" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" /></svg>
+          </button>
+        )}
         {!tutorial && (
           <button onClick={doCopy} className="safari-chrome-btn" title="주소 복사" aria-label="주소 복사" style={copied ? { color: 'var(--c-mint)' } : undefined}>
             {copied

@@ -5,6 +5,29 @@
 
 ---
 
+## §μ+6 2026-06-22 B-2 참가자 접속정보 디렉터리 신설 + DashboardShell 헤더 개편(초록 도트 삭제·새로고침 본문 이관)
+
+**계기**: 사용자 지시 — ① 참가자 관리 버튼 추가 + 팀별로 묶인 개인 접속정보(이름+코드) 명함 페이지(조회 전용, 검색). ② 헤더를 D-2 갤러리 상세 헤더 컴포넌트와 일치. ③ 참가자 관리 버튼을 sub GNB로, 새로고침은 본문으로, 초록 도트는 전부 삭제, 참가자 관리는 모든 상태에서 노출.
+
+**변경** (`operator.jsx`, `shared.jsx`, `viewer.html`, `Jitda Renewal.html`):
+- **신규 화면 `b2-participant-directory`** (`B2ParticipantDirectory` + `ParticipantCard` + `participantCode`) — 팀별 그룹(팀명 헤더 + n/m 접속) + 개인 **명함**(아바타·이름·접속 상태·6자리 접속 코드). 상단 **검색**(이름·팀·코드 부분일치, 결과 카운트, 빈 상태). **조회 전용** — 실제 관리 액션 없음(복사 버튼은 데코). 코드 분실 참가자 현장 안내 용도.
+- **접속 코드 생성**: `participantCode(name)` — FNV-1a 해시 + 위치별 xorshift avalanche → 혼동 문자(O/0/I/1) 제외 32-charset 6자리. 86명 mock 충돌 0 검증(초기 `h%32` 하위비트-only 방식은 한글 charcode 잔차 겹침으로 다수 충돌 → avalanche로 교정). ⚠ mock 결정값 — 실제 앱은 서버 발급 1회성 코드(auth.jsx A-1 "6자리 영문 대문자·숫자").
+- **상단 툴바 = D-2 갤러리 상세 어휘와 일치**: 단일 행(디자인 시스템 "헤더 2줄 금지") — `BackLink`(무테 ghost, gallery.jsx L117 동일 스타일) + 세로 구분선(1px×24 hairline-strong) + 16px 제목 + "조회 전용" 칩 + 슬림 검색(height 32, GallerySubHeader 입력 어휘). 안내 문구는 본문 카운트 줄로 이관. (이전엔 테두리 버튼 + 18px 제목 + 2번째 줄 설명 = 2줄 헤더 위반이었음. `BackLink`는 gallery.jsx에 있고 window 미export → 도메인 결합 회피 위해 컴포넌트 import 대신 동일 마크업 재현.)
+- **DashboardShell sticky 헤더 개편**:
+  - **`LiveStatus`(초록 mint pulse dot + 새로고침) 폐기** → `RefreshButton`으로 추출. **초록 도트 전면 삭제**(사용자 결정).
+  - **새로고침 → 본문 뷰 헤더 제목 옆으로 이관**: RosterView("참가자 접속 현황 …")·TutorialProgressView("튜토리얼 진행률 …")·ActivityView("해커톤 진행상황 …"). 종료(SummaryView)는 원래 새로고침 없음 → 미추가.
+  - **`참가자 관리` 버튼 → sub GNB, 5상태 전체 상시 노출**(ended 포함). open-directory 와이어링: b2-tutorial-waiting/running/hack-waiting/started/ended/ended-judging. back → b2-tutorial-waiting(정본 복귀).
+- **SummaryView eyebrow 도트 2개 삭제**: 운영 결산(ink) + 갤러리 호응(mint) `eyebrowDot` 제거 → 양쪽 도트 없는 대칭. 라이브 의미는 "종료 후에도 누적 중" 문구가 전달.
+- **shared.jsx**: `Icon.search`(lucide Search)·`Icon.key`(lucide Key) 추가.
+
+**검증**: Babel 컴파일 OK(shared·operator). 헤드리스 4상태 렌더 콘솔 0(favicon 404 제외). directoryBtn 4상태 전부 present / refreshBtn 라이브 3개 present·종료 absent. 검색 "도윤"→4명 정확 그룹 필터. 86명 코드 유일성 0 충돌. open-directory→b2-participant-directory, back→b2-tutorial-waiting 이동 확인.
+
+**캐시 무효화**: `viewer.html`·`Renewal.html` `?v=` — shared.jsx=`20260622directory`, operator.jsx=`20260622dir5`. `_serve.py`(no-store) 기동 — `http.server`는 캐시함.
+
+**후속/한계**: prototype 특성상 directory `back`은 출발 상태 무관 항상 b2-tutorial-waiting 복귀(b2-roster-detail과 동일 패턴). 진짜 DRY는 `BackLink`를 shared.jsx로 승격해 전 영역 공용화하는 것(현재는 시각적 일치만).
+
+---
+
 ## §μ+5 2026-06-12 마스코트 애니메이션 가이드 신설 + 발밑 그림자 + reduced-motion 버그 수정
 
 **계기**: 사용자 지시 — Z. 데모의 마스코트 애니메이션 3종(HOP·BLUEPRINT·DIG)을 문서화하고, 로딩/대기를 포함하는 모든 화면을 식별해 화면별 적절한 애니메이션을 선정.
@@ -4209,3 +4232,30 @@ paper 배경(#faf9f6) 위 흰색(#ffffff) 카드 → 명도 차이 1.5%. 카드 
 ### 진행 로그 (2026-06-15 마감 — e5 삭제 + 12행 채우기)
 - **e5(E-5 AI 선택지 투표) 화면 삭제(사용자 지시)** — 모델명 'CLAUDE HAIKU 4.5' 노출 이슈 화면. `dialogs.jsx` `E5AIChoiceVote` 함수(161줄)·Object.assign export·파일 헤더 주석 제거, `CanvasContextHeader` 주석 'E-4/E-5 공용'→'E-4 전용'. `viewer.html` SCREENS 항목·`Jitda Renewal.html` DCArtboard 제거. `STRUCTURE.md` §3 인덱스 행·§4 와이어링 제거 + §2 E 카운트 10→9. 검증: viewer 드롭다운 e5 미노출(hasE5=false)·총 80→79화면·e1/e4 콘솔 0(dialogs.jsx 정상 컴파일)·전역 e5 참조 0.
 - **활동 zone 12행 채우기(사용자 요청 "3열일 때도 꽉 차게")** — `STARTED_TEAMS`에 18팀 증원(손든 +10→36, 잠시멈춤 +8→36). 동적 perPage=열×12라 3열에서 36개=12행 꽉 참. 카운트는 전부 계산값(`raised`/`alerts`/`normalCount` 필터)이라 자동 갱신 — 실측 1680/3열: 손든 36·정체 36·토큰 12, 헤더 '48/88 순항'(정상48·주의25·위험11·불참4). 신규 팀명 2건(패리티 비트·페이지 폴트) 기존 중복 → 패리티 체크·페이지 스왑으로 리네임(React key 중복 해소). 검증 콘솔 0. cache-bust `operator.jsx?v=20260615final`·`dialogs.jsx?v=20260615final`.
+
+---
+
+## §30 튜토리얼 갤러리 신설 — 전원 강제공개 · 열람 전용 (2026-06-22)
+
+> 사용자 지시(C-1 대기실 ② 스크린샷): "이 화면에서 튜토리얼 갤러리를 볼 수 있으면. 공개/비공개 신경쓰지 말고 모든 튜토리얼 결과물을 모아 갤러리로. 진행 도중엔 강제로 모두 공개·진행 중에도 갤러리 볼 수 있음. 튜토리얼 끝나고 본행사 시작 전까지 유지. 본행사 시작하면 튜토리얼에서 한 건 전부 없어짐 — 소스코드만 빼고. 운영자가 해커톤 시작 누르면 어디 있든 바로 강제 화면이동. 댓글·반응 기능은 삭제."
+
+### 결정
+- **재사용**: 새 갤러리를 새로 그리지 않고 D-1/D-2 컴포넌트의 **`tutorial` 변형**으로 구현. `GallerySubHeader`에 이미 있던 `status="tutorial"` 디자인을 처음으로 실제 화면에 연결.
+- **전원 강제공개**: 공개/비공개 토글 무시, 모든 팀(목업 12) 노출. 카드 "내 프로젝트" 강조만 유지.
+- **열람 전용(좋아요·댓글 제거)**: `GalleryGrid tutorial` 플래그 → 카드 `LikeMeta`·`CommentMeta` 숨김. `D2Shell status="tutorial"` → `LikeActionInline`·댓글 탭·작성 폼·공개설정 아이콘 제거(`DetailInfoPane tutorial` 분기, BackLink `back-to-list` 와이어).
+- **진입 2개**: 대기실 ②(`c1-after-tutorial`, 대기 pulse와 공존하는 보조 CTA) + 튜토리얼 진행 중(`c2` 툴바, [튜토리얼 갤러리]만 허용·그 외 메뉴 차단 유지).
+- **강제 전환·생애주기**: 본행사 시작 시 갤러리를 보던 중이어도 C-3·C-4 강제 전환. 튜토리얼 산출물은 **소스코드만 보존하고 폐기**(갤러리 소멸, 본행사는 새 프로젝트). 참가자-로그인 v10 자동전환 매트릭스 · 셀프 튜토리얼 v9 생애주기 표 정합.
+
+### 구현 파일
+- **gallery.jsx**: `D1GalleryTutorial`·`D2GalleryDetailTutorial` 신설 + export. `GalleryCard`/`GalleryGrid`/`D2Shell`/`DetailInfoPane` `tutorial` 플래그. tutorial sub 카피 갱신.
+- **participant.jsx**: `roomAfterTutorial` actions + hint/actions 렌더 분리. `ParticipantTutorialGalleryAction` 신설·C-2 툴바 연결.
+- **viewer.html / Renewal.html**: SCREENS·artboard `d1-tutorial`·`d2-tutorial`, ACTIONS 5종, `?v=20260622tutgallery` bump(participant·gallery, 양쪽).
+
+### 검증
+- ACTIONS↔SCREENS(89 id) 정합 스캔: dangling 키·타깃 0.
+- ⚠ Playwright 렌더 검증은 브라우저 프로필 점유로 **보류** — 사용자 하드 새로고침(`?id=d1-tutorial`·`?id=d2-tutorial`) 확인 필요.
+
+### 반증·검토 포인트
+- (a) "소스코드만 보존" 백엔드(`enk-hackathon-rails`) 구현 — 보존 위치·본행사 새 프로젝트 연결 미정. 디자인 범위 밖.
+- (b) 전원 강제공개가 참가자 사전 동의 없이 결과물 노출 → 행사 안내 고지 필요.
+- (c) 본행사 진행 중 잔존 진입로 차단(라우팅) 검증 필요. C-3/C-4 [갤러리 보기]는 본행사 `d1`로 가야 함(현 분리 유지).

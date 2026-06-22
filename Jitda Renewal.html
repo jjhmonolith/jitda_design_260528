@@ -518,11 +518,11 @@
   <div id="root"></div>
 
   <script type="text/babel" src="design-canvas.jsx"></script>
-  <script type="text/babel" src="shared.jsx?v=20260612digclip2"></script>
+  <script type="text/babel" src="shared.jsx?v=20260622directory"></script>
   <script type="text/babel" src="auth.jsx?v=20260615resp"></script>
-  <script type="text/babel" src="operator.jsx?v=20260615final"></script>
-  <script type="text/babel" src="participant.jsx?v=20260615finish"></script>
-  <script type="text/babel" src="gallery.jsx?v=20260615finish"></script>
+  <script type="text/babel" src="operator.jsx?v=20260622dir5"></script>
+  <script type="text/babel" src="participant.jsx?v=20260622tutgallery"></script>
+  <script type="text/babel" src="gallery.jsx?v=20260622tutgallery"></script>
   <script type="text/babel" src="dialogs.jsx"></script>
   <!-- 심사 영역 통합 (2026-06-10): judge.jsx → judging.jsx -->
   <script type="text/babel" src="judging.jsx?v=20260615finish"></script>
@@ -702,6 +702,10 @@
               <div className="jt-art"><B2RosterDetail /></div>
             </DCArtboard>
 
+            <DCArtboard id="b2-participant-directory" label="B-2 · 참가자 접속정보 디렉터리 (명함 + 검색 · 조회 전용)" width={1280} height={920}>
+              <div className="jt-art"><B2ParticipantDirectory /></div>
+            </DCArtboard>
+
           </DCSection>
 
           <DCSection
@@ -737,6 +741,9 @@
             <DCArtboard id="c2-step4" label="C-2 · 셀프 튜토리얼 · Step 4 내 손으로" width={1280} height={820}>
               <div className="jt-art"><C2Tutorial step={4} /></div>
             </DCArtboard>
+            <DCArtboard id="c2-error" label="C-2 · 셀프 튜토리얼 (서버 오류)" width={1280} height={820}>
+              <div className="jt-art"><C2TutorialError /></div>
+            </DCArtboard>
 
             <DCArtboard id="c3" label="C-3 · 1인팀 캔버스 (미리보기 완성)" width={1280} height={820}>
               <div className="jt-art"><C3PersonalCoding /></div>
@@ -752,9 +759,15 @@
             <DCArtboard id="c3-generating" label="C-3 · 1인팀 캔버스 (AI 생성 중 · DIG)" width={1280} height={820}>
               <div className="jt-art"><C3PersonalCodingGenerating /></div>
             </DCArtboard>
+            <DCArtboard id="c3-error" label="C-3 · 1인팀 캔버스 (서버 오류)" width={1280} height={820}>
+              <div className="jt-art"><C3PersonalCodingError /></div>
+            </DCArtboard>
 
             <DCArtboard id="c4" label="C-4 · 다인팀 캔버스 (커서 + 전송 요청)" width={1280} height={820}>
               <div className="jt-art"><C4TeamCanvas /></div>
+            </DCArtboard>
+            <DCArtboard id="c4-error" label="C-4 · 다인팀 캔버스 (서버 오류)" width={1280} height={820}>
+              <div className="jt-art"><C4TeamCanvasError /></div>
             </DCArtboard>
 
           </DCSection>
@@ -774,6 +787,10 @@
 
             <DCArtboard id="d1-ended-operator" label="D-1 · 갤러리 목록 (종료 후 · 운영자 시점 — 대시보드 복귀 버튼)" width={1280} height={920}>
               <div className="jt-art"><D1GalleryListEnded role="operator" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="d1-tutorial" label="D-1 · 튜토리얼 갤러리 (전원 강제공개 · 열람 전용)" width={1280} height={920}>
+              <div className="jt-art"><D1GalleryTutorial /></div>
             </DCArtboard>
 
             <DCArtboard id="d1-empty" label="D-1 · 빈 상태 (아직 공개된 작품 없음)" width={1280} height={820}>
@@ -815,6 +832,10 @@
 
             <DCArtboard id="d2-last" label="D-2 · 마지막 프로젝트 (다음 비활성)" width={1280} height={920}>
               <div className="jt-art"><D2GalleryDetailLast /></div>
+            </DCArtboard>
+
+            <DCArtboard id="d2-tutorial" label="D-2 · 튜토리얼 작품 상세 (좋아요·댓글 없음 · 열람 전용)" width={1280} height={920}>
+              <div className="jt-art"><D2GalleryDetailTutorial /></div>
             </DCArtboard>
           </DCSection>
 

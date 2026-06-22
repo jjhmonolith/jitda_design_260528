@@ -679,7 +679,7 @@ function A4OperatorSignup() {
   return (
     <AuthShell
       variant="blueprint"
-      leftTag="OPERATOR · 운영자"
+      leftTag="운영자"
       leftHeadline={<>운영자 계정을<br/>만듭니다</>}
       leftBody="이메일로 가입하고 직접 해커톤을 운영해 보세요.">
 

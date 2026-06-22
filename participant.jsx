@@ -246,10 +246,10 @@ function C1TeamRoomV2({ state = 'roomBefore', team = MOCK_TEAM_STANDARD }) {
       status: 'hackathon_waiting',
       eyebrow: '튜토리얼 완료',
       headline: <>튜토리얼이 끝났습니다.<br />해커톤이 곧 시작됩니다.</>,
-      body: '운영자가 해커톤을 시작하면 코딩 환경이 자동으로 열려요. 본행사는 새 프로젝트에서 시작합니다.',
+      body: '운영자가 해커톤을 시작하면 코딩 환경이 자동으로 열려요. 본행사는 새 프로젝트에서 시작합니다. 기다리는 동안 튜토리얼 갤러리에서 다른 팀의 결과를 둘러볼 수 있어요.',
       hintLabel: '해커톤 시작을 기다리는 중',
       hintColor: 'var(--c-tutorial)',
-      actions: null,
+      actions: [{ label: '튜토리얼 갤러리 둘러보기', kind: 'secondary', icon: Icon.gallery(13), action: 'open-tutorial-gallery' }],
       ended: false,
     },
     roomEnded: {
@@ -354,21 +354,9 @@ function C1TeamRoomV2({ state = 'roomBefore', team = MOCK_TEAM_STANDARD }) {
             margin: 0,
           }}>{s.body}</p>
 
-          {/* Hint pulse 또는 CTA 버튼 — 메시지 바로 아래 (단일 좌측 컬럼 안) */}
-          {s.actions ? (
-            <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-              {s.actions.map((a, i) => (
-                <button
-                  key={i}
-                  data-action={a.action}
-                  className={`jt-btn ${a.kind === 'critical' ? 'jt-btn-critical' : a.kind === 'primary' ? 'jt-btn-primary' : 'jt-btn-secondary'}`}
-                  style={{ padding: '12px 22px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  {a.icon}
-                  {a.label}
-                </button>
-              ))}
-            </div>
-          ) : (
+          {/* Hint pulse + CTA 버튼 — 메시지 바로 아래 (단일 좌측 컬럼 안).
+              roomAfterTutorial은 둘 다 노출(대기 중 pulse + 튜토리얼 갤러리 진입), roomEnded는 CTA만, roomBefore는 hint만. */}
+          {s.hintLabel && (
             <div style={{
               alignSelf: 'flex-start', marginTop: 6,
               display: 'inline-flex', alignItems: 'center', gap: 8,
@@ -384,6 +372,20 @@ function C1TeamRoomV2({ state = 'roomBefore', team = MOCK_TEAM_STANDARD }) {
                 animation: 'pulse 1.6s infinite', display: 'inline-block',
               }} />
               {s.hintLabel}
+            </div>
+          )}
+          {s.actions && (
+            <div style={{ display: 'flex', gap: 10, marginTop: s.hintLabel ? 4 : 10 }}>
+              {s.actions.map((a, i) => (
+                <button
+                  key={i}
+                  data-action={a.action}
+                  className={`jt-btn ${a.kind === 'critical' ? 'jt-btn-critical' : a.kind === 'primary' ? 'jt-btn-primary' : 'jt-btn-secondary'}`}
+                  style={{ padding: '12px 22px', fontSize: 14, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  {a.icon}
+                  {a.label}
+                </button>
+              ))}
             </div>
           )}
         </section>
@@ -462,6 +464,16 @@ function ParticipantCanvasActions() {
         {Icon.gallery(12)} 갤러리 보기
       </button>
     </>
+  );
+}
+
+// 튜토리얼(C-2) 전용 — [내 프로젝트] 등 메뉴는 차단하되 [튜토리얼 갤러리]만 허용 (2026-06-22).
+// 진행 중에도 다른 팀의 튜토리얼 결과를 둘러볼 수 있게.
+function ParticipantTutorialGalleryAction() {
+  return (
+    <button data-action="open-tutorial-gallery" className="jt-btn jt-btn-secondary jt-btn-sm" style={{ padding: '5px 10px', fontSize: 11.5 }}>
+      {Icon.gallery(12)} 튜토리얼 갤러리
+    </button>
   );
 }
 
@@ -1109,6 +1121,49 @@ function OcPreviewGenerating() {
   );
 }
 
+// OpenCode 셸 자체를 못 띄움 — 작업 환경(서버) 연결 실패. 미리보기 한 칸이 아니라
+// 본문 전체(대화+미리보기)를 덮는 에러. C-2 튜토리얼·C-3 1인팀·C-4 다인팀 공용.
+// 툴바는 화면 래퍼가 유지, 이 컴포넌트는 그 아래 본문 영역만 채운다.
+// 디자인: 운영자 B1Empty 어휘 재사용 — 격자 배경 + 중앙 단일 포스트잇 카드(tape·정적 -0.6° 회전).
+//   배지만 안내(stone) 대신 경고(safety) 톤으로 에러 신호, 카드 안에 [다시 시도] CTA.
+function OcServerError() {
+  return (
+    <div style={{
+      flex: 1, minHeight: 0,
+      background: 'linear-gradient(rgba(45,42,36,0.04) 1px, transparent 1px) 0 0 / 24px 24px, linear-gradient(90deg, rgba(45,42,36,0.04) 1px, transparent 1px) 0 0 / 24px 24px, var(--c-paper)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40,
+    }}>
+      <div
+        className="jt-postit-card jt-postit-card-static jt-postit-tape-lg"
+        tabIndex={0}
+        style={{
+          width: 'min(460px, 88vw)',
+          padding: '44px 40px 40px',
+          borderRadius: 'var(--r-xs)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          textAlign: 'center',
+          '--postit-rot': 'var(--postit-rot-b)',
+          '--postit-tint': 'var(--c-canvas)',
+        }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: 10,
+          background: 'var(--c-safety-soft)', color: 'var(--c-safety-deep)',
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          marginBottom: 18,
+        }}>{Icon.warn(24)}</div>
+        <h2 style={{ fontSize: 22, marginBottom: 8, color: 'var(--c-ink)' }}>서버를 불러오지 못했어요</h2>
+        <p style={{ fontSize: 13.5, color: 'var(--c-slate)', lineHeight: 1.6, margin: 0 }}>
+          작업 환경에 연결하지 못했어요. 네트워크 상태를 확인하고<br />다시 시도해 주세요. 몇 번 해도 안 되면 운영자에게 알려 주세요.
+        </p>
+        <button data-action="retry" className="jt-btn jt-btn-primary" style={{ marginTop: 24, padding: '11px 22px', fontSize: 13.5, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          {Icon.refresh(15)}
+          다시 시도
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // 우측 미리보기 기본 — 음료 추천 앱의 가짜 렌더 (살구색 배경 + 4 카드).
 function OcDefaultPreview() {
   const cards = [
@@ -1684,8 +1739,8 @@ function C2Tutorial({ step: initialStep = 2 }) {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--c-paper)' }}>
-        {/* C-2 튜토리얼: 액션 버튼 없음 (튜토리얼 중 메뉴 접근 차단) */}
-        <JitdaToolbar status="tutorial_running" />
+        {/* C-2 튜토리얼: [튜토리얼 갤러리]만 허용 — 그 외 메뉴는 차단 (2026-06-22) */}
+        <JitdaToolbar status="tutorial_running" actions={<ParticipantTutorialGalleryAction />} />
 
         {/* 튜토리얼 구분 띠 — 주황 테이프. 본 해커톤과 헷갈리지 않게, 포스트잇 접어도 항상 보임 */}
         <div className="oc-tutorial-strip">
@@ -1750,6 +1805,22 @@ function C2Tutorial({ step: initialStep = 2 }) {
             onNext={goNext} onPrev={goPrev} canNext={canNext}
           />
         </div>
+      </div>
+  );
+}
+
+
+// 서버 오류 (튜토리얼) — 툴바 + 튜토리얼 띠 유지, 본문 전체 OcServerError.
+// 가이드가 사라지므로 띠의 "단계별 가이드 확인" 힌트는 제거(가리킬 대상 없음).
+function C2TutorialError() {
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--c-paper)' }}>
+        <JitdaToolbar status="tutorial_running" />
+        <div className="oc-tutorial-strip">
+          <span className="jt-tape">튜토리얼</span>
+          <span style={{ color: 'var(--c-ink-2)' }}>지금은 연습이에요 — 여기서 만든 건 본 해커톤으로 이어지지 않아요.</span>
+        </div>
+        <OcServerError />
       </div>
   );
 }
@@ -1834,6 +1905,15 @@ function C3PersonalCodingEmpty() { return <C3PersonalCoding previewState="empty"
 function C3PersonalCodingSpawning() { return <C3PersonalCoding previewState="spawning" />; }
 // AI 생성 중 — sending 순간 미리보기 패널에 DIG 마스코트(마스코트-애니메이션-가이드 §4 1순위).
 function C3PersonalCodingGenerating() { return <C3PersonalCoding previewState="generating" />; }
+// 서버 오류 — OpenCode 셸 자체를 못 띄움. 툴바 유지 + 본문 전체 OcServerError + [다시 시도]. (해커톤 진행)
+function C3PersonalCodingError() {
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--c-paper)' }}>
+        <JitdaToolbar status="hackathon_running" actions={<ParticipantCanvasActions />} />
+        <OcServerError />
+      </div>
+  );
+}
 
 
 // ─── C-4. 다인팀 코딩 환경 ───────────────────────────────────────
@@ -1893,6 +1973,10 @@ function C4TeamCanvas() {
   );
 }
 
+// 서버 오류 (다인팀) — 툴바는 C-3와 동일(hackathon_running + 캔버스 액션)이라 본문은 같은 OcServerError.
+// 다인팀 컨텍스트 구분을 위해 별도 화면으로 등록(viewer/Renewal). 시각은 C-3 오류와 동일.
+function C4TeamCanvasError() { return <C3PersonalCodingError />; }
+
 function TeamCursor({ top, left, name, color }) {
   return (
     <div style={{ position: 'absolute', top, left, pointerEvents: 'none', zIndex: 5 }}>
@@ -1913,8 +1997,8 @@ function TeamCursor({ top, left, name, color }) {
 Object.assign(window, {
   // C-1 \ub300\uae30\uc2e4 (v1 \ud3d0\uae30 2026-05-29 \u2014 v2 \ub2e8\uc77c \ucc44\ud0dd). C1TeamRoomV2(state, team)\uc5d0 \uc9c1\uc811 props.
   C1RoomBeforeV2, C1RoomAfterTutorialV2, C1RoomEndedV2, C1TeamRoomV2,
-  C2Tutorial, C3PersonalCoding, C3PersonalCodingEmpty, C3PersonalCodingSpawning, C3PersonalCodingGenerating, C4TeamCanvas,
-  OpenCodeShell, OcReferenceBlock, OcPreviewEmpty, OcPreviewSpawning, OcPreviewGenerating, JitdaToolbar, ParticipantCanvasActions,
+  C2Tutorial, C2TutorialError, C3PersonalCoding, C3PersonalCodingEmpty, C3PersonalCodingSpawning, C3PersonalCodingGenerating, C3PersonalCodingError, C4TeamCanvas, C4TeamCanvasError,
+  OpenCodeShell, OcReferenceBlock, OcPreviewEmpty, OcPreviewSpawning, OcPreviewGenerating, OcServerError, JitdaToolbar, ParticipantCanvasActions,
   OcBrowser, OcFileTree, OcFileTab, OcCodeView,
   // MOCK \ud300 \ubcc0\ud615 \u2014 viewer edge case \ub4f1\ub85d\uc6a9
   MOCK_TEAM_STANDARD, MOCK_TEAM_LONG_NAME, MOCK_TEAM_MANY_MEMBERS,

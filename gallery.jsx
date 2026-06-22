@@ -139,7 +139,7 @@ function GallerySubHeader({ status, total, query = '', tutorialMode, backLabel, 
   const sub = {
     running: '마음에 드는 프로젝트엔 ❤️ 좋아요로 응원해주세요. 마감 시간까지 자유롭게 둘러볼 수 있어요.',
     ended: '해커톤이 종료되어 모든 팀의 작품이 자동으로 공개됐어요. 마음에 드는 작품엔 ❤️ 로 응원을 남겨주세요.',
-    tutorial: '튜토리얼에서 만든 첫 작품들을 둘러볼 수 있어요.'
+    tutorial: '공개·비공개 구분 없이 모든 팀의 튜토리얼 결과를 둘러볼 수 있어요. 좋아요·댓글 없이 열람만 가능하고, 본행사가 시작되면 사라집니다.'
   }[status];
 
   // 해커톤 진행 상태 — 색상 + 도트로 이중 인코딩.
@@ -260,7 +260,8 @@ function CommentMeta({ count }) {
 // 회전: 팀명 hash 4-variant (postitRotation). tint: 단일 흰색 (§18-27 단일색 정책).
 // LivePreview 16:10 썸네일이 카드 식별자 역할이라 색 식별은 불필요 + RosterRow와 시각 위계 통일.
 // ❤️·💬는 카드 내부 메타 표시만 — 카드 전체 클릭으로 D-2 진입 (hit-area 경합 회피).
-function GalleryCard({ p, mine, dim }) {
+// tutorial: 튜토리얼 갤러리 — 열람 전용. 좋아요·댓글 메타 숨김 (2026-06-22).
+function GalleryCard({ p, mine, dim, tutorial }) {
   // 댓글 수 mock (제목 길이로 결정)
   const commentCount = p.commentCount ?? Math.max(0, (p.likes / 4 | 0) - 1);
   const rot = postitRotation(p.team);
@@ -308,9 +309,11 @@ function GalleryCard({ p, mine, dim }) {
             color: 'var(--c-ink)',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>{p.title}</span>
+          {!tutorial &&
           <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}>
             <LikeMeta count={p.likes} iLiked={p.iLiked} />
           </span>
+          }
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
           <span style={{
@@ -322,9 +325,11 @@ function GalleryCard({ p, mine, dim }) {
             {p.team} <span style={{ color: 'var(--c-hairline-strong)', margin: '0 2px' }}>·</span>
             <span className="jt-mono" style={{ fontSize: 11 }}>{p.members}명</span>
           </span>
+          {!tutorial &&
           <span style={{ flexShrink: 0 }}>
             <CommentMeta count={commentCount} />
           </span>
+          }
         </div>
       </div>
     </div>);
@@ -378,6 +383,29 @@ function D1GalleryListEnded({ role = 'participant' } = {}) {
 
         <GalleryGrid projects={GALLERY_PROJECTS} mineTeam={isOperator ? null : '터미널 사파리'} />
         <Pagination page={1} perPage={12} total={12} prevDisabled nextDisabled />
+      </div>
+    </div>);
+
+}
+
+// (2b) 튜토리얼 갤러리 — 전원 강제공개 · 열람 전용 (2026-06-22)
+//   · 공개/비공개 무시: 모든 팀의 튜토리얼 결과를 한데 모아 보여줌 (12개 전원).
+//   · 좋아요·댓글 없음 (GalleryGrid tutorial 플래그로 카드 메타 숨김).
+//   · 진입: c1-after-tutorial(대기실 ②) + C-2(튜토리얼 진행 중) 양쪽.
+//   · 생애주기: 튜토리얼 종료~본행사 시작 전까지만 유지. 본행사 시작 시 어디에 있든 강제 전환되며 폐기(소스코드만 보존).
+function D1GalleryTutorial() {
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: GRID_BG }}>
+      <GalleryHeader count={GALLERY_PROJECTS.length} role="participant" user={PARTICIPANT_USER} breadcrumb={['튜토리얼 갤러리']} />
+
+      <div style={{ flex: 1, padding: '24px clamp(20px, 4vw, 48px)', overflow: 'auto' }}>
+        <GallerySubHeader
+          status="tutorial"
+          total={GALLERY_PROJECTS.length}
+          backLabel="대기실로"
+          backDataAction="back-to-room" />
+        <GalleryGrid projects={GALLERY_PROJECTS} mineTeam="터미널 사파리" tutorial />
+        <Pagination page={1} perPage={GALLERY_PROJECTS.length} total={GALLERY_PROJECTS.length} prevDisabled nextDisabled />
       </div>
     </div>);
 
@@ -500,7 +528,7 @@ function D1GalleryLoading() {
 }
 
 // GalleryGrid — postit 카드 회전(±1.4°) + hover translateY(-3px) 여유 위해 gap 16 → 20.
-function GalleryGrid({ projects, mineTeam }) {
+function GalleryGrid({ projects, mineTeam, tutorial }) {
   return (
     <div style={{
       display: 'grid',
@@ -508,7 +536,7 @@ function GalleryGrid({ projects, mineTeam }) {
       gap: 20
     }}>
       {projects.map((p, i) =>
-      <GalleryCard key={i} p={p} mine={p.team === mineTeam} />
+      <GalleryCard key={i} p={p} mine={p.team === mineTeam} tutorial={tutorial} />
       )}
     </div>);
 
@@ -529,6 +557,7 @@ function D2Shell({ idx, mine, previewState = 'loaded', tab = 'info', commentsSta
   const next = GALLERY_PROJECTS[idx + 1];
   const prevDisabled = idx === 0;
   const nextDisabled = idx === GALLERY_PROJECTS.length - 1;
+  const tutorial = status === 'tutorial'; // 튜토리얼 갤러리 상세 — 좋아요·댓글·공개설정 제거 (열람 전용, 2026-06-22)
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--c-paper)' }}>
@@ -549,7 +578,7 @@ function D2Shell({ idx, mine, previewState = 'loaded', tab = 'info', commentsSta
         display: 'flex', alignItems: 'center', gap: 10,
         minHeight: 44
       }}>
-        <BackLink label="갤러리 목록" />
+        <BackLink label={tutorial ? '튜토리얼 갤러리' : '갤러리 목록'} dataAction={tutorial ? 'back-to-list' : undefined} />
         <div style={{ width: 1, height: 24, background: 'var(--c-hairline-strong)', margin: '0 4px' }} />
 
         {/* 제목 — 단일 행. 메타(팀·멤버)는 모두 다른 곳으로 분산. */}
@@ -575,7 +604,7 @@ function D2Shell({ idx, mine, previewState = 'loaded', tab = 'info', commentsSta
         <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginLeft: 4 }}>
           <IconButton title="새로고침 (라이브 앱 상태 다시 불러오기)">{Icon.refresh(14)}</IconButton>
           <IconButton title="새 탭에서 열기">{Icon.external(14)}</IconButton>
-          {mine &&
+          {mine && !tutorial &&
           <IconButton
             title={status === 'ended' ? '해커톤 종료 후엔 공개 설정을 변경할 수 없어요' : '공개 설정'}
             disabled={status === 'ended'}>
@@ -594,7 +623,7 @@ function D2Shell({ idx, mine, previewState = 'loaded', tab = 'info', commentsSta
       {/* 본문 — 2-pane · 2026-06-15 반응형: 우 정보 레일 고정 400px → clamp 유동(340~460), 라이브 패널은 minmax(0,1fr)로 자유 축소. d2 9개 상태 일괄 (프레임 캡이 ultrawide 처리) */}
       <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) clamp(340px, 30%, 460px)', minHeight: 0 }}>
         <DetailLivePane project={project} state={previewState} />
-        <DetailInfoPane project={project} mine={mine} tab={tab} commentsState={commentsState} composeOpen={composeOpen} threadOpenIdx={threadOpenIdx} threadReplyComposeOpen={threadReplyComposeOpen} menuOpenIdx={menuOpenIdx} editIdx={editIdx} deleteIdx={deleteIdx} />
+        <DetailInfoPane project={project} mine={mine} tutorial={tutorial} tab={tutorial ? 'info' : tab} commentsState={commentsState} composeOpen={composeOpen} threadOpenIdx={threadOpenIdx} threadReplyComposeOpen={threadReplyComposeOpen} menuOpenIdx={menuOpenIdx} editIdx={editIdx} deleteIdx={deleteIdx} />
       </div>
     </div>);
 
@@ -847,7 +876,7 @@ const COMMENTS_MOCK = [
 // ─── 우측 정보 패널 ────────────────────────────────────
 // tab: 'info' | 'comments'
 // commentsState: 'has' | 'empty'
-function DetailInfoPane({ project, mine, tab = 'info', commentsState = 'has', composeOpen = false, threadOpenIdx = null, threadReplyComposeOpen = false, menuOpenIdx = null, editIdx = null, deleteIdx = null }) {
+function DetailInfoPane({ project, mine, tutorial = false, tab = 'info', commentsState = 'has', composeOpen = false, threadOpenIdx = null, threadReplyComposeOpen = false, menuOpenIdx = null, editIdx = null, deleteIdx = null }) {
   const purpose = project.purpose ||
   `${project.team}가 만든 작품이에요. 자세한 목적은 팀이 아직 작성하지 않았어요.`;
   const howto = project.howto || ['카드를 누르면 라이브 앱이 열려요', '좌측 화면에서 직접 사용해보세요', '마음에 들면 ❤️ 좋아요를 눌러주세요'];
@@ -887,11 +916,12 @@ function DetailInfoPane({ project, mine, tab = 'info', commentsState = 'has', co
             letterSpacing: '-0.022em'
           }}>{project.title}</h2>
         </div>
-        <LikeActionInline project={project} mine={mine} />
+        {!tutorial && <LikeActionInline project={project} mine={mine} />}
       </div>
 
       {/* 탭 — 짓다 어휘 인라인 (2026-06-01). 디자인 시스템 jt-tab 미사용.
             배경 paper + 하단 hairline. 각 탭이 작은 도면 시트 라벨처럼 자리. */}
+      {!tutorial &&
       <div role="tablist" style={{
         display: 'flex',
         background: 'var(--c-paper)',
@@ -901,6 +931,7 @@ function DetailInfoPane({ project, mine, tab = 'info', commentsState = 'has', co
         <PanelTab active={tab === 'info'} label="정보" />
         <PanelTab active={tab === 'comments'} label="댓글" badge={commentCount} />
       </div>
+      }
 
       {/* 스레드 모드 전용 백 액션 — 격자 배경 위 .jt-btn-secondary 정식 어휘 사용
             (디자인 시스템 §06 Buttons — "건너뛰기"와 동일 변형, 2026-06-01). */}
@@ -999,7 +1030,7 @@ function DetailInfoPane({ project, mine, tab = 'info', commentsState = 'has', co
       {/* 하단 sticky — 댓글 탭일 때만 작성 폼 노출. 트리거 단계 폐기, 항상 펼친 입력 폼.
             · 일반 댓글 모드: 본 댓글 작성
             · 스레드 모드: 답글 작성 — 부모 댓글 대상 */}
-      {tab === 'comments' &&
+      {!tutorial && tab === 'comments' &&
       <div style={{
         flexShrink: 0,
         padding: '12px 18px 14px',
@@ -1750,6 +1781,11 @@ function D2GalleryDetailMine() {
   return <D2Shell idx={0} mine={true} previewState="loaded" tab="info" />;
 }
 
+// 튜토리얼 갤러리 상세 — 열람 전용 (좋아요·댓글·공개설정 모두 제거). status="tutorial"로 D2Shell 분기 (2026-06-22).
+function D2GalleryDetailTutorial() {
+  return <D2Shell idx={0} mine={false} previewState="loaded" status="tutorial" />;
+}
+
 // 댓글 탭 — 통합 액션(댓글 N · 댓글 달기) + 댓글 4건. 답글 있는 댓글엔 요약 줄 자동 노출.
 function D2GalleryDetailComments() {
   return <D2Shell idx={0} mine={false} previewState="loaded" tab="comments" commentsState="has" />;
@@ -1789,8 +1825,8 @@ function D2GalleryDetailCommentsDelete() {
 }
 
 Object.assign(window, {
-  D1GalleryList, D1GalleryListEnded, D1GalleryEmpty, D1GalleryLoading,
-  D2GalleryDetail, D2GalleryDetailLoading, D2GalleryDetailFirst, D2GalleryDetailLast, D2GalleryDetailMine,
+  D1GalleryList, D1GalleryListEnded, D1GalleryTutorial, D1GalleryEmpty, D1GalleryLoading,
+  D2GalleryDetail, D2GalleryDetailLoading, D2GalleryDetailFirst, D2GalleryDetailLast, D2GalleryDetailMine, D2GalleryDetailTutorial,
   D2GalleryDetailComments, D2GalleryDetailCommentsEmpty,
   D2GalleryDetailCommentsThread, D2GalleryDetailCommentsThreadCompose,
   D2GalleryDetailCommentsMenu, D2GalleryDetailCommentsEdit, D2GalleryDetailCommentsDelete

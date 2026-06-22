@@ -40,8 +40,8 @@
 |------|--------|---------|-------------|--------------|---------|
 | **A 인증** | 9 | `auth.jsx` — A1Expired 폐기 (2026-05-26) · A4 운영자 회원가입 신설 (2026-05-29) · **a1-not-started 비활성화 (2026-06-12, 함수 보존·viewer/Renewal 주석)** | §A (L23~154) | §3·§4·§5-1 | §A (L29~108) |
 | **B 운영자** | 18 | `operator.jsx` — 5상태 + 확인 모달 6종 + 팀 상세 모달 1종(2026-05-27) · b2-paused 폐기(2026-05-29) · **B-3 심사 4종**(루브릭·심사위원 관리·집계) + b2-ended 진입 CTA — **컴포넌트는 judging.jsx로 이동(2026-06-10)**, operator는 SummaryView의 JudgingEntryBanner 참조만 유지(2026-06-12: b2-ended 기본은 배너 미노출 — `judgingEntry` prop true일 때만, F.심사 `b2-ended-judging` 화면 전용) | §B (L155~277) | §6·§7 | §B (L110~173) |
-| **C 참가자** | 14 | `participant.jsx` — c1-paused 폐기(2026-05-26) · c1-v2/c1-after-tutorial-v2/c1-ended-v2 신설(2026-05-29) · **C-5 산출물 제출 + C-결과 결과 뷰** — **컴포넌트는 judging.jsx로 이동(2026-06-10)** · c3-generating 신설(2026-06-12: AI 생성 중 DIG 마스코트) | §C (L278~474) | §5-2·§7 | §C (L175~242) |
-| **D 갤러리** | 12 | `gallery.jsx` — d2-comments-replies·d2-comments-reply-compose 신설(2026-06-01: 대댓글 1단계 디자인 — 들여쓰기 + 답글 액션, 대대댓글 차단) | §D (L475~584) | §8·§9 | §D (L244~289) |
+| **C 참가자** | 17 | `participant.jsx` — c1-paused 폐기(2026-05-26) · c1-v2/c1-after-tutorial-v2/c1-ended-v2 신설(2026-05-29) · **C-5 산출물 제출 + C-결과 결과 뷰** — **컴포넌트는 judging.jsx로 이동(2026-06-10)** · c3-generating 신설(2026-06-12: AI 생성 중 DIG 마스코트) · c2-error/c3-error/c4-error 서버 오류 신설(2026-06-19: 포스트잇 에러 카드) | §C (L278~474) | §5-2·§7 | §C (L175~242) |
+| **D 갤러리** | 14 | `gallery.jsx` — d1-tutorial·d2-tutorial 신설(2026-06-22: 튜토리얼 갤러리 — D-1/D-2 재사용 열람 전용 변형, 전원 강제공개·좋아요/댓글 제거) | §D (L475~584) | §8·§9 | §D (L244~289) |
 | **E 다이얼로그** | 9 | `dialogs.jsx` — E-4 게임 수락 단순화 · E-7 폐기(2026-05-27) · e4-waiting 신설(2026-05-27) · **e4-v2/e4-waiting-v2 신설**(2026-05-27: 매치 수락 어휘 alternate 세트) · **E-6 일시정지 폐기(2026-05-29)** | §E (L585~716) | §7-5·§9-5 (일부) | §E (L290~305) ⚠️ |
 | **F 심사 (전 역할 통합)** | 13 | **`judging.jsx`** — 2026-06-10 심사 전 화면 단일 파일 통합. 심사위원(f1-rubric·f1·f1-completed·f2) + 참여자(c5-submit·c5-submitted·c-result·c-result-private) + 운영자(b2-ended-judging·b3-rubric-settings·b3-judge-management·b3-judge-assign·b3-results-tally). `b2-ended-judging`은 operator.jsx의 `B2DashboardEnded judgingEntry`(종료 대시보드 + JudgingEntryBanner) — 심사 진입 화면(2026-06-12). viewer/Renewal에서도 단일 "F. 심사" 섹션. judge.jsx 삭제. JudgingEntryBanner는 judging.jsx 정의·operator SummaryView가 참조(전역). | §F (L717~768) | ❌ | 기획 `03-planning/product/2026-06-10_심사-평가-기능-기획.md` |
 | 공용 | - | `shared.jsx` (491줄) | §전체 페이지 맵 (L769~) | §10 공통 컴포넌트 | - |
@@ -69,7 +69,7 @@
 | `a3-failed` | 인증 실패 + 카운트다운 | `A3OAuthFailed` | auth.jsx | L119 | §4-2 |
 | `a4` | 운영자 회원가입 (이메일 + 약관 동의) [신규 2026-05-29] | `A4OperatorSignup` | auth.jsx | (TBD) | (TBD) |
 
-### B. 운영자 (11)
+### B. 운영자 (12)
 
 | ID | 라벨 | Component | 파일 | 페이지정의서 | 화면상태정의서 |
 |----|------|-----------|------|-------------|--------------|
@@ -88,6 +88,7 @@
 | `b2-tutorial-end-confirm` | 모달 · 튜토리얼 종료 확인 + 완료 현황 (② → ④) [신규] | `B2TutorialEndConfirm` | operator.jsx | §규칙 L215 | - |
 | `b2-hackathon-start-confirm` | 모달 · 해커톤 시작 확인 (④ → ⑤) [신규] | `B2HackathonStartConfirm` | operator.jsx | §규칙 L216 | - |
 | `b2-roster-detail` | 모달 · 팀 상세 (RosterRow 카드 클릭 → 멤버·접속) [신규 2026-05-27] | `B2RosterDetail` + `RosterTeamDetailModal` | operator.jsx | §B-2 ⑦ | - |
+| `b2-participant-directory` | 참가자 접속정보 디렉터리 (팀별 그룹 + 개인 명함: 이름·6자리 접속 코드·접속 상태 + 검색. **조회 전용** — 코드 분실 참가자 현장 안내용. 상단 툴바는 D-2 갤러리 상세 헤더(BackLink+세로구분선+16px 제목) 어휘와 일치) [신규 2026-06-22] | `B2ParticipantDirectory` + `ParticipantCard` + `participantCode` | operator.jsx | - | - |
 | `b2-ended-judging` | 심사 진입 — 종료 대시보드 + 심사 시작 배너 (b2-ended에서 분리) [신규 2026-06-12] | `B2DashboardEnded judgingEntry` | operator.jsx | 기획 §3 | §7 |
 | `b3-rubric-settings` | 심사 — 루브릭 설정 (항목·배점·보조데이터 ON/OFF) [신규 2026-06-10] | `B3RubricSettings` | judging.jsx | 기획 §3·§5 | - |
 | `b3-judge-management` | 심사 — 심사위원 관리 (초대 탭) [신규 2026-06-10] | `B3JudgeManagement tab="invite"` | judging.jsx | 기획 §4.4 | - |
@@ -106,9 +107,12 @@
 | `c1-long-name` | 대기실 ① · edge: 긴 팀명 (25+자) | `C1TeamRoomV2 + MOCK_TEAM_LONG_NAME` | participant.jsx | (edge) | - |
 | `c1-many-members` | 대기실 ① · edge: 다인팀 7명 | `C1TeamRoomV2 + MOCK_TEAM_MANY_MEMBERS` | participant.jsx | (edge) | - |
 | `c2` | 셀프 튜토리얼 | `C2Tutorial` | participant.jsx | L322 | §7 |
+| `c2-error` | 셀프 튜토리얼 — 서버 오류(OpenCode 셸 로드 실패 · 툴바+튜토리얼 띠 유지 · 포스트잇 에러 카드) [신규 2026-06-19] | `C2TutorialError` (`OcServerError`) | participant.jsx | L374 | §7 |
 | `c3` | 1인팀 캔버스 (OpenCode 임베드 · 미리보기=`OcBrowser` 사파리형 탐색기+탭+검색 [2026-06-11]) | `C3PersonalCoding` | participant.jsx | L374 | §7 |
 | `c3-generating` | 1인팀 캔버스 — AI 생성 중(미리보기 패널 DIG 마스코트) [신규 2026-06-12] | `C3PersonalCodingGenerating` | participant.jsx | L374 | §7 |
+| `c3-error` | 1인팀 캔버스 — 서버 오류(본문 전체 포스트잇 에러 카드 + [다시 시도] · B1Empty 어휘) [신규 2026-06-19] | `C3PersonalCodingError` (`OcServerError`) | participant.jsx | L374 | §7 |
 | `c4` | 다인팀 캔버스 (커서 + 전송 요청 · 미리보기=`OcBrowser` 사파리형 탐색기+탭+검색 [2026-06-11]) | `C4TeamCanvas` | participant.jsx | L418 | §7 |
+| `c4-error` | 다인팀 캔버스 — 서버 오류(C-3 오류와 시각 동일 · 다인팀 컨텍스트 구분 등록) [신규 2026-06-19] | `C4TeamCanvasError` (→`C3PersonalCodingError`) | participant.jsx | L418 | §7 |
 | `c5-submit` | 산출물 제출·소개 (AI 초안→편집 · 심사 데이터원) [신규 2026-06-10] | `C5SubmitIntro` | judging.jsx | 기획 §4.2 | - |
 | `c5-submitted` | 산출물 제출 완료 | `C5SubmitIntro stateVariant="submitted"` | judging.jsx | 기획 §4.2 | - |
 | `c-result` | 참가자 결과 뷰 (점수·심사평·수상) [신규 2026-06-10] | `CParticipantResult` | judging.jsx | 기획 §4.4 | - |
@@ -123,13 +127,14 @@
 > 2. 미니 아바타 → 공용 `RosterMemberRow`(shared.jsx) 전체 이름 행 — 단일 팀만 표시하는 대기실 컨텍스트에서 가독성 우선.
 > 3. 레이아웃: 단일 컬럼 hero → 3:2 두-컬럼 (좌측 메시지 hugs-left · 우측 세로형 포스트잇 360px). 운영자 `RosterTeamDetailModal`(operator.jsx L1648)과 동일한 tape·rotation·shadow-modal 어휘.
 
-### D. 갤러리 (10)
+### D. 갤러리 (12)
 
 | ID | 라벨 | Component | 파일 | 페이지정의서 | 화면상태정의서 |
 |----|------|-----------|------|-------------|--------------|
 | `d1` | 목록 (진행 중 · 8개 공개) | `D1GalleryList` | gallery.jsx | L481 | §8 |
 | `d1-ended` | 목록 (종료 후 · 12개) | `D1GalleryListEnded` | gallery.jsx | L481 | §8 |
 | `d1-ended-operator` | 목록 (종료 후 · 운영자 시점 — 대시보드 복귀 버튼) | `D1GalleryListEnded role="operator"` | gallery.jsx | L481 | §8 |
+| `d1-tutorial` | 튜토리얼 갤러리 (전원 강제공개 · 열람 전용 · 좋아요/댓글 없음) | `D1GalleryTutorial` | gallery.jsx | L396 | §8 |
 | `d1-empty` | 빈 상태 | `D1GalleryEmpty` | gallery.jsx | L481 | §8-2 |
 | `d1-loading` | 로딩 (스켈레톤) | `D1GalleryLoading` | gallery.jsx | L481 | §8-2 |
 | `d2` | 상세 (기본·정보 탭) | `D2GalleryDetail` | gallery.jsx | L524 | §9 |
@@ -141,8 +146,10 @@
 | `d2-loading` | 라이브 프리뷰 로딩 | `D2GalleryDetailLoading` | gallery.jsx | L524 | §9-2 |
 | `d2-mine` | 내 프로젝트 (공개 설정 활성) | `D2GalleryDetailMine` | gallery.jsx | L524 | §9 |
 | `d2-last` | 마지막 프로젝트 (다음 비활성) | `D2GalleryDetailLast` | gallery.jsx | L524 | §9 |
+| `d2-tutorial` | 튜토리얼 작품 상세 (좋아요/댓글/공개설정 없음 · 열람 전용) | `D2GalleryDetailTutorial` (`D2Shell status="tutorial"`) | gallery.jsx | L524 | §9 |
 
-> D 영역은 `spec-updates.md`에 18개 변경 결정이 정리되어 있음 — **수정 전 반드시 확인**.
+> D 영역은 `spec-updates.md`에 변경 결정이 정리되어 있음 — **수정 전 반드시 확인**.
+> 튜토리얼 갤러리(`d1-tutorial`/`d2-tutorial`)는 D-1/D-2 컴포넌트를 `status="tutorial"`/`tutorial` 플래그로 재사용하는 **열람 전용** 변형 — 전원 강제공개, 좋아요·댓글 제거. 진입: `c1-after-tutorial`(대기실 ②) + `c2`(튜토리얼 진행 중) → `open-tutorial-gallery`. 생애주기: 튜토리얼 종료~본행사 시작 전까지만 유지, 본행사 시작 시 어디서든 강제 전환되며 폐기(소스코드만 보존). 셀프-튜토리얼-기획 §튜토리얼 갤러리 참조.
 
 ### E. 다이얼로그 (10)
 
@@ -327,6 +334,9 @@ hackathon_ended                           → c1-ended (대기실 ③)
 | `b2-ended-judging` | 갤러리 / 토큰 모달 / 루브릭 설정 (`start-rubric`) / 심사 시작 (`start-judging`) | → `d1-ended-operator` / 자기 화면 토글 / `b3-rubric-settings` |
 | `d1-ended-operator` | 대시보드 복귀 (`back-to-dashboard`) / 갤러리 카드 (`open-card`) | → `b2-ended` / `d2` |
 | `d1`, `d1-ended` | 갤러리 카드 (`open-card`) | → `d2` |
+| `c1-after-tutorial`, `c2`/`c2-step2~4` | 튜토리얼 갤러리 둘러보기 (`open-tutorial-gallery`) | → `d1-tutorial` |
+| `d1-tutorial` | 작품 카드 (`open-card`) / 대기실로 (`back-to-room`) | → `d2-tutorial` / `c1-after-tutorial` |
+| `d2-tutorial` | 튜토리얼 갤러리로 (`back-to-list`) | → `d1-tutorial` |
 ### 핵심 데모 시나리오 (클릭만으로 완주)
 1. **운영자 풀 스토리**: `a2` → Google → `a3` → (수동으로 `b1`로) → 카드 클릭 → 튜토리얼 시작 → 종료 → 해커톤 시작 → 종료 → 카운트다운 → `b2-ended` → 갤러리 보기 → `d1-ended-operator` → 대시보드 복귀 → `b2-ended` 또는 카드 클릭 → `d2`
 2. **참가자 시작**: `a1` → 입장 → `c1` (이후 자동 전환 시뮬레이션 없음 — 드롭다운으로 c2~c4 이동)
@@ -381,6 +391,8 @@ hackathon_ended                           → c1-ended (대기실 ③)
 
 ## 변경 이력
 
+| 2026-06-19 | **참가자 OpenCode 서버 오류 화면 3종 신설 + 튜토리얼 미리보기 새 탭 열기 버튼 숨김 (C 14→17)** — 사용자 지시 2건. (1) **서버 오류 화면** — OpenCode 셸(작업 환경) 자체를 못 띄운 상태. 공용 컴포넌트 `OcServerError`(participant.jsx) 신설: 운영자 `B1Empty` 어휘 재사용(24px 격자 배경 + 중앙 단일 포스트잇 카드 `jt-postit-card jt-postit-card-static jt-postit-tape-lg`, 정적 -0.6° 회전 + tape). 배지만 안내(stone) 대신 경고(safety-soft/safety-deep `Icon.warn`)로 에러 신호, 헤드라인 "서버를 불러오지 못했어요" + 본문 + 카드 내 [다시 시도]`data-action=retry` CTA. 화면 래퍼 3종: `C2TutorialError`(툴바 tutorial_running + 튜토리얼 띠 유지 — 가이드 없으므로 "단계별 가이드 확인" 힌트 제거 + OcServerError), `C3PersonalCodingError`(툴바 hackathon_running + 캔버스 액션 + OcServerError · 요청 "해커톤 진행" 정본), `C4TeamCanvasError`(→C3 오류 재사용, 다인팀 컨텍스트 구분 등록). 정합: participant.jsx Object.assign · viewer.html SCREENS(c2-error/c3-error/c4-error)+ACTIONS(각 retry→c2/c3/c4) · Renewal.html artboard 3종 · `participant.jsx ?v=20260619ocerror2` bump(viewer·Renewal). 사용자 1차 시안(앱 기본 에러 바운더리 모방한 박스)은 반려 → 디자인시스템 포스트잇으로 재작업. (2) **튜토리얼 새 탭 열기 숨김** — `SafariChrome`(shared.jsx) 우측 "새 탭에서 열기" 버튼을 `tutorial` 시 숨김(`{!tutorial && ...}`) — 기존 "주소 복사"와 동일 정책(연습 환경 외부 이탈·공유 차단). `shared.jsx ?v=20260619ocerror` bump. 검증: Playwright로 c2-error/c3-error 포스트잇 카드 0 에러 렌더, c2 미리보기 chrome에서 newTab·copy 버튼 부재 + refresh·explorer 유지 확인. | AI |
+
 | 2026-06-12 | **b2-ended 심사 진입 배너 분리 + 갤러리 호응 LIVE 칩 제거 (F 12→13, 총 60→61)** — 사용자 지시 2건: (1) **LIVE 칩 삭제** — 갤러리 호응 eyebrow의 `SummaryLiveLabel`에서 mint pulse 도트 + "LIVE" 워드 제거, "종료 후에도 누적 중" 문구만 유지(사용자 선택: 칩만 삭제·문구 유지). (2) **심사 배너 이동** — `JudgingEntryBanner`("심사 단계를 시작하세요" + 루브릭/심사 시작 CTA)를 b2-ended 기본에서 분리. 사유: 심사 기능 미개발 → 진입 배너 없는 깨끗한 종료 대시보드가 기본 필요. 구현: `SummaryView`/`DashboardShell`/`B2DashboardEnded`에 `judgingEntry` prop(기본 false) 추가 — false면 배너 미노출. 배너 버전은 F.심사 영역 신규 화면 `b2-ended-judging`(`<B2DashboardEnded judgingEntry />`)으로 보존. 정합: viewer.html SCREENS(F.심사에 b2-ended-judging 추가)·ACTIONS(b2-ended에서 start-rubric/start-judging 제거, b2-ended-judging에 추가, b3-rubric-settings cancel → b2-ended-judging), Renewal.html artboard 추가, `operator.jsx ?v=20260612endclean` bump(viewer·Renewal). 검증: Playwright로 b2-ended(배너 없음·LIVE 칩 없음)·b2-ended-judging(배너 있음) 둘 다 0 에러 렌더 확인. | AI |
 
 | 2026-06-12 | **마스코트 재배치 (대기실 구분) + a1-not-started 비활성화 (A 10→9, 총 60→59)** — 사용자 지시 3건: (1) **대기실 마스코트 차별화** — 튜토리얼 대기 `c1`=BLUEPRINT(도면 검토) 유지, 해커톤 대기 `c1-after-tutorial`=**DIG**(곡괭이질, "이제 짓는다")로 변경(`C1TeamRoomV2` state 분기). (2) **미리보기 3상태 마스코트 재배치** — `c3-preview-empty`(OcPreviewEmpty) 스켈레톤→**HOP**(친근한 빈 상태), `c3-spawning`(OcPreviewSpawning) HOP→**BLUEPRINT**(준비·검토). 결과 진행: 빈상태 HOP → 준비중 BLUEPRINT → 생성중 DIG. (3) **a1-not-started 비활성화** — "화면 자체가 필요 없음" → viewer.html SCREENS·Renewal.html artboard 주석 처리(A1NotStarted 함수는 auth.jsx에 보존, 복원 시 주석 해제). `participant.jsx ?v=20260612mascot2` bump. 검증: Playwright로 c1/c1-after-tutorial/c3-preview-empty/c3-spawning 재확인 + a1-not-started 드롭다운 부재 확인. 상세 spec-updates §28. | AI |
@@ -405,6 +417,7 @@ hackathon_ended                           → c1-ended (대기실 ③)
 | 2026-06-01 | **D-2 갤러리 상세 3종 수정** — (1) 제목 영역 gear 아이콘 가시성/활성 조건 변경: `mine=true`에서만 노출, `status='ended'`이면 disabled (D2Shell에 `status` prop 신설, 기본 `running`). 종료 후엔 전원 자동 공개로 변경 불가 — 의미 일관성. (2) 우측 정보 패널 헤더의 `project.tagline` 부제 라인 제거. mock 한 줄 카피로 실제 데이터 모델 대응 필드 없음 + 본문 "목적" 섹션 의미 중복 + spec-updates #17 헤더 단일 행 원칙 정렬. (3) 댓글 영역 1단계 대댓글 디자인 신설. 신규 화면 2종: `d2-comments-replies`(대댓글 표시) + `d2-comments-reply-compose`(답글 작성 폼 열림). `CommentItem`에 `isReply`·`showReplies`·`replyOpen` prop 추가, 들여쓰기는 `borderLeft hairline + paddingLeft 12px`로 처리. `CommentItem isReply=true`는 답글 액션 미노출 → 대대댓글 차단. `CommentCompose`에 `mode='reply'·initialFocused·replyToName` prop 확장(아바타 22→24, placeholder "{이름}님에게 답글 남기기…"). `COMMENTS_MOCK`에 한지원·운영팀 댓글에 replies 데이터 추가. 영향: gallery.jsx + viewer.html SCREENS 2건 + Renewal.html artboards 2건. 검증 포인트: (a) 대댓글 깊이 1단계 강제(isReply=true 분기로 답글 액션 가림)가 모든 답글에 적용되는지, (b) replyOpen 상태에서 외부 클릭 시 자동 닫힘 정책 — 현재 미정, (c) 본인이 단 답글에도 수정/삭제 노출되는지 확인 필요. | AI |
 | 일자 | 변경 | 작성자 |
 |------|------|--------|
+| 2026-06-22 | **튜토리얼 갤러리 신설 — 전원 강제공개 · 열람 전용 (D 12→14, +2 화면)** — 사용자 지시: "튜토리얼 결과물을 공개/비공개 무시하고 모두 모아 갤러리로 / 진행 중에도 열람 가능 / 튜토리얼 종료~본행사 시작 전까지 유지 / 본행사 시작하면 소스코드만 빼고 전부 폐기 / 운영자 해커톤 시작 시 어디 있든 강제 전환 / 댓글·반응 기능 삭제". 구현: (1) **gallery.jsx** — `D1GalleryTutorial`(D-1 재사용, `status="tutorial"` 헤더는 기존 디자인 존치분 활용, `GalleryGrid tutorial` 플래그로 카드 LikeMeta·CommentMeta 숨김, 전원 12개 표시) + `D2GalleryDetailTutorial`(`D2Shell status="tutorial"` 분기 — LikeActionInline·댓글 탭·댓글 작성 폼·공개설정 아이콘 제거, BackLink `back-to-list` 와이어). `GallerySubHeader` tutorial sub 카피를 "공개·비공개 구분 없이… 좋아요·댓글 없이 열람만… 본행사 시작 시 사라짐"으로 갱신. `Object.assign` 2종 export. (2) **participant.jsx** — C-1 `roomAfterTutorial`에 `open-tutorial-gallery` 보조 CTA 추가(대기 pulse와 공존하도록 hint/actions 렌더 분리), C-2 `JitdaToolbar`에 `ParticipantTutorialGalleryAction`([튜토리얼 갤러리]만 허용, 그 외 메뉴 차단 유지). (3) **viewer.html / Renewal.html** — SCREENS·artboard `d1-tutorial`·`d2-tutorial` 추가, ACTIONS `open-tutorial-gallery`(c1-after-tutorial·c2·c2-step2~4)→`d1-tutorial`, `open-card`→`d2-tutorial`, `back-to-room`→`c1-after-tutorial`, `back-to-list`→`d1-tutorial`. `?v=20260622tutgallery` bump(participant·gallery, 양쪽 HTML). (4) **기획문서** — 셀프-튜토리얼-기획 §튜토리얼 갤러리·데이터 생애주기 신설, 참가자-로그인-기획 자동전환 매트릭스에 "해커톤 시작 시 튜토리얼 갤러리 포함 강제 전환" 명문화, spec-updates §튜토리얼 갤러리 결정 기록. 검증: ACTIONS 89 SCREEN id 대비 dangling 키·타깃 0(파이썬 정합 스캔 통과). ⚠ 브라우저 렌더 검증은 Playwright 프로필 점유로 보류 — 사용자 하드 새로고침(`d1-tutorial`·`d2-tutorial`) 확인 필요. 검증 포인트: (a) "소스코드만 보존" 데이터 정책의 백엔드 구현(튜토리얼 산출물 폐기 시 소스 어디 보존·본행사 새 프로젝트와 연결 여부)은 enk-hackathon-rails 책임 — 디자인 범위 밖, (b) 전원 강제공개가 참가자 동의 없이 결과물 노출하는 점의 행사 안내 필요성, (c) 본행사 진행 중에도 튜토리얼 갤러리 잔존 진입로 없는지(C-3/C-4 [갤러리 보기]는 본행사 d1로 가야 함 — 현 분리 유지). | AI |
 | 2026-06-01 | **§19 paper 어휘 전면 폐기 + 포스트잇 모달 신설** — 사용자 결정. paper 컴포넌트(`.jt-paper-surface*`·`.jt-paper-pinned*`) 4 사용처(B1Empty · RosterTeamDetailModal · TeamPostitV2 · D1GalleryEmpty / 6 화면)를 `.jt-postit-card` 어휘로 통일. shared.jsx `ModalSurface`에 `variant='default'\|'postit'` prop 신설 (RosterTeamDetailModal `variant="postit"` 전환, 회전은 `postitRotation(team.name)` hash로 RosterRow와 동일 자세). tokens.css `.jt-postit-card-static` modifier 신설(hover 회전·lift·active 비활성, D-1 CTA 충돌 회피 + 모달 공용). 디자인 시스템: §09g Paper Surface 섹션 전체 deprecated 표기(opacity 0.55 + line-through + 상단 배너 + 내부 ▸ POSTIT vs PAPER 표·▸ 예외 모달 카르브아웃 줄긋기), §09e POSTIT CARD 끝에 ▸ POSTIT MODAL 서브섹션 신설(시각 데모 + 속성 표 + DO/DON'T 6종), §08 Overlay/Modal에 ▸ MODAL VARIANT 표 신설(default · postit · ~~paper~~). tokens.css §618g paper 룰셋 영역은 deprecated 주석만 추가(룰셋 보존 — 역사·결정 흔적). `--c-paper` 색 토큰은 70회 사용되는 배경색이라 유지. spec-updates §19 신설 — 반증 3종(시각 위계 약화·tape 시각 간섭·§09e DON'T 룰 충돌)·후속 검증·미해결 3종 기록. 영향: 6 화면 상태 + CSS modifier 1종 + 디자인 시스템 3 섹션 + 1 prop 확장. 검증: viewer.html 6 화면 정상 렌더 + grep `jt-paper-(surface\|pinned)` JSX 0건 + 콘솔 0 에러 | AI |
 | 2026-05-26 | 초안 작성 (46 화면 인덱싱, 5개 갭 식별) | AI |
 | 2026-05-26 | B2 모달 3종 위치 정정 (dialogs.jsx → operator.jsx), viewer.html 추가 | AI |
