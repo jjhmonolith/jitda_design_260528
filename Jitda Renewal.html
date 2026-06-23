@@ -521,11 +521,11 @@
   <script type="text/babel" src="shared.jsx?v=20260622tutgallery"></script>
   <script type="text/babel" src="auth.jsx?v=20260615resp"></script>
   <script type="text/babel" src="operator.jsx?v=20260622handraise2"></script>
-  <script type="text/babel" src="participant.jsx?v=20260622handraise2"></script>
+  <script type="text/babel" src="participant.jsx?v=20260623logout"></script>
   <script type="text/babel" src="gallery.jsx?v=20260623gallerystates4"></script>
-  <script type="text/babel" src="dialogs.jsx?v=20260623consentv3d"></script>
+  <script type="text/babel" src="dialogs.jsx?v=20260623logout2"></script>
   <!-- 심사 영역 통합 (2026-06-10): judge.jsx → judging.jsx -->
-  <script type="text/babel" src="judging.jsx?v=20260615finish"></script>
+  <script type="text/babel" src="judging.jsx?v=20260623logout"></script>
 
   <script type="text/babel" data-presets="react">
     function App() {
@@ -870,6 +870,10 @@
 
             <DCArtboard id="e1-unsaved-close" label="E-1 · 미저장 종료 경고 (변경 항목 표시)" width={1280} height={820}>
               <div className="jt-art"><E1UnsavedCloseConfirm /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e-logout-confirm" label="E · 참가자 로그아웃 확인 (이름·코드 재안내)" width={1280} height={820}>
+              <div className="jt-art"><ParticipantLogoutConfirm /></div>
             </DCArtboard>
 
             {/* E-4 v1 (e4 · e4-waiting · e4-rejected) 폐기 2026-06-01 — v2(거대 ring)만 정본 */}

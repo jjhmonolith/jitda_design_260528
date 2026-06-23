@@ -936,6 +936,10 @@ function C5SubmitIntro({ stateVariant = 'editing' }) {
             <div className="jt-avatar" style={{ background: DEFAULT_PARTICIPANT_USER.color, color: '#fff', width: 26, height: 26, fontSize: 10, fontWeight: 700, letterSpacing: '-0.04em' }}>
               {DEFAULT_PARTICIPANT_USER.name.slice(-2)}
             </div>
+            {/* 로그아웃 — 운영자 GNB(shared.jsx AppHeader)와 동일한 ghost 버튼. 클릭 시 확인 모달(ParticipantLogoutConfirm, dialogs.jsx)에서 이름·코드 재안내. */}
+            <button data-action="logout" className="jt-btn jt-btn-ghost jt-btn-sm" title="로그아웃" style={{ padding: '4px 8px', fontSize: 11.5 }}>
+              로그아웃
+            </button>
           </div>
         }
       />
@@ -1047,6 +1051,10 @@ function CParticipantResult({ scorePublic = true, awarded = true }) {
             <div className="jt-avatar" style={{ background: DEFAULT_PARTICIPANT_USER.color, color: '#fff', width: 26, height: 26, fontSize: 10, fontWeight: 700, letterSpacing: '-0.04em' }}>
               {DEFAULT_PARTICIPANT_USER.name.slice(-2)}
             </div>
+            {/* 로그아웃 — 운영자 GNB(shared.jsx AppHeader)와 동일한 ghost 버튼. 클릭 시 확인 모달(ParticipantLogoutConfirm, dialogs.jsx)에서 이름·코드 재안내. */}
+            <button data-action="logout" className="jt-btn jt-btn-ghost jt-btn-sm" title="로그아웃" style={{ padding: '4px 8px', fontSize: 11.5 }}>
+              로그아웃
+            </button>
           </div>
         }
       />

@@ -1184,6 +1184,76 @@ function E1UnsavedCloseConfirm() {
   );
 }
 
+// ─────────────────────────────────────────────────────────────
+// E-로그아웃. 참가자 로그아웃 확인 (2026-06-23)
+// ─────────────────────────────────────────────────────────────
+// 참가자 GNB [로그아웃] 클릭 시 뜨는 확인 모달. 참가자는 계정이 없어
+// 재입장에 "코드+이름"이 필요(참가자-로그인-기획 §재입장)하므로,
+// 모달에서 이름·입장 코드를 한 번 더 보여줘 분실을 막는다. 작업물 자동저장 안내.
+// 표준: E1UnsavedCloseConfirm 셸 차용(BlurredCodingBackground + jt-modal-backdrop is-strong).
+// 코드는 mock(participantCode, operator.jsx) — 실제 앱은 서버 발급 1회성 코드.
+function ParticipantLogoutConfirm() {
+  const name = (typeof DEFAULT_PARTICIPANT_USER !== 'undefined') ? DEFAULT_PARTICIPANT_USER.name : '최지유';
+  const code = (typeof participantCode === 'function') ? participantCode(name) : 'A3K7M2';
+  return (
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--c-paper)' }}>
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        {/* 뒷배 — 참가자 코딩 화면이 흐릿하게 깔린 컨텍스트 (E-1과 동일 셸) */}
+        <BlurredCodingBackground />
+        <div className="jt-modal-backdrop is-strong" />
+
+        {/* 포스트잇 모달 — b2-roster-detail(RosterTeamDetailModal)과 동일 어휘:
+            ModalSurface variant="postit" + jt-postit-tape-lg(테이프) + 정적 회전(--postit-rot). */}
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          display: 'flex', zIndex: 3,
+        }}>
+          <ModalSurface
+            width={420}
+            topStrip={null}
+            entrance="fade"
+            role="alertdialog"
+            ariaLabel="로그아웃 확인"
+            variant="postit"
+            className="jt-postit-tape-lg"
+            style={{ '--postit-rot': '-1.6deg' }}>
+
+            {/* 헤더 — borderBottom (인터랙션 모달 규칙 §08, roster 모달과 동일) */}
+            <div style={{ flex: '0 0 auto', padding: '24px 28px 16px', borderBottom: '1px solid var(--c-hairline)' }}>
+              <h2 style={{ fontSize: 20, lineHeight: 1.25, marginBottom: 6, fontFamily: 'var(--font-display)' }}>로그아웃할까요?</h2>
+              <p style={{ fontSize: 13, color: 'var(--c-slate)', lineHeight: 1.55, margin: 0 }}>
+                다시 들어오려면 아래 <strong style={{ color: 'var(--c-ink)' }}>이름과 입장 코드</strong>가 필요해요. 지금까지의 작업물은 자동 저장돼 있어요.
+              </p>
+            </div>
+
+            {/* 본문 — 이름 · 입장 코드 (재입장 정보 분실 방지 재안내). roster 모달 멤버 행과 동일 행 어휘. */}
+            <div style={{ flex: '1 1 auto', minHeight: 0, padding: '14px 24px 6px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 8px', borderBottom: '1px solid var(--c-hairline)' }}>
+                <span style={{ fontSize: 11.5, color: 'var(--c-muted)', letterSpacing: '0.02em' }}>이름</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--c-ink)' }}>{name}</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 8px' }}>
+                <span style={{ fontSize: 11.5, color: 'var(--c-muted)', letterSpacing: '0.02em' }}>입장 코드</span>
+                <span className="jt-mono" style={{ fontSize: 20, fontWeight: 700, color: 'var(--c-ink)', letterSpacing: '0.22em' }}>{code}</span>
+              </div>
+              <p style={{ margin: '8px 8px 0', fontSize: 11.5, color: 'var(--c-muted)', lineHeight: 1.5 }}>
+                코드를 잊지 않도록 메모해 두세요. 잃어버리면 운영자에게 문의하세요.
+              </p>
+            </div>
+
+            {/* 푸터 — borderTop + 우측 정렬 [취소]/[로그아웃] (roster 모달 푸터 규칙) */}
+            <div style={{ flex: '0 0 auto', padding: '14px 24px 20px', borderTop: '1px solid var(--c-hairline)', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button data-action="cancel" className="jt-btn jt-btn-secondary">취소</button>
+              <button data-action="confirm-logout" className="jt-btn jt-btn-critical-static">로그아웃</button>
+            </div>
+          </ModalSurface>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // E-6 폐기 (2026-05-29): 일시정지/재시작 기능 자체를 제거.
 // 진행 중 휴식은 운영자 구두 안내로 처리하고, 작업물은 자동 저장된다.
 // 어드민 기획 v11 · 로그인 기획 v9 정합.
@@ -1625,4 +1695,4 @@ function E4ConsensusVoteV3({ stateVariant = 'voting-v3', reason = 'cancelled', t
   );
 }
 
-Object.assign(window, { E1ProjectSettings, E1UnsavedCloseConfirm, E4ConsensusVote, E4ConsensusVoteV3 });
+Object.assign(window, { E1ProjectSettings, E1UnsavedCloseConfirm, E4ConsensusVote, E4ConsensusVoteV3, ParticipantLogoutConfirm });

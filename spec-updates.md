@@ -4315,3 +4315,26 @@ paper 배경(#faf9f6) 위 흰색(#ffffff) 카드 → 명도 차이 1.5%. 카드 
 ### 반증·검토 포인트
 - 튜토리얼은 보통 운영자가 옆에서 함께 진행(기획 §5-1 원래 제외 근거) — 60팀 대형 행사에선 그 가정이 깨지므로 손들기 유효. 단 소규모 행사선 손들기 카드가 과할 수 있음(노이즈). 1회 운영 후 검토.
 - 손든 팀 자동진행 제외는 시연 안정성 위한 mock 규칙 — 실제론 손든 채로도 학생이 계속 작업해 단계가 오를 수 있음. 백엔드는 hand_raised_at과 step을 독립 관리(이 제외는 디자인 mock 한정).
+
+---
+
+## §33 참가자 로그아웃 진입점 신설 — 전 참가자 화면 (2026-06-23)
+
+**계기**: 사용자 지적 — "참가자가 로그아웃을 맘대로 할 수 없다". 전 참가자 화면을 검토한 결과 계정 칩(`이름·팀명+아바타`)이 읽기 전용이라 세션 종료 수단이 한 곳도 없었음. 운영자 GNB(`shared.jsx` AppHeader)에만 `[로그아웃]` 버튼 존재. 기획(`참가자-로그인-기획.md` 재입장 절)은 "(로그아웃 포함)"이라 전제하나 디자인 미반영 갭.
+
+**결정** (사용자): ① 노출 = **전 참가자 화면**, ② 어휘 = **"로그아웃"**(운영자와 통일), ③ 구현 = **운영자와 동일한 ghost 버튼**(드롭다운 메뉴·확인 모달 없이 단독 버튼). 기기 환경 혼재/미정 → 안전 우선 전 화면 노출.
+
+**변경** (`participant.jsx`, `judging.jsx`):
+- 계정 칩 우측(아바타 다음)에 `<button data-action="logout" className="jt-btn jt-btn-ghost jt-btn-sm" title="로그아웃">로그아웃</button>` 추가 — 운영자 `shared.jsx:638`과 동일 마크업(padding 4/8, fontSize 11.5).
+- 적용 4곳: `participant.jsx` C1TeamRoomV2 AppHeader actions 칩(L290) + JitdaToolbar 칩(L449) → C-1 대기실 3상태·C-2 튜토리얼·C-3·C-4 코딩 전부 커버. `judging.jsx` C-5 제출(L940) + C-결과(L1055).
+
+**후속 추가 (2026-06-23): 로그아웃 확인 모달** (사용자 지시 "모달도 추가, 이름·코드 재안내"):
+- **신규 화면 `e-logout-confirm`** (`ParticipantLogoutConfirm`, `dialogs.jsx`) — E1UnsavedCloseConfirm 셸 차용(BlurredCodingBackground + jt-modal-backdrop is-strong + jt-modal-pop-in). 본문 아래 **이름·입장 코드 콜아웃**(코드는 `jt-mono` 20px letter-spacing 0.22em)으로 재입장 정보 분실 방지 + "작업물 자동 저장" 안심 문구. 푸터 `[취소]`(secondary) / `[로그아웃]`(critical-static).
+- 코드값은 mock `participantCode(name)`(operator.jsx, 전역) — 실제 앱은 서버 발급 1회성 코드.
+- 와이어링: 전 참가자 화면 `logout` → `e-logout-confirm` (viewer ACTIONS: c1·c1-after-tutorial·c1-ended·c2(+steps)·c3·c4·c5-submit·c-result). 모달 `cancel` → c3(대표 복귀) / `confirm-logout` → a1(코드 입장, 토큰 폐기 가정).
+- Renewal.html 아트보드 + viewer SCREENS(E영역) 등록. cache-bust: `dialogs.jsx?v=20260623logout`, `participant.jsx`·`judging.jsx ?v=20260623logout`.
+- ⚠ 운영자 로그아웃은 모달 없음 — 참가자만 확인 모달을 거친다(계정 없는 참가자의 코드 분실 방어).
+
+### 반증·검토 포인트
+- **실수 로그아웃 리스크**: 참가자는 계정이 없어 재입장 시 6자리 코드+이름 재입력 필요(`참가자-로그인-기획.md` 재입장). 240명 행사에서 진행 중 오클릭→코드 분실→운영자 호출 부담 발생 가능. ghost 버튼은 약하게 노출되나 확인 모달이 없어 1클릭 종료됨 — 1회 운영 후 "확인 모달 필요" 재검토 권장(사용자는 현재 "운영자와 동일" 선택).
+- **공용 PC 정리 효과**: 학교 공용 PC/크롬북 교대 시 이전 학생 토큰 잔류로 신원 혼선되는 문제를 해소하는 게 본 추가의 주 효용. 기기 환경 미정이라 전 화면 노출로 대응.
