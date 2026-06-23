@@ -806,7 +806,9 @@ function avatarLabel(name) {
 //   props: url|address(주소 텍스트) · openUrl(새 탭 대상) · onRefresh · onHome(홈 클릭, 없으면 데코) ·
 //          onToggleSidebar+sidebarOpen(파일 탐색기 토글) · tutorial(새 탭 열기·복사 숨김)
 //   ⚠ 홈은 항상 노출(OpenCode·갤러리 공통). 파일 탐색기 토글만 OpenCode 전용 — 갤러리(D-2)는 onToggleSidebar 미전달 → 소스 버튼 없음.
-function SafariChrome({ url, address, onRefresh, onHome, onToggleSidebar, sidebarOpen = false, openUrl, tutorial = false }) {
+// closeAction: 지정 시 좌상단 트래픽 라이트(빨강·노랑·초록)가 클릭 시 해당 data-action을 발동하는 닫기 버튼이 됨
+//              (튜토리얼 미리보기 모달에서 신호등=모달 닫기). 미지정 시 기존처럼 장식용.
+function SafariChrome({ url, address, onRefresh, onHome, onToggleSidebar, sidebarOpen = false, openUrl, tutorial = false, closeAction }) {
   const [spin, setSpin] = React.useState(false);
   const [copied, setCopied] = React.useState(false);
   const spinT = React.useRef(null);
@@ -833,7 +835,13 @@ function SafariChrome({ url, address, onRefresh, onHome, onToggleSidebar, sideba
       {/* ── 좌 그룹 (flex:1) — 트래픽 라이트 + 사이드바 토글(옵션) + 뒤로/앞으로 ──
            min-width 미지정(=auto=min-content): 좁아져도 버튼이 안 줄고 주소창이 먼저 축소(브라우저식). */}
       <div style={{ flex: '1 1 0', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+        <div
+          data-action={closeAction || undefined}
+          role={closeAction ? 'button' : undefined}
+          tabIndex={closeAction ? 0 : undefined}
+          title={closeAction ? '닫기' : undefined}
+          aria-label={closeAction ? '미리보기 닫기' : undefined}
+          style={{ display: 'flex', gap: 6, flexShrink: 0, cursor: closeAction ? 'pointer' : 'default' }}>
           <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FF5F57', boxShadow: 'inset 0 0 0 0.5px rgba(0,0,0,0.06)' }} />
           <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#FEBC2E', boxShadow: 'inset 0 0 0 0.5px rgba(0,0,0,0.06)' }} />
           <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#28C840', boxShadow: 'inset 0 0 0 0.5px rgba(0,0,0,0.06)' }} />

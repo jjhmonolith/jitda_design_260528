@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 
   <!-- 단일 소스: tokens.css 직접 로드 (2026-05-27 전환). 아래 인라인 <style>은 viewer-specific override만 유지. -->
-  <link rel="stylesheet" href="tokens.css?v=20260612mascot" />
+  <link rel="stylesheet" href="tokens.css?v=20260623consentv3b" />
 
   <!-- viewer 인라인 override (기존 토큰 값은 tokens.css와 다를 수 있음 — 우선순위: 인라인 > tokens.css) -->
   <style>
@@ -666,12 +666,12 @@
   </div>
 
   <!-- JSX 컴포넌트 (shared 먼저 로드) — ?v= 토큰: 브라우저 메모리 캐시 무효화 (dev only) -->
-  <script type="text/babel" src="shared.jsx?v=20260622directory"></script>
+  <script type="text/babel" src="shared.jsx?v=20260622tutgallery"></script>
   <script type="text/babel" src="auth.jsx?v=20260622chip"></script>
-  <script type="text/babel" src="operator.jsx?v=20260622dir5"></script>
-  <script type="text/babel" src="participant.jsx?v=20260622tutgallery"></script>
-  <script type="text/babel" src="gallery.jsx?v=20260622tutgallery"></script>
-  <script type="text/babel" src="dialogs.jsx?v=20260615final"></script>
+  <script type="text/babel" src="operator.jsx?v=20260622handraise2"></script>
+  <script type="text/babel" src="participant.jsx?v=20260622handraise2"></script>
+  <script type="text/babel" src="gallery.jsx?v=20260623gallerystates4"></script>
+  <script type="text/babel" src="dialogs.jsx?v=20260623consentv3d"></script>
   <!-- 심사 영역 통합 (2026-06-10): judge.jsx → judging.jsx (심사위원·참여자·운영자 전 화면) -->
   <script type="text/babel" src="judging.jsx?v=20260615finish"></script>
 
@@ -852,6 +852,7 @@
       { id: 'b1-empty',              section: 'B. 운영자',  label: 'B-1 · 빈 상태 (신규 운영자)',                    render: () => <B1Empty /> },
       { id: 'b2-tutorial-waiting',   section: 'B. 운영자',  label: 'B-2 · ① 튜토리얼 대기 — 참가자 접속',    h: 920, render: () => <B2DashboardTutorialWaiting /> },
       { id: 'b2-tutorial-running',   section: 'B. 운영자',  label: 'B-2 · ② 튜토리얼 진행 — 완료율 모니터',  h: 920, render: () => <B2DashboardTutorialRunning /> },
+      { id: 'b2-tutorial-running-preview', section: 'B. 운영자', label: 'B-2 · ② 튜토리얼 진행 — 팀 작품 미리보기 모달', h: 920, render: () => <B2TutorialRunningPreview /> },
       { id: 'b2-hack-waiting',       section: 'B. 운영자',  label: 'B-2 · ④ 해커톤 대기 — 시작 직전',        h: 920, render: () => <B2DashboardHackathonWaiting /> },
       { id: 'b2-started',            section: 'B. 운영자',  label: 'B-2 · ⑤ 해커톤 진행 — 팀 활동',           h: 920, render: () => <B2DashboardStarted /> },
       // b2-paused 폐기 (2026-05-29): 일시정지 기능 제거
@@ -890,6 +891,7 @@
       { id: 'd1-ended-operator',     section: 'D. 갤러리',  label: 'D-1 · 목록 (종료 후 · 운영자 시점 — 대시보드 복귀 버튼)', h: 920, render: () => <D1GalleryListEnded role="operator" /> },
       { id: 'd1-tutorial',           section: 'D. 갤러리',  label: 'D-1 · 튜토리얼 갤러리 (전원 강제공개 · 열람 전용)', h: 920, render: () => <D1GalleryTutorial /> },
       { id: 'd1-empty',              section: 'D. 갤러리',  label: 'D-1 · 빈 상태 (아직 공개된 작품 없음)',           render: () => <D1GalleryEmpty /> },
+      { id: 'd1-search-empty',       section: 'D. 갤러리',  label: 'D-1 · 검색 결과 없음',                             render: () => <D1GallerySearchEmpty /> },
       { id: 'd1-loading',            section: 'D. 갤러리',  label: 'D-1 · 로딩 상태 (스켈레톤)',                       render: () => <D1GalleryLoading /> },
       { id: 'd2',                    section: 'D. 갤러리',  label: 'D-2 · 상세 (기본 · 정보 탭 · 좋아요)',     h: 920, render: () => <D2GalleryDetail /> },
       { id: 'd2-comments',           section: 'D. 갤러리',  label: 'D-2 · 댓글 탭 (입력 폼 상시 노출 · 답글 요약)', h: 920, render: () => <D2GalleryDetailComments /> },
@@ -902,7 +904,7 @@
       { id: 'd2-loading',            section: 'D. 갤러리',  label: 'D-2 · 라이브 프리뷰 로딩 (서버 기동 중)',   h: 920, render: () => <D2GalleryDetailLoading /> },
       { id: 'd2-mine',               section: 'D. 갤러리',  label: 'D-2 · 내 프로젝트 (공개 설정 활성)',        h: 920, render: () => <D2GalleryDetailMine /> },
       { id: 'd2-last',               section: 'D. 갤러리',  label: 'D-2 · 마지막 프로젝트 (다음 비활성)',       h: 920, render: () => <D2GalleryDetailLast /> },
-      { id: 'd2-tutorial',           section: 'D. 갤러리',  label: 'D-2 · 튜토리얼 작품 상세 (좋아요·댓글 없음 · 열람 전용)', h: 920, render: () => <D2GalleryDetailTutorial /> },
+      { id: 'd2-tutorial',           section: 'D. 갤러리',  label: 'D-2 · 튜토리얼 작품 미리보기 (브라우저 창 모달 · 정보패널 없음)', h: 920, render: () => <D2GalleryDetailTutorial /> },
 
       // ─ E. 다이얼로그 ───────────────────────────
       { id: 'e1',                    section: 'E. 다이얼로그', label: 'E-1 · 프로젝트 설정 (공개 활성 + 사용법)',     render: () => <E1ProjectSettings stateVariant="unsaved" /> },
@@ -917,6 +919,14 @@
       { id: 'e4-waiting-v2-large',   section: 'E. 다이얼로그', label: 'E-4 v2 · 응답 대기 (10인 · 큰 팀)',                    render: () => <E4ConsensusVote stateVariant="waiting-v2" teamSize="large" /> },
       { id: 'e4-rejected-v2',        section: 'E. 다이얼로그', label: 'E-4 v2 · 합의 무산 (4인)',                            render: () => <E4ConsensusVote stateVariant="rejected-v2" /> },
       { id: 'e4-rejected-v2-large',  section: 'E. 다이얼로그', label: 'E-4 v2 · 합의 무산 (10인 · 큰 팀)',                    render: () => <E4ConsensusVote stateVariant="rejected-v2" teamSize="large" /> },
+      // E-4 v3(카드형 리디자인 2026-06-23) — 내용 스냅샷 주인공 + soft scrim + caution-strip 타이머. v2와 공존.
+      { id: 'e4-v3',                 section: 'E. 다이얼로그', label: 'E-4 v3 · 전송 동의 (내용 스냅샷)',                     render: () => <E4ConsensusVoteV3 stateVariant="voting-v3" /> },
+      { id: 'e4-v3-large',           section: 'E. 다이얼로그', label: 'E-4 v3 · 전송 동의 (10인 · 큰 팀)',                    render: () => <E4ConsensusVoteV3 stateVariant="voting-v3" teamSize="large" /> },
+      { id: 'e4-waiting-v3',         section: 'E. 다이얼로그', label: 'E-4 v3 · 동의 후 대기',                               render: () => <E4ConsensusVoteV3 stateVariant="waiting-v3" /> },
+      { id: 'e4-waiting-v3-large',   section: 'E. 다이얼로그', label: 'E-4 v3 · 동의 후 대기 (10인 · 큰 팀)',                 render: () => <E4ConsensusVoteV3 stateVariant="waiting-v3" teamSize="large" /> },
+      { id: 'e4-rejected-v3',        section: 'E. 다이얼로그', label: 'E-4 v3 · 무산 (거절·취소)',                           render: () => <E4ConsensusVoteV3 stateVariant="rejected-v3" reason="cancelled" /> },
+      { id: 'e4-expired-v3',         section: 'E. 다이얼로그', label: 'E-4 v3 · 무산 (시간초과)',                           render: () => <E4ConsensusVoteV3 stateVariant="rejected-v3" reason="expired" /> },
+      { id: 'e4-left-v3',            section: 'E. 다이얼로그', label: 'E-4 v3 · 무산 (팀원 이탈)',                           render: () => <E4ConsensusVoteV3 stateVariant="rejected-v3" reason="left" /> },
       // E-6 폐기 (2026-05-29): 일시정지 기능 제거
       // E-7 폐기 (2026-05-27): 참가자 종료 예고 없음 정책 — 운영자 b2-end-countdown 만료 시 곧바로 c1-ended로 전환.
 
@@ -966,7 +976,8 @@
       // 모든 4개 전이는 확인 모달을 거친다 (어드민-역할-기획 §"규칙" 단방향 전이 — 모두 확인 필수)
       'b1':                  { 'open': 'b2-tutorial-waiting' },                              // 카드 클릭
       'b2-tutorial-waiting': { 'start': 'b2-tutorial-start-confirm', 'skip': 'b2-skip', 'open-team': 'b2-roster-detail', 'open-directory': 'b2-participant-directory' },    // ① → 확인 모달 / 건너뛰기 / 팀 카드 클릭 / 참가자 관리
-      'b2-tutorial-running': { 'end-tutorial': 'b2-tutorial-end-confirm', 'open-directory': 'b2-participant-directory' },                  // ② → 확인 모달 / 참가자 관리
+      'b2-tutorial-running': { 'end-tutorial': 'b2-tutorial-end-confirm', 'open-directory': 'b2-participant-directory', 'open-tutorial-gallery': 'd1-tutorial', 'open-team': 'b2-tutorial-running-preview' },  // ② → 확인 모달 / 참가자 관리 / 튜토리얼 갤러리 / 칸반 팀 클릭 → 미리보기 모달(이 화면 위에) (2026-06-22)
+      'b2-tutorial-running-preview': { 'close-preview': 'b2-tutorial-running' },  // 미리보기 모달 닫기(배경·신호등) → 대시보드 복귀
       'b2-hack-waiting':     { 'start-hackathon': 'b2-hackathon-start-confirm', 'open-team': 'b2-roster-detail', 'open-directory': 'b2-participant-directory' },            // ④ → 확인 모달 / 팀 카드 클릭 / 참가자 관리
       'b2-roster-detail':    { 'close-roster-detail': 'b2-tutorial-waiting' },              // 백드롭·X 클릭 시 원래 화면(예시: ①)으로 복귀
       'b2-participant-directory': { 'back': 'b2-tutorial-waiting' },                         // 참가자 접속정보 디렉터리 → 뒤로가기 ①
@@ -1006,6 +1017,14 @@
       'e4-waiting-v2-large':    { 'back-to-canvas': 'c4' },
       'e4-rejected-v2':         { 'back-to-canvas': 'c4' }, // 합의 무산 → 다인팀 캔버스 복귀
       'e4-rejected-v2-large':   { 'back-to-canvas': 'c4' },
+      // E-4 v3 (카드형 리디자인) — 수락 → 대기 / 거절 → 무산 / 무산 → 캔버스 복귀
+      'e4-v3':                  { 'agree': 'e4-waiting-v3', 'reject': 'e4-rejected-v3' },
+      'e4-v3-large':            { 'agree': 'e4-waiting-v3-large', 'reject': 'e4-rejected-v3' },
+      'e4-waiting-v3':          { 'reject': 'e4-rejected-v3' }, // 동의 취소 → 무산 (실 운영은 전원 동의 시 success)
+      'e4-waiting-v3-large':    { 'reject': 'e4-rejected-v3' },
+      'e4-rejected-v3':         { 'back-to-canvas': 'c4' },
+      'e4-expired-v3':          { 'back-to-canvas': 'c4' },
+      'e4-left-v3':             { 'back-to-canvas': 'c4' },
 
       // C-1 v2 — 운영자 디자인 어휘 이식 (2026-05-29). 종료 상태에서만 갤러리 CTA 노출.
       'c1-ended':            { 'open-gallery': 'd1-ended' },
@@ -1013,6 +1032,7 @@
       // D. 갤러리
       'd1':                  { 'open-card': 'd2' },
       'd1-ended':            { 'open-card': 'd2' },
+      'd1-search-empty':     { 'clear-search': 'd1' }, // 검색어 지우고 전체 목록 복귀 (2026-06-23)
       // 튜토리얼 갤러리 — 작품 상세(열람 전용) / 대기실 복귀 (2026-06-22)
       'd1-tutorial':         { 'open-card': 'd2-tutorial', 'back-to-room': 'c1-after-tutorial' },
       'd2-tutorial':         { 'back-to-list': 'd1-tutorial' },

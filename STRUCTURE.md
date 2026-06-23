@@ -41,7 +41,7 @@
 | **A 인증** | 9 | `auth.jsx` — A1Expired 폐기 (2026-05-26) · A4 운영자 회원가입 신설 (2026-05-29) · **a1-not-started 비활성화 (2026-06-12, 함수 보존·viewer/Renewal 주석)** | §A (L23~154) | §3·§4·§5-1 | §A (L29~108) |
 | **B 운영자** | 18 | `operator.jsx` — 5상태 + 확인 모달 6종 + 팀 상세 모달 1종(2026-05-27) · b2-paused 폐기(2026-05-29) · **B-3 심사 4종**(루브릭·심사위원 관리·집계) + b2-ended 진입 CTA — **컴포넌트는 judging.jsx로 이동(2026-06-10)**, operator는 SummaryView의 JudgingEntryBanner 참조만 유지(2026-06-12: b2-ended 기본은 배너 미노출 — `judgingEntry` prop true일 때만, F.심사 `b2-ended-judging` 화면 전용) | §B (L155~277) | §6·§7 | §B (L110~173) |
 | **C 참가자** | 17 | `participant.jsx` — c1-paused 폐기(2026-05-26) · c1-v2/c1-after-tutorial-v2/c1-ended-v2 신설(2026-05-29) · **C-5 산출물 제출 + C-결과 결과 뷰** — **컴포넌트는 judging.jsx로 이동(2026-06-10)** · c3-generating 신설(2026-06-12: AI 생성 중 DIG 마스코트) · c2-error/c3-error/c4-error 서버 오류 신설(2026-06-19: 포스트잇 에러 카드) | §C (L278~474) | §5-2·§7 | §C (L175~242) |
-| **D 갤러리** | 14 | `gallery.jsx` — d1-tutorial·d2-tutorial 신설(2026-06-22: 튜토리얼 갤러리 — D-1/D-2 재사용 열람 전용 변형, 전원 강제공개·좋아요/댓글 제거) | §D (L475~584) | §8·§9 | §D (L244~289) |
+| **D 갤러리** | 15 | `gallery.jsx` — d1-search-empty 신설(2026-06-23: 검색 결과 없음) + 카드 빈 상태 `CardEmptyThumb`(서버 잠듦/미완성). d1-tutorial·d2-tutorial(2026-06-22: 튜토리얼 갤러리 — D-1/D-2 재사용 열람 전용 변형, 전원 강제공개·좋아요/댓글 제거) | §D (L475~584) | §8·§9 | §D (L244~289) |
 | **E 다이얼로그** | 9 | `dialogs.jsx` — E-4 게임 수락 단순화 · E-7 폐기(2026-05-27) · e4-waiting 신설(2026-05-27) · **e4-v2/e4-waiting-v2 신설**(2026-05-27: 매치 수락 어휘 alternate 세트) · **E-6 일시정지 폐기(2026-05-29)** | §E (L585~716) | §7-5·§9-5 (일부) | §E (L290~305) ⚠️ |
 | **F 심사 (전 역할 통합)** | 13 | **`judging.jsx`** — 2026-06-10 심사 전 화면 단일 파일 통합. 심사위원(f1-rubric·f1·f1-completed·f2) + 참여자(c5-submit·c5-submitted·c-result·c-result-private) + 운영자(b2-ended-judging·b3-rubric-settings·b3-judge-management·b3-judge-assign·b3-results-tally). `b2-ended-judging`은 operator.jsx의 `B2DashboardEnded judgingEntry`(종료 대시보드 + JudgingEntryBanner) — 심사 진입 화면(2026-06-12). viewer/Renewal에서도 단일 "F. 심사" 섹션. judge.jsx 삭제. JudgingEntryBanner는 judging.jsx 정의·operator SummaryView가 참조(전역). | §F (L717~768) | ❌ | 기획 `03-planning/product/2026-06-10_심사-평가-기능-기획.md` |
 | 공용 | - | `shared.jsx` (491줄) | §전체 페이지 맵 (L769~) | §10 공통 컴포넌트 | - |
@@ -76,7 +76,7 @@
 | `b1` | 해커톤 목록 (5상태) | `B1HackathonList` + `PhaseFilterStepper` | operator.jsx | L163 | §6-1·§6-3 |
 | `b1-empty` | 빈 상태 (신규 운영자) | `B1Empty` | operator.jsx | L163 | §6-1 |
 | `b2-tutorial-waiting` | ① 튜토리얼 대기 | `B2DashboardTutorialWaiting` | operator.jsx | L198 | §7 |
-| `b2-tutorial-running` | ② 튜토리얼 진행 | `B2DashboardTutorialRunning` | operator.jsx | L198 | §7 |
+| `b2-tutorial-running` | ② 튜토리얼 진행 (5열 step 칸반 · 손든 팀 각 열 맨 위 노랑 카드+[해결] [2026-06-22]) | `B2DashboardTutorialRunning` (`TutorialHandRaisedCard`·`HandResolveChip`) | operator.jsx | L198 | §7 |
 | `b2-hack-waiting` | ④ 해커톤 대기 | `B2DashboardHackathonWaiting` (operator.jsx:1032 inline) | operator.jsx | L198 | §7 |
 | `b2-started` | ⑤ 해커톤 진행 (v2 2026-06-01: 운영자 액션 중심 — 손든 팀·정체·불참 4단 우선순위) | `B2DashboardStarted` + `ActivityView` + `HandRaisedSection` + `AlertSection` + `AbsentSection` | operator.jsx | L198 | §7 |
 | ~~`b2-paused`~~ | ~~일시정지 오버레이~~ | — | — | — | **2026-05-29 폐기**: 일시정지 기능 자체를 제거. 진행 중 휴식은 운영자 구두 안내로 처리. |
@@ -106,12 +106,12 @@
 | `c1-ended` | 대기실 ③ 해커톤 종료 (hackathon_ended · 갤러리 CTA) | `C1RoomEndedV2` | participant.jsx | L510 | §5-2 |
 | `c1-long-name` | 대기실 ① · edge: 긴 팀명 (25+자) | `C1TeamRoomV2 + MOCK_TEAM_LONG_NAME` | participant.jsx | (edge) | - |
 | `c1-many-members` | 대기실 ① · edge: 다인팀 7명 | `C1TeamRoomV2 + MOCK_TEAM_MANY_MEMBERS` | participant.jsx | (edge) | - |
-| `c2` | 셀프 튜토리얼 | `C2Tutorial` | participant.jsx | L322 | §7 |
+| `c2` | 셀프 튜토리얼 (composer 액션 바 [✋손들기] 토글 — 튜토리얼도 노출 [2026-06-22]) | `C2Tutorial` (`HandRaiseButton`) | participant.jsx | L322 | §7 |
 | `c2-error` | 셀프 튜토리얼 — 서버 오류(OpenCode 셸 로드 실패 · 툴바+튜토리얼 띠 유지 · 포스트잇 에러 카드) [신규 2026-06-19] | `C2TutorialError` (`OcServerError`) | participant.jsx | L374 | §7 |
-| `c3` | 1인팀 캔버스 (OpenCode 임베드 · 미리보기=`OcBrowser` 사파리형 탐색기+탭+검색 [2026-06-11]) | `C3PersonalCoding` | participant.jsx | L374 | §7 |
+| `c3` | 1인팀 캔버스 (OpenCode 임베드 · 미리보기=`OcBrowser` 사파리형 탐색기+탭+검색 [2026-06-11] · composer 액션 바 [✋손들기] 토글, 전송 옆 [2026-06-22]) | `C3PersonalCoding` (`HandRaiseButton`·`.oc-hand-btn`) | participant.jsx | L374 | §7 |
 | `c3-generating` | 1인팀 캔버스 — AI 생성 중(미리보기 패널 DIG 마스코트) [신규 2026-06-12] | `C3PersonalCodingGenerating` | participant.jsx | L374 | §7 |
 | `c3-error` | 1인팀 캔버스 — 서버 오류(본문 전체 포스트잇 에러 카드 + [다시 시도] · B1Empty 어휘) [신규 2026-06-19] | `C3PersonalCodingError` (`OcServerError`) | participant.jsx | L374 | §7 |
-| `c4` | 다인팀 캔버스 (커서 + 전송 요청 · 미리보기=`OcBrowser` 사파리형 탐색기+탭+검색 [2026-06-11]) | `C4TeamCanvas` | participant.jsx | L418 | §7 |
+| `c4` | 다인팀 캔버스 (커서 + 전송 요청 · 미리보기=`OcBrowser` 사파리형 탐색기+탭+검색 [2026-06-11] · composer 액션 바 [✋손들기] 토글 — 팀원 누구나, 전송 옆 [2026-06-22]) | `C4TeamCanvas` (`HandRaiseButton`·`.oc-hand-btn`) | participant.jsx | L418 | §7 |
 | `c4-error` | 다인팀 캔버스 — 서버 오류(C-3 오류와 시각 동일 · 다인팀 컨텍스트 구분 등록) [신규 2026-06-19] | `C4TeamCanvasError` (→`C3PersonalCodingError`) | participant.jsx | L418 | §7 |
 | `c5-submit` | 산출물 제출·소개 (AI 초안→편집 · 심사 데이터원) [신규 2026-06-10] | `C5SubmitIntro` | judging.jsx | 기획 §4.2 | - |
 | `c5-submitted` | 산출물 제출 완료 | `C5SubmitIntro stateVariant="submitted"` | judging.jsx | 기획 §4.2 | - |
@@ -127,7 +127,9 @@
 > 2. 미니 아바타 → 공용 `RosterMemberRow`(shared.jsx) 전체 이름 행 — 단일 팀만 표시하는 대기실 컨텍스트에서 가독성 우선.
 > 3. 레이아웃: 단일 컬럼 hero → 3:2 두-컬럼 (좌측 메시지 hugs-left · 우측 세로형 포스트잇 360px). 운영자 `RosterTeamDetailModal`(operator.jsx L1648)과 동일한 tape·rotation·shadow-modal 어휘.
 
-### D. 갤러리 (12)
+### D. 갤러리 (13)
+
+> 카드 빈 상태(2026-06-23): `GalleryCard`가 `cardState`(`'asleep'` 서버 잠듦 / `'building'` 미완성)면 `CardEmptyThumb` placeholder로 교체. 종료 후 전원 자동공개 시 `d1-ended`(참가자)·`d1-ended-operator`(운영자)에서 노출 — 운영자 뷰는 빈 카드 dim·비활성, 참가자 뷰는 asleep만 눌러서 깨우기 가능(`GalleryGrid emptyInteractive`).
 
 | ID | 라벨 | Component | 파일 | 페이지정의서 | 화면상태정의서 |
 |----|------|-----------|------|-------------|--------------|
@@ -135,7 +137,8 @@
 | `d1-ended` | 목록 (종료 후 · 12개) | `D1GalleryListEnded` | gallery.jsx | L481 | §8 |
 | `d1-ended-operator` | 목록 (종료 후 · 운영자 시점 — 대시보드 복귀 버튼) | `D1GalleryListEnded role="operator"` | gallery.jsx | L481 | §8 |
 | `d1-tutorial` | 튜토리얼 갤러리 (전원 강제공개 · 열람 전용 · 좋아요/댓글 없음) | `D1GalleryTutorial` | gallery.jsx | L396 | §8 |
-| `d1-empty` | 빈 상태 | `D1GalleryEmpty` | gallery.jsx | L481 | §8-2 |
+| `d1-empty` | 빈 상태 (아직 공개 작품 없음) | `D1GalleryEmpty` | gallery.jsx | L481 | §8-2 |
+| `d1-search-empty` | 검색 결과 없음 | `D1GallerySearchEmpty` | gallery.jsx | L569 | §8-2 |
 | `d1-loading` | 로딩 (스켈레톤) | `D1GalleryLoading` | gallery.jsx | L481 | §8-2 |
 | `d2` | 상세 (기본·정보 탭) | `D2GalleryDetail` | gallery.jsx | L524 | §9 |
 | `d2-comments` | 댓글 탭 (통합 액션 · 답글 요약 줄) | `D2GalleryDetailComments` | gallery.jsx | L524 | §9-3 |
@@ -151,7 +154,7 @@
 > D 영역은 `spec-updates.md`에 변경 결정이 정리되어 있음 — **수정 전 반드시 확인**.
 > 튜토리얼 갤러리(`d1-tutorial`/`d2-tutorial`)는 D-1/D-2 컴포넌트를 `status="tutorial"`/`tutorial` 플래그로 재사용하는 **열람 전용** 변형 — 전원 강제공개, 좋아요·댓글 제거. 진입: `c1-after-tutorial`(대기실 ②) + `c2`(튜토리얼 진행 중) → `open-tutorial-gallery`. 생애주기: 튜토리얼 종료~본행사 시작 전까지만 유지, 본행사 시작 시 어디서든 강제 전환되며 폐기(소스코드만 보존). 셀프-튜토리얼-기획 §튜토리얼 갤러리 참조.
 
-### E. 다이얼로그 (10)
+### E. 다이얼로그 (17)
 
 | ID | 라벨 | Component | 파일 | 페이지정의서 | 트리거 |
 |----|------|-----------|------|-------------|--------|
@@ -166,6 +169,13 @@
 | `e4-waiting-v2` | 응답 대기 (매치 수락 어휘 · 거대 ring + 동의 완료 pill) | `E4ConsensusVote stateVariant="waiting-v2"` | dialogs.jsx | L825 | 동의 클릭 시 e4-v2 → 본 화면 |
 | `e4-rejected-v2` | 합의 무산 (정지 safety ring + 84px X + 패자 outcome row + 자동 복귀 카운트다운) | `E4ConsensusVote stateVariant="rejected-v2"` | dialogs.jsx | L949 | 거절·타임아웃 시 (이름 미명시, 2026-06-01 정본) |
 | ~~`e4-rejected`~~ | ~~합의 무산 v1 (4 칩 포트레이트 + primary CTA)~~ | — | — | — | **2026-06-01 폐기**: v2 정본 채택 |
+| `e4-v3` | 전송 동의 v3 (카드형 · 내용 스냅샷 주인공 + soft scrim + caution-strip 타이머) | `E4ConsensusVoteV3 stateVariant="voting-v3"` | dialogs.jsx | L1197 | C-4 다인팀 전송요청 (2026-06-23 리디자인, v2와 공존) |
+| `e4-v3-large` | 전송 동의 v3 (10인 큰 팀 · 동의 현황 아바타 9개 스택) | `E4ConsensusVoteV3 stateVariant="voting-v3" teamSize="large"` | dialogs.jsx | L1197 | 동일 (팀원 10명) |
+| `e4-waiting-v3` | 동의 후 대기 v3 (마스코트 + 팀원 상태 행 + 동의 취소) | `E4ConsensusVoteV3 stateVariant="waiting-v3"` | dialogs.jsx | L1197 | e4-v3 수락 시 |
+| `e4-waiting-v3-large` | 동의 후 대기 v3 (10인 · 상태 행 10개 + 목록 내부 스크롤) | `E4ConsensusVoteV3 stateVariant="waiting-v3" teamSize="large"` | dialogs.jsx | L1197 | e4-v3-large 수락 시 |
+| `e4-rejected-v3` | 무산 v3 (거절·취소 · 자동 복귀 카운트다운) | `E4ConsensusVoteV3 stateVariant="rejected-v3" reason="cancelled"` | dialogs.jsx | L1197 | e4-v3/e4-waiting-v3 거절·취소 시 |
+| `e4-expired-v3` | 무산 v3 (시간초과 · 15초 미동의) | `E4ConsensusVoteV3 stateVariant="rejected-v3" reason="expired"` | dialogs.jsx | L1197 | 타임아웃 시 |
+| `e4-left-v3` | 무산 v3 (팀원 이탈 · 합의 깨짐) | `E4ConsensusVoteV3 stateVariant="rejected-v3" reason="left"` | dialogs.jsx | L1197 | 팀원 캔버스 이탈 시 |
 | ~~`e6-paused`~~ | ~~일시정지 오버레이~~ | — | — | — | **2026-05-29 폐기**: 일시정지 기능 자체를 제거. 진행 중 휴식은 운영자 구두 안내로 처리(작업물은 자동 저장). |
 | ~~`e7-ending`~~ | ~~해커톤 종료 카운트다운 오버레이~~ | — | — | — | **2026-05-27 폐기**: 참가자에게 종료 예고 없음 정책. 운영자 30초 유예 만료 시 C-3/C-4 → c1-ended 직접 전환. |
 

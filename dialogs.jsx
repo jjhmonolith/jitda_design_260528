@@ -1192,4 +1192,437 @@ function E1UnsavedCloseConfirm() {
 // 30초 유예는 운영자 전용이며, 종료 확정 시 참가자 화면은 C-3/C-4 → 대기실 ③(c1-ended)로 직접 전환.
 // 참가자-로그인-기획.md §자동 전환 매트릭스 "[해커톤 종료] → 대기실 ③"와 정합.
 
-Object.assign(window, { E1ProjectSettings, E1UnsavedCloseConfirm, E4ConsensusVote });
+// ─────────────────────────────────────────────────────────────
+// E-4 v3. 전송 동의 — 카드형 리디자인 (2026-06-23, 거대 ring v2와 공존)
+// ─────────────────────────────────────────────────────────────
+// `PLAN-전송동의-화면-개선.md` 기반. 핵심 전환: 화면의 주인공을
+// "링 타이머"에서 "전송될 내용 스냅샷(글·이미지)"으로 교체.
+//  · ④ soft scrim(0.58 + blur) — 캔버스가 비쳐 보여 컨텍스트 단절 완화 (.jt-consent-scrim)
+//  · 상단 caution-strip 타이머 바(.jt-consent-strip) — 남은 시간만큼 가로 축소,
+//    5초 이내 노랑→빨강 + 카드 전체 두근두근(.is-urgent)
+//  · 액션: 수락 = Enter(critical, 비가역) / 거절 = Esc(가역) — 키보드 동작 지원
+//  · 자체 경량 마크다운 뷰어로 텍스트 흐름 안에 이미지 삽입 (전송될 바이트 전체 확인)
+// stateVariant: 'voting-v3'(투표) | 'waiting-v3'(동의 후 대기) | 'rejected-v3'(무산)
+//   rejected reason: 'cancelled'(거절·취소) | 'expired'(시간초과) | 'left'(팀원 이탈)
+
+// ── 팀 · 프롬프트 목업 ──
+const V3_REQUESTER = { name: '김민준', color: 'var(--c-blue)' };
+const V3_TEAM = [
+  { name: '김민준', color: 'var(--c-blue)',     requester: true },
+  { name: '최지유', color: 'var(--c-mint)',     me: true },
+  { name: '박서연', color: 'var(--c-amber)' },
+  { name: '이도현', color: 'var(--c-tutorial)' },
+];
+// 큰 팀(10인) — 동의 현황 아바타 스택·대기 상태 행 large 케이스용
+const V3_TEAM_LARGE = [
+  { name: '김민준', color: 'var(--c-blue)',     requester: true },
+  { name: '최지유', color: 'var(--c-mint)',     me: true },
+  { name: '박서연', color: 'var(--c-amber)' },
+  { name: '이도현', color: 'var(--c-tutorial)' },
+  { name: '정해린', color: 'var(--c-rebar)' },
+  { name: '한지우', color: 'var(--c-deep)' },
+  { name: '오세훈', color: 'var(--c-safety)' },
+  { name: '서나윤', color: 'var(--c-ink-3)' },
+  { name: '윤도경', color: 'var(--c-slate)' },
+  { name: '강시우', color: 'var(--c-amber)' },
+];
+// 마크다운 본문 속 이미지 placeholder 메타 (파일명 → 색·라이트/다크)
+const V3_IMAGE_PARTS = {
+  '현재_헤더.png': { hue: 'var(--c-blue)', kind: 'light' },
+  '시안_다크모드.png': { hue: 'var(--c-tutorial)', kind: 'dark' },
+};
+const V3_PROMPT_MD = `급식 메뉴 투표 앱 **헤더 우측**에 다크모드 토글을 추가해줘.
+
+현재 헤더는 이렇게 생겼고,
+
+![현재_헤더.png](현재_헤더.png)
+
+아래 시안처럼 다크모드로 부드럽게 전환되도록 만들어줘.
+
+![시안_다크모드.png](시안_다크모드.png)
+
+세부 요구사항은 다음과 같아:
+
+- 선택한 테마는 \`localStorage\`에 저장
+- 새로고침해도 유지
+- 토글 아이콘은 해 / 달로 변경`;
+
+// 아바타 — 이니셜 원 + 동의 시 우하단 체크 팝업
+function ConsentAvatar({ p, size = 30, on = true, dashed = false, check = false }) {
+  return (
+    <span style={{ position: 'relative', display: 'inline-flex', flexShrink: 0 }}>
+      <span style={{
+        width: size, height: size, borderRadius: '50%',
+        background: dashed ? 'transparent' : p.color, color: dashed ? 'var(--c-slate)' : '#fff',
+        border: dashed ? '1.5px dashed var(--c-hairline-strong)' : '1.5px solid transparent',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box',
+        fontSize: size * 0.36, fontWeight: 700, letterSpacing: '-0.04em', opacity: on ? 1 : 0.5,
+        transition: 'background var(--dur-base) var(--ease-decelerate), color var(--dur-base), border-color var(--dur-base), opacity var(--dur-base)',
+      }}>{avatarLabel(p.name)}</span>
+      {check && (
+        <span className="jt-check-pop" style={{
+          position: 'absolute', right: -2, bottom: -2, width: 14, height: 14, borderRadius: '50%',
+          background: 'var(--c-mint)', border: '2px solid var(--c-canvas)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {Icon.check(8)}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// 마크다운 본문 속 블록 이미지 — 파일명으로 메타 조회해 스냅샷 placeholder 렌더
+function ConsentMdImage({ name }) {
+  const part = V3_IMAGE_PARTS[name] || { hue: 'var(--c-slate)', kind: 'light' };
+  const dark = part.kind === 'dark';
+  return (
+    <figure style={{ margin: '10px 0', maxWidth: 360 }}>
+      <div style={{ height: 132, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--c-hairline)', background: dark ? 'var(--c-ink)' : 'var(--c-canvas)', position: 'relative' }}>
+        <div style={{ position: 'absolute', inset: 0, padding: 13, display: 'flex', flexDirection: 'column', gap: 9 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <div style={{ flex: 1, height: 13, borderRadius: 4, background: part.hue }} />
+            <div style={{ width: 20, height: 13, borderRadius: 999, background: dark ? 'var(--c-helmet)' : 'var(--c-stone-2)' }} />
+          </div>
+          <div style={{ flex: 1, borderRadius: 6, background: dark ? 'var(--c-ink-2)' : 'var(--c-stone)' }} />
+          <div style={{ width: '60%', height: 10, borderRadius: 4, background: dark ? 'var(--c-ink-3)' : 'var(--c-stone-2)' }} />
+        </div>
+      </div>
+      <figcaption style={{ marginTop: 6, fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--c-slate)' }}>{name}</figcaption>
+    </figure>
+  );
+}
+
+// 인라인 마크다운 — **bold** · `code`
+function consentInlineMd(text, keyBase) {
+  const nodes = [];
+  const re = /\*\*([^*]+)\*\*|`([^`]+)`/g;
+  let last = 0, m, i = 0;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) nodes.push(text.slice(last, m.index));
+    if (m[1] != null) nodes.push(<strong key={keyBase + '-b' + i} style={{ fontWeight: 700, color: 'var(--c-ink)' }}>{m[1]}</strong>);
+    else nodes.push(<code key={keyBase + '-c' + i} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9em', background: 'var(--c-stone)', borderRadius: 4, padding: '1px 5px' }}>{m[2]}</code>);
+    last = re.lastIndex; i++;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes;
+}
+
+// 경량 마크다운 뷰어 — 이미지/리스트/문단 블록 파싱
+function ConsentMarkdownView({ src }) {
+  const lines = src.split('\n');
+  const blocks = [];
+  let para = [], list = null;
+  const flushPara = () => { if (para.length) { blocks.push({ t: 'p', text: para.join(' ') }); para = []; } };
+  const flushList = () => { if (list) { blocks.push({ t: 'ul', items: list }); list = null; } };
+  for (const raw of lines) {
+    const line = raw.trim();
+    const img = line.match(/^!\[[^\]]*\]\(([^)]+)\)$/);
+    if (line === '') { flushPara(); flushList(); }
+    else if (img) { flushPara(); flushList(); blocks.push({ t: 'img', name: img[1] }); }
+    else if (line.startsWith('- ')) { flushPara(); (list = list || []).push(line.slice(2)); }
+    else { flushList(); para.push(line); }
+  }
+  flushPara(); flushList();
+  return (
+    <div style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--c-ink-2)' }}>
+      {blocks.map((b, i) => {
+        if (b.t === 'img') return <ConsentMdImage key={i} name={b.name} />;
+        if (b.t === 'ul') return (
+          <ul key={i} style={{ margin: '8px 0', paddingLeft: 18, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {b.items.map((it, j) => <li key={j} style={{ textWrap: 'pretty' }}>{consentInlineMd(it, i + '-' + j)}</li>)}
+          </ul>
+        );
+        return <p key={i} style={{ margin: '0 0 8px', textWrap: 'pretty' }}>{consentInlineMd(b.text, '' + i)}</p>;
+      })}
+    </div>
+  );
+}
+
+// 전송될 프롬프트 스냅샷 — 화면의 주인공 (텍스트 흐름 안에 이미지 자연 삽입)
+function ConsentPromptSnapshot() {
+  return (
+    <div className="jt-snap-scroll" style={{
+      background: 'var(--c-canvas)', border: '1px solid var(--c-hairline)', borderRadius: 'var(--r-md)',
+      padding: '16px 18px', maxHeight: 300, overflowY: 'auto',
+      boxShadow: 'inset 0 1px 2px rgba(15,15,20,0.03)',
+    }}>
+      <ConsentMarkdownView src={V3_PROMPT_MD} />
+    </div>
+  );
+}
+
+// 카운트다운 칩 — 우상단. 5초 이내 노랑→주황(danger)
+function ConsentCountdownChip({ sec, danger }) {
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 11px', borderRadius: 'var(--r-pill)',
+      fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700, letterSpacing: '-0.01em',
+      background: danger ? 'var(--c-safety-soft)' : 'var(--c-helmet-soft)', color: danger ? 'var(--c-safety-deep)' : 'var(--c-amber)',
+      transition: 'background var(--dur-fast), color var(--dur-fast)', whiteSpace: 'nowrap',
+    }}>
+      {Icon.clock(13)}
+      자동 거절까지 {sec}초
+    </span>
+  );
+}
+
+// ── voting body (전송될 내용 + 동의 현황 + 비대칭 액션) ──
+function ConsentVotingBody({ sec, approved, team = V3_TEAM }) {
+  const danger = sec <= 5;
+  const requester = team.find(p => p.requester) || V3_REQUESTER;
+  const nonReq = team.filter(p => !p.requester);              // 요청자 제외 — 동의 대상
+  const remaining = nonReq.filter(p => !approved.includes(p.name));
+  const onlyMeLeft = remaining.length === 1 && remaining[0].me;
+  return (
+    <div style={{ padding: '20px 24px 22px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+      {/* 헤더: 요청자 + 카운트다운 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <ConsentAvatar p={requester} size={34} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14.5, color: 'var(--c-ink-2)' }}><strong>{requester.name}</strong>님이 전송을 요청했어요</div>
+        </div>
+        <ConsentCountdownChip sec={sec} danger={danger} />
+      </div>
+
+      <h2 style={{ fontSize: 23, lineHeight: 1.25, margin: '2px 0 0', letterSpacing: '-0.022em' }}>이 내용을 보낼까요?</h2>
+
+      {/* 주인공: 전송될 프롬프트 스냅샷 */}
+      <ConsentPromptSnapshot />
+
+      {/* 동의 현황 — 팀원이 한 명씩 동의하면 체크가 팝업 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ display: 'flex' }}>{nonReq.map((p, i) => {
+          const ok = approved.includes(p.name);
+          return <span key={p.name} style={{ marginLeft: i ? -7 : 0, border: '2px solid var(--c-paper)', borderRadius: '50%' }}><ConsentAvatar p={p} size={26} dashed={!ok} check={ok} on={ok} /></span>;
+        })}</span>
+        <span style={{ fontSize: 12.5, color: 'var(--c-slate)' }}>
+          {onlyMeLeft
+            ? <span>이제 <strong style={{ color: 'var(--c-ink)' }}>나만</strong> 동의하면 전송돼요</span>
+            : remaining.length === 0
+              ? <span><strong style={{ color: 'var(--c-mint)' }}>모두 동의했어요</strong> · 곧 전송돼요</span>
+              : <span><strong style={{ color: 'var(--c-ink)' }}>{remaining.length}명</strong>이 더 동의하면 전송돼요</span>}
+        </span>
+      </div>
+
+      {/* 액션 — 비대칭: 수락=신중(critical) / 거절=쉬움(가역) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
+        <button data-action="reject" className="jt-btn jt-btn-secondary jt-btn-lg" style={{ gap: 8 }}>
+          거절 <span className="kbd">Esc</span>
+        </button>
+        <span style={{ flex: 1 }} />
+        <button data-action="agree" className="jt-btn jt-btn-critical jt-btn-lg" style={{ gap: 9, paddingInline: 22 }}>
+          {Icon.send(15)}
+          수락하고 보내기
+          <span className="kbd" style={{ background: 'rgba(255,206,43,0.18)', borderColor: 'rgba(255,206,43,0.4)', color: 'var(--c-helmet)' }}>Enter</span>
+        </button>
+      </div>
+      <div style={{ fontSize: 11.5, color: 'var(--c-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+        {Icon.warn(12)}
+        전송 후에는 AI 응답을 취소할 수 없어요. 거절하면 다시 편집할 수 있어요.
+      </div>
+    </div>
+  );
+}
+
+// 동의 현황 행 — ok가 false→true로 바뀌는 순간 행이 민트로 한번 번쩍
+function ConsentStatusRow({ p, ok, first }) {
+  const prev = React.useRef(ok);
+  const [flash, setFlash] = React.useState(false);
+  React.useEffect(() => {
+    if (ok && !prev.current) { setFlash(true); const t = setTimeout(() => setFlash(false), 800); prev.current = ok; return () => clearTimeout(t); }
+    prev.current = ok;
+  }, [ok]);
+  return (
+    <div className={flash ? 'jt-consent-row-flash' : ''} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '10px 14px', borderTop: first ? 'none' : '1px solid var(--c-hairline)', textAlign: 'left' }}>
+      <ConsentAvatar p={p} size={28} on={ok} check={ok} />
+      <span style={{ flex: 1, fontSize: 13.5, fontWeight: 600, color: ok ? 'var(--c-ink)' : 'var(--c-slate)', transition: 'color var(--dur-base)' }}>
+        {p.name}{p.me ? ' (나)' : ''}{p.requester ? ' · 요청자' : ''}
+      </span>
+      {ok
+        ? <span className="jt-pill jt-pill-started jt-pill-in" style={{ fontSize: 11 }}>동의함</span>
+        : <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--c-muted)', fontFamily: 'var(--font-mono)' }}>대기 중 <span className="jt-spin" style={{ display: 'inline-flex' }}>{Icon.refresh(12)}</span></span>}
+    </div>
+  );
+}
+
+// ── waiting body (동의 후 팀원 대기) ──
+function ConsentWaitingBody({ sec, approved, team = V3_TEAM }) {
+  const allOk = team.every(p => approved.includes(p.name));
+  return (
+    <div style={{ padding: '24px 24px 20px', display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', textAlign: 'center' }}>
+      <JitdaMascot size={64} />
+      <div>
+        <h2 style={{ fontSize: 21, margin: '0 0 4px', letterSpacing: '-0.022em' }}>{allOk ? '모두 동의했어요. 전송할게요' : '동의했어요. 팀원을 기다려요'}</h2>
+        <p style={{ fontSize: 13, color: 'var(--c-slate)', margin: 0 }}>모두 동의하면 바로 AI에게 전송돼요 · <span style={{ whiteSpace: 'nowrap' }}>자동 거절까지 {sec}초</span></p>
+      </div>
+      {/* 큰 팀에서 행이 많아도 카드를 넘지 않도록 목록만 내부 스크롤 */}
+      <div className="jt-snap-scroll" style={{ width: '100%', maxHeight: 360, overflowY: 'auto', background: 'var(--c-canvas)', border: '1px solid var(--c-hairline)', borderRadius: 'var(--r-md)' }}>
+        {team.map((p, i) => <ConsentStatusRow key={p.name} p={p} ok={approved.includes(p.name)} first={i === 0} />)}
+      </div>
+      <button data-action="reject" className="jt-btn jt-btn-secondary" style={{ gap: 8 }}>
+        동의 취소 <span className="kbd">Esc</span>
+      </button>
+    </div>
+  );
+}
+
+// ── consent frame (상단 줄무늬 타이머 바 + body) ──
+function ConsentFrame({ view, sec, approved, team = V3_TEAM }) {
+  const danger = sec <= 5;
+  // 긴급(주황 깜빡임·빨강 스트립)은 "결정을 재촉"하는 신호 → 이미 동의한 대기 화면에선 표시하지 않음.
+  const urgent = danger && view === 'voting';
+  const pct = Math.max(0, Math.min(100, sec / 15 * 100));
+  return (
+    <div className={'jt-consent-card' + (urgent ? ' is-urgent' : '')} style={{ width: 'min(620px, 94%)', maxHeight: '92%' }}>
+      {/* 상단 caution-strip 타이머 바 — 남은 시간만큼 줄어듦. 5초 이내 빨강 크로스페이드(투표 한정) */}
+      <div className="jt-consent-strip">
+        <div className="jt-consent-strip-fill" style={{ width: pct + '%' }}>
+          <div className="jt-consent-strip-layer" />
+          <div className={'jt-consent-strip-layer is-red' + (urgent ? ' on' : '')} />
+        </div>
+      </div>
+      <div className="jt-consent-body-in" style={{ overflowY: 'auto' }}>
+        {view === 'waiting'
+          ? <ConsentWaitingBody sec={sec} approved={approved} team={team} />
+          : <ConsentVotingBody sec={sec} approved={approved} team={team} />}
+      </div>
+    </div>
+  );
+}
+
+// ── failure card (무산 — 3 reason) ──
+const V3_FAIL = {
+  cancelled: { title: '전송이 취소되었어요', sub: '캔버스로 돌아가 내용을 다시 다듬은 뒤 보낼 수 있어요.', icon: 'x' },
+  expired:   { title: '시간이 초과되었어요', sub: '15초 안에 모두 동의하지 않아 전송되지 않았어요. 다시 시도해 주세요.', icon: 'clock' },
+  left:      { title: '전송이 무산됐어요', sub: '팀원이 캔버스를 나가 합의가 깨졌어요. 다시 모이면 보낼 수 있어요.', icon: 'user' },
+};
+function ConsentFailureCard({ reason }) {
+  const f = V3_FAIL[reason] || V3_FAIL.cancelled;
+  const [retSec, setRetSec] = React.useState(3);
+  React.useEffect(() => {
+    if (retSec <= 0) return;
+    const t = setTimeout(() => setRetSec(s => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [retSec]);
+  const iconNode = { x: Icon.x(22), clock: Icon.clock(22), user: Icon.user(22) }[f.icon];
+  return (
+    <div className="jt-consent-card" style={{
+      width: 'min(420px, 92%)', alignItems: 'center', textAlign: 'center',
+      borderRadius: 'var(--r-lg)', padding: '30px 28px 22px',
+    }}>
+      <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--c-stone)', color: 'var(--c-ink-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>{iconNode}</div>
+      <h2 style={{ fontSize: 20, margin: '0 0 6px', letterSpacing: '-0.022em' }}>{f.title}</h2>
+      <p style={{ fontSize: 13.5, color: 'var(--c-slate)', lineHeight: 1.55, margin: '0 0 18px', maxWidth: 320 }}>{f.sub}</p>
+      <div style={{ width: '100%', maxWidth: 240, height: 3, borderRadius: 999, background: 'var(--c-stone)', overflow: 'hidden', marginBottom: 8 }}>
+        <div style={{ height: '100%', width: (retSec / 3 * 100) + '%', background: 'var(--c-ink-3)', transition: 'width 1s linear' }} />
+      </div>
+      <span style={{ fontSize: 11.5, color: 'var(--c-muted)', fontFamily: 'var(--font-mono)', whiteSpace: 'nowrap' }}>{Math.max(0, retSec)}초 후 캔버스로 돌아가요</span>
+      <button data-action="back-to-canvas" className="jt-btn jt-btn-secondary" style={{ marginTop: 16, gap: 8 }}>
+        지금 돌아가기 {Icon.arrowRight(14)}
+      </button>
+    </div>
+  );
+}
+
+// ── 캔버스 컨텍스트(soft scrim 뒤로 비치는 라이트 캔버스) ──
+// v2의 다크 CanvasBackdrop과 달리, ④ 설계 의도(캔버스 비침)에 맞춘 라이트 paper 캔버스.
+function ConsentCanvasBehind() {
+  const codeMuted = { color: 'var(--c-muted)' };
+  return (
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', minHeight: 0, background: 'var(--c-paper)' }}>
+      <div style={{ width: 188, borderRight: '1px solid var(--c-hairline)', background: 'var(--c-paper)', padding: '12px 10px' }}>
+        <div className="jt-eyebrow" style={{ padding: '0 8px 8px' }}>파일</div>
+        {['index.html', 'app.js', 'style.css', 'assets/'].map((file, i) => (
+          <div key={i} style={{ padding: '4px 8px', borderRadius: 6, fontSize: 12, fontFamily: 'var(--font-mono)', background: i === 1 ? 'var(--c-stone)' : 'transparent', color: i === 1 ? 'var(--c-ink)' : 'var(--c-ink-3)' }}>{file}</div>
+        ))}
+      </div>
+      <div style={{ flex: 1, padding: '24px 32px', overflow: 'hidden' }}>
+        <div style={{ maxWidth: 640, fontFamily: 'var(--font-mono)', fontSize: 13, lineHeight: 1.9, color: 'var(--c-ink-3)' }}>
+          <div><span style={codeMuted}>1</span>&nbsp;&nbsp;<span style={{ color: 'var(--c-blue)' }}>function</span> ThemeToggle() {'{'}</div>
+          <div><span style={codeMuted}>2</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style={{ color: 'var(--c-slate)' }}>// 헤더 우측 다크모드 토글</span></div>
+          <div><span style={codeMuted}>3</span>&nbsp;&nbsp;&nbsp;&nbsp;<span style={{ color: 'var(--c-mint)' }}>const</span> [dark, setDark] = useState(<span style={{ color: 'var(--c-safety-deep)' }}>false</span>);</div>
+          <div><span style={codeMuted}>4</span>&nbsp;&nbsp;{'}'}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// rAF 카운트다운 — 진입 후 연속 감소(데모). 0에서 멈춤.
+function useConsentCountdown(total) {
+  const startedAtRef = React.useRef(null);
+  if (startedAtRef.current === null) startedAtRef.current = Date.now();
+  const [remaining, setRemaining] = React.useState(total);
+  React.useEffect(() => {
+    let raf;
+    const tick = () => {
+      const left = Math.max(0, total - (Date.now() - startedAtRef.current) / 1000);
+      setRemaining(left);
+      if (left > 0) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => raf && cancelAnimationFrame(raf);
+  }, [total]);
+  return remaining;
+}
+
+// ── E-4 v3 화면 컴포넌트 ──
+function E4ConsensusVoteV3({ stateVariant = 'voting-v3', reason = 'cancelled', teamSize = 'small' }) {
+  const view = stateVariant === 'waiting-v3' ? 'waiting'
+             : stateVariant === 'rejected-v3' ? 'failure' : 'voting';
+  const team = teamSize === 'large' ? V3_TEAM_LARGE : V3_TEAM;
+  const requesterName = (team.find(p => p.requester) || {}).name;
+  const meName = (team.find(p => p.me) || {}).name;
+  // 데모: 요청자는 선동의. waiting은 나도 동의 확정. 그 외 팀원 2명이 순차 동의(체크 팝업 시연).
+  const initial = view === 'waiting' ? [requesterName, meName] : [requesterName];
+  const [approved, setApproved] = React.useState(initial);
+  React.useEffect(() => {
+    if (view === 'failure') return;
+    // 요청자·나를 제외한 팀원 중 앞 2명이 시차를 두고 동의
+    const others = team.filter(p => !p.requester && !p.me).map(p => p.name);
+    const timers = others.slice(0, 2).map((name, i) =>
+      setTimeout(() => setApproved(a => a.includes(name) ? a : [...a, name]), 2600 + i * 2600)
+    );
+    return () => timers.forEach(clearTimeout);
+  }, [view, teamSize]);
+
+  const remaining = useConsentCountdown(15);
+  const sec = Math.max(0, Math.ceil(remaining));
+
+  // 키보드: 수락 = Enter / 거절·취소 = Esc. 해당 인스턴스 내부 버튼만 클릭(ref 스코프) →
+  // viewer 클릭 위임이 data-action으로 화면 전환을 처리(Renewal 다중 인스턴스에서도 자기 버튼만 동작).
+  const rootRef = React.useRef(null);
+  React.useEffect(() => {
+    if (view === 'failure') return;
+    const onKey = (e) => {
+      const root = rootRef.current;
+      if (!root || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 'Enter' && view === 'voting') {
+        e.preventDefault();
+        root.querySelector('[data-action="agree"]')?.click();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        root.querySelector('[data-action="reject"]')?.click();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [view]);
+
+  return (
+    <div ref={rootRef} style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--c-paper)' }}>
+      <CanvasContextHeader />
+      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        <ConsentCanvasBehind />
+        <div className="jt-consent-scrim" role="alertdialog" aria-modal="true" aria-label="전송 동의">
+          {view === 'failure'
+            ? <ConsentFailureCard reason={reason} />
+            : <ConsentFrame view={view} sec={sec} approved={approved} team={team} />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { E1ProjectSettings, E1UnsavedCloseConfirm, E4ConsensusVote, E4ConsensusVoteV3 });

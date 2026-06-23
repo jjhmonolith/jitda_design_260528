@@ -4259,3 +4259,59 @@ paper 배경(#faf9f6) 위 흰색(#ffffff) 카드 → 명도 차이 1.5%. 카드 
 - (a) "소스코드만 보존" 백엔드(`enk-hackathon-rails`) 구현 — 보존 위치·본행사 새 프로젝트 연결 미정. 디자인 범위 밖.
 - (b) 전원 강제공개가 참가자 사전 동의 없이 결과물 노출 → 행사 안내 고지 필요.
 - (c) 본행사 진행 중 잔존 진입로 차단(라우팅) 검증 필요. C-3/C-4 [갤러리 보기]는 본행사 `d1`로 가야 함(현 분리 유지).
+
+### §30 후속 (2026-06-22) — 운영자 진입 + 칸반 클릭 + 작품 설명 제거
+- **운영자 튜토리얼 갤러리 진입**: `B2DashboardTutorialRunning` statusActions `tutorial_running`에 [튜토리얼 갤러리] 버튼 추가(hackathon_running 갤러리 버튼과 동일 어휘). ACTIONS `b2-tutorial-running`에 `open-tutorial-gallery`→`d1-tutorial`. (직전엔 [튜토리얼 종료] 단독이라 운영자 진입로가 없던 갭.)
+- **칸반 팀 클릭 → 작품 상세**: 튜토리얼 진행 칸반 팀 포스트잇(`RosterRow data-action="open-team"`)을 `b2-tutorial-running`에서만 `d2-tutorial`로 매핑(ACTIONS는 화면 ID별이라 b2-tutorial-waiting의 open-team→b2-roster-detail과 무충돌). 실 운영은 모달 오버레이, 프로토타입은 화면 전환.
+- **작품 설명 제거(정합성)**: 튜토리얼 상세(`DetailInfoPane tutorial`)에서 **목적·사용법 섹션 제거** → 미리보기 + 팀 멤버만. 근거: 작품 설명(원페이저)은 **본행사 산출물 제출 시 AI 자동 생성**(`2026-06-15_산출물-자동-제작-기획`/project-summary)이라 튜토리얼엔 미존재. 기존엔 본행사 `GALLERY_PROJECTS` mock의 purpose/howto를 빌려써 설명이 있는 듯 보이던 갭 해소. cache-bust `operator.jsx?v=20260622tutgallery`·`gallery.jsx?v=20260622tutgallery2`.
+- **d2-tutorial 미리보기 모달 재설계(2026-06-22 2차)**: 우측 정보 패널(팀 멤버만 남아 무의미)까지 폐기 결정. `D2GalleryDetailTutorial`을 D2Shell 2-pane → **브라우저 창 단독 모달**로 재작성: dim backdrop(클릭 시 `back-to-list`→d1-tutorial) 위에 `SafariChrome`+`PreviewLoaded`만 담은 카드, 뒤로 d1-tutorial 비침. 모달 내부 클릭은 카드 `onClick stopPropagation`(+맵에 없는 noop data-action)으로 닫힘 전파 차단. ⇒ D2Shell/DetailInfoPane의 `tutorial` 분기는 이제 미사용(死코드, 추후 정리 가능). label·cache-bust `gallery.jsx?v=20260622tutgallery3`.
+
+---
+
+## §31 손들기 학생 측 토글 신설 — C-3/C-4 (2026-06-22)
+
+§21-4·`2026-06-01_손들기-기획.md` §10에서 "후속 패턴 A 작업"으로 미뤄둔 **학생 측 손들기 버튼**을 구현. 운영자 측(b2-started "지금 손들었어요" zone)은 2026-06-01에 이미 신설됨 — 이번 작업으로 학생↔운영자 양측 UI 정합.
+
+### 변경
+- `participant.jsx` 신규 `HandRaiseButton` 컴포넌트(`React.useState` 토글). **위치: composer 하단 액션 바(`OpenCodeShell`) 우측 클러스터 — 전송(↑) 버튼 바로 왼쪽(gap 8px).** (초안은 상단 toolbar `ParticipantCanvasActions`였으나 사용자 피드백 "toolbar는 눈에 안 띄고 규칙도 없음" → 입력창 액션 바로 이동.)
+- 노출 조건: `OpenCodeShell`의 `!tutorial`일 때만 렌더 → C-3/C-4(+미리보기 상태 variant)에만 표시. 튜토리얼(C-2, `tutorial` prop)은 미노출, 서버오류(c3/c4-error)는 OcServerError라 composer 자체가 없어 자연 제외(기획 §5-1 정합).
+- 시각: 신규 `.oc-hand-btn` 클래스(tokens.css, oc-* 컴포저 버튼 패밀리). 정상 = 중립(canvas bg + hairline-strong border + ink-2, 32px pill — 전송 버튼과 동일 높이) / 손든 = `.is-raised` helmet(브랜드 노랑) filled + stache 텍스트 → 검은 전송 버튼 옆에서 강대비. `Icon.hand`·helmet 토큰 기존. hover/title "취소하기". `tokens.css?v=20260622handraise` bump(신규 클래스).
+
+### 정책 (사용자 확인 2026-06-22 — v2 정합)
+- **팀 단위·만장일치 없음**: 팀원 누구나 누르면 즉시 팀 전체가 손든 상태(`hand_raised_at` team 레벨), 누구나 다시 눌러 끔. 전송 합의(E-4)의 만장일치 투표와 **별개** — 손들기는 즉시 토글.
+- 해제 경로 2가지(시간 자동 해제 없음): ① 학생 재클릭 ② 운영자 [✓ 해결]. 실 구현 시 팀원 전원 버튼 상태 실시간 동기화 필요(기획 §7-1).
+
+### 검증 (Playwright + computed style)
+- `?id=c3`·`?id=c4` composer 액션 바에 렌더(전송 버튼 왼쪽 8px), 콘솔 0 에러. 클릭 시 정상→손든(`aria-pressed=true`, helmet 노랑, 32px) 토글 확인.
+- `?id=c2`(튜토리얼) hand 버튼 0개(전송 버튼만) — 미노출 확인. `?id=c4` 정상 상태 중립색(canvas/hairline) 확인.
+- `viewer.html`·`Renewal.html` cache-bust: `participant.jsx?v=20260622handraise`·`tokens.css?v=20260622handraise`.
+
+### 반증·검토 포인트
+- 토글이라 다인팀(C-4) A가 누른 걸 B가 모르고 또 눌러 즉시 취소 → 운영자가 못 봄(기획 §7-1). 디자인은 단일 버튼 상태만 표현 — 실시간 동기화는 백엔드 책임.
+- composer 액션 바에 두면서 학생 시선(전송 버튼)과 가까워 발견성↑. 단 정상 상태가 중립색이라 평상시엔 조용함 — 손들 일 생기면 학생이 의도적으로 찾는 동선이므로 적정. 1회 운영 후 발견성 재검토 가능.
+
+---
+
+## §32 손들기 튜토리얼 확장 — 참가자 C-2 + 운영자 b2-tutorial-running (2026-06-22)
+
+§31에서 본행사(C-3/C-4 + b2-started)만 다뤘던 손들기를 **튜토리얼 단계로 확장**(사용자 결정). 기획 §5-1·§5-2의 "튜토리얼 제외" 룰 폐기 — 튜토리얼에서도 학생이 막히면 도움 요청 필요.
+
+### 참가자 (C-2 셀프 튜토리얼)
+- `OpenCodeShell`의 `!tutorial` 게이트 제거 → `HandRaiseButton`이 C-2/C-3/C-4 전부 composer 액션 바에 노출. §31과 동일 컴포넌트·시각(`.oc-hand-btn`).
+
+### 운영자 (b2-tutorial-running 튜토리얼 진행 칸반)
+- b2-started는 손들기 전용 zone("지금 손들었어요")이 있으나 **튜토리얼 화면은 5열 step 칸반**이라 별도 zone 없음 → **각 step 열 안에서** 손든 팀을 처리:
+  - **정렬**: 손든 팀이 해당 열 **맨 위**(오래 기다린 순). `TutorialProgressView` `sortHandRaisedFirst` — 열 필터 후, 페이지네이션 전 적용.
+  - **카드**: 신규 `TutorialHandRaisedCard` — helmet-soft 노랑 + ✋ + 팀명 / 경과시간 + `[✓ 해결]`. **크기는 일반 카드(`RosterRow`)와 동일**(minHeight 60), **팀원 아바타 생략**(사용자 룰). b2-started 손든 카드와 동일 어휘.
+  - **해결**: `[✓ 해결]` chip → `resolvedHands` state로 즉시 해제(흰색 일반 카드로 복귀, 정렬에서 빠짐). b2-started와 동일 정책(자동 해제 없음).
+  - **mock**: name-keyed `TUTORIAL_HAND_RAISED`(6팀, 5열 분포). 손든 팀은 **라이브 단계 자동진행에서 제외**(막혀서 도움 요청 중 = 진행 정지) → 5열 손들기 시연이 안정적으로 유지 + 논리 정합.
+- 공통 `[✓ 해결]` chip을 `HandResolveChip`으로 추출 → b2-started `HandRaisedPostit` + 튜토리얼 카드 공용(중복 제거).
+
+### 검증 (Playwright + computed style)
+- `?id=b2-tutorial-running`: 5개 열(미시작·Step1·2·3·완료) 모두 첫 카드 = 손든 팀(노랑 `rgb(255,244,194)`, 맨 위). 완료 열 세그폴트(1분32초) > 노유진(47초) 정렬 확인. [✓ 해결] 클릭 → 흰색 일반 카드 복귀 확인. 콘솔 0 에러.
+- `?id=c2`: hand 버튼 1개("손들기") composer 바 노출. `?id=b2-started` 회귀: 손든 카드 36개·해결 chip 정상.
+- cache-bust: `operator.jsx`·`participant.jsx ?v=20260622handraise2`.
+
+### 반증·검토 포인트
+- 튜토리얼은 보통 운영자가 옆에서 함께 진행(기획 §5-1 원래 제외 근거) — 60팀 대형 행사에선 그 가정이 깨지므로 손들기 유효. 단 소규모 행사선 손들기 카드가 과할 수 있음(노이즈). 1회 운영 후 검토.
+- 손든 팀 자동진행 제외는 시연 안정성 위한 mock 규칙 — 실제론 손든 채로도 학생이 계속 작업해 단계가 오를 수 있음. 백엔드는 hand_raised_at과 step을 독립 관리(이 제외는 디자인 mock 한정).

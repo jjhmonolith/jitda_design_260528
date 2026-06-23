@@ -454,6 +454,8 @@ const DEFAULT_PARTICIPANT_USER = {
 
 // 참가자 캔버스(C-3·C-4·E-4·E-5)에서 GNB 우측에 들어가는 액션 묶음.
 // [내 프로젝트][갤러리 보기] — 서버 재시작은 사용자 결정으로 제거.
+// 손들기는 toolbar가 아니라 composer 하단 액션 바(OpenCodeShell)에 위치 — 2026-06-22 사용자 결정
+//   ("toolbar는 눈에 안 띄고 규칙도 없음, 손들기는 입력창 액션 바 안에").
 function ParticipantCanvasActions() {
   return (
     <>
@@ -464,6 +466,31 @@ function ParticipantCanvasActions() {
         {Icon.gallery(12)} 갤러리 보기
       </button>
     </>
+  );
+}
+
+// 손들기 토글 — C-2 튜토리얼·C-3·C-4 코딩 화면 composer 하단 액션 바(전송 버튼 옆)에 위치.
+// 기획: 03-planning/product/2026-06-01_손들기-기획.md §6-1. 2026-06-22 위치 변경: toolbar → composer 액션 바.
+// 2026-06-22: 튜토리얼(C-2)에도 노출(기획 §5-1 "튜토리얼 제외" 룰 폐기 — 사용자 결정).
+// 정책(v2): 팀 단위 신호 — 만장일치 합의 없이 팀원 누구나 누르면 즉시 팀 전체가 손든 상태가 되고,
+//   누구나 다시 눌러 끌 수 있다. (전송 합의 E-4 의 만장일치 투표와는 별개 — 손들기는 즉시 토글.)
+//   해제 경로: ① 학생 재클릭(취소) ② 운영자 [✓ 해결]. 시간 자동 해제 없음.
+//   상태는 hand_raised_at(team 레벨)이므로 실제 구현 시 팀원 전원에게 동일 버튼 상태로 동기화.
+// 시각: 정상 = 중립(canvas+hairline) / 손든 = helmet(브랜드 노랑) filled. oc-hand-btn (tokens.css).
+function HandRaiseButton() {
+  const [raised, setRaised] = React.useState(false);
+  return (
+    <button
+      type="button"
+      data-action="raise-hand"
+      onClick={() => setRaised((v) => !v)}
+      aria-pressed={raised}
+      title={raised
+        ? '취소하기 — 팀원 누구나 끌 수 있어요'
+        : '도움을 요청해요 — 누르면 팀 전체가 손든 상태가 돼요'}
+      className={'oc-hand-btn' + (raised ? ' is-raised' : '')}>
+      {Icon.hand(13)} {raised ? '손든 상태' : '손들기'}
+    </button>
   );
 }
 
@@ -773,10 +800,15 @@ function OpenCodeShell({
               </button>
             </div>
 
-            {/* 전송 — 1인팀 즉시전송·다인팀 합의전송 공용 단일 버튼 (data-action 으로 분기) */}
-            <button className="oc-send-btn" aria-label="전송" data-action={sendAction} onClick={onSend}>
-              <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M10 16V4M10 4l5 5M10 4 5 9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </button>
+            {/* 우측 클러스터 — 손들기(C-2 튜토리얼·C-3·C-4 전부) + 전송(공용 단일).
+                2026-06-22 사용자 결정: 튜토리얼도 도움 요청 가능해야 함 → 기획 §5-1 "튜토리얼 제외" 폐기. */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <HandRaiseButton />
+              {/* 전송 — 1인팀 즉시전송·다인팀 합의전송 공용 단일 버튼 (data-action 으로 분기) */}
+              <button className="oc-send-btn" aria-label="전송" data-action={sendAction} onClick={onSend}>
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.9"><path d="M10 16V4M10 4l5 5M10 4 5 9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+            </div>
           </div>
         </div>
       </div>

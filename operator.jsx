@@ -487,6 +487,10 @@ function DashboardShell({ status, runtime, teams, mode, live, page = 1, perPage,
 
     tutorial_running:
     <>
+        {/* 진행 중에도 운영자가 튜토리얼 갤러리(전원 강제공개)를 둘러볼 수 있도록 진입 (2026-06-22). */}
+        <button data-action="open-tutorial-gallery" className="jt-btn jt-btn-secondary">
+          {Icon.gallery(13)} 튜토리얼 갤러리
+        </button>
         <button data-action="end-tutorial" className="jt-btn jt-btn-primary">
           튜토리얼 종료
         </button>
@@ -785,6 +789,16 @@ function RosterView({ teams, live, multiCount, soloCount, pagedTeams, totalTeams
 
 const TUTORIAL_STEP_ORDER = ['not-started', 'step1', 'step2', 'step3', 'done'];
 
+// 튜토리얼 손들기 mock (2026-06-22) — 팀명 → 손든 경과 초. 5개 열에 고루 분포(완료/Step/미시작 모두 손들 수 있음).
+// name-keyed라 PENDING_TEAMS 원본·다른 화면(b2-tutorial-waiting RosterView)에 영향 없음 — TutorialKanban만 특별 렌더.
+const TUTORIAL_HAND_RAISED = {
+  '세그폴트 어택': 92, '노유진': 47,   // 완료 열 — 2팀(정렬 시연: 92초 > 47초)
+  '캐시 미스': 131,                     // Step 1
+  '코드밍아웃': 28,                     // Step 2
+  '황태리': 74,                         // Step 3
+  'JS의 비밀': 113,                     // 미시작
+};
+
 function TutorialProgressView({ teams, live }) {
   // 초기 분포: 완료 20 / Step1·2·3 진행 7 / 미시작 잔여 (PENDING_TEAMS 32팀 기준).
   const initialSteps = React.useMemo(() => teams.map((_, i) => {
@@ -800,13 +814,20 @@ function TutorialProgressView({ teams, live }) {
   // 이동 시 wrapper key가 step 포함이라 remount되며 .jt-kanban-card-enter keyframe 재생.
   const [steps, setSteps] = React.useState(initialSteps);
   const [moved, setMoved] = React.useState(() => new Set());
+  // 손들기 해결 — 운영자 [✓ 해결] 클릭 시 해당 팀명을 resolved에 넣어 즉시 손든 상태 해제 (b2-started와 동일 정책).
+  const [resolvedHands, setResolvedHands] = React.useState(() => new Set());
+  const resolveHand = React.useCallback((name) => {
+    setResolvedHands((s) => { const n = new Set(s); n.add(name); return n; });
+  }, []);
 
   React.useEffect(() => {
     if (!live) return;
     const tick = setInterval(() => {
       setSteps((prev) => {
         const movable = [];
-        prev.forEach((s, i) => { if (s !== 'done') movable.push(i); });
+        // 손든 팀은 자동 진행에서 제외 — 손들기=막혀서 도움 요청 중이므로 단계 진행이 멈춘 상태.
+        // (효과: 손든 팀이 초기 열에 머물러 5개 열 손들기 시연이 안정적으로 유지됨.)
+        prev.forEach((s, i) => { if (s !== 'done' && TUTORIAL_HAND_RAISED[teams[i].name] == null) movable.push(i); });
         if (!movable.length) return prev;
         const idx = movable[Math.floor(Math.random() * movable.length)];
         const next = prev.slice();
@@ -818,7 +839,22 @@ function TutorialProgressView({ teams, live }) {
     return () => clearInterval(tick);
   }, [live]);
 
-  const tutorialTeams = teams.map((t, i) => ({ ...t, step: steps[i], _moved: moved.has(i) }));
+  const tutorialTeams = teams.map((t, i) => ({
+    ...t,
+    step: steps[i],
+    _moved: moved.has(i),
+    // 손든 경과(초). resolved이면 해제(null). name-keyed mock.
+    handRaisedSec: resolvedHands.has(t.name) ? null : (TUTORIAL_HAND_RAISED[t.name] ?? null),
+  }));
+
+  // 컬럼 내 정렬 — 손든 팀이 맨 위(오래 기다린 순), 나머지는 원래 순서 유지(stable sort).
+  const sortHandRaisedFirst = (list) => list.slice().sort((a, b) => {
+    const ah = a.handRaisedSec != null, bh = b.handRaisedSec != null;
+    if (ah && bh) return b.handRaisedSec - a.handRaisedSec;
+    if (ah) return -1;
+    if (bh) return 1;
+    return 0;
+  });
 
   // 칸반 5열 — 미시작 → Step 1·2·3 → 완료. accent=헤더 라인, bg=컬럼 zone 옅은 wash, barColor=진행률 바 단계 색.
   // 진행률 바: tutorial 한 색을 paper와 mix해 step1·2·3에 단계별 농도(라이트→딥) 부여. progression 시각 단서.
@@ -828,7 +864,7 @@ function TutorialProgressView({ teams, live }) {
     { id: 'step2',       label: 'Step 2 · 기능 추가', shortLabel: 'Step 2', accent: 'var(--c-tutorial)', bg: 'rgba(46, 44, 138, 0.045)', barColor: 'color-mix(in oklab, var(--c-tutorial) 58%, var(--c-paper))' },
     { id: 'step3',       label: 'Step 3 · 다듬기',   shortLabel: 'Step 3', accent: 'var(--c-tutorial)', bg: 'rgba(46, 44, 138, 0.045)', barColor: 'var(--c-tutorial)' },
     { id: 'done',        label: '완료',             accent: 'var(--c-mint)',     bg: 'rgba(56, 167, 84, 0.05)',  barColor: 'var(--c-mint)' }
-  ].map((c) => ({ ...c, teams: tutorialTeams.filter((t) => t.step === c.id) }));
+  ].map((c) => ({ ...c, teams: sortHandRaisedFirst(tutorialTeams.filter((t) => t.step === c.id)) }));
 
   const completed = columns.find((c) => c.id === 'done').teams.length;
   const inProgress = columns.filter((c) => c.id === 'step1' || c.id === 'step2' || c.id === 'step3').
@@ -855,7 +891,7 @@ function TutorialProgressView({ teams, live }) {
       {/* 5-단계 stacked 진행률 바 — 컬럼 색과 정합, hover로 단계별 팀 수 노출. width 전환으로 실시간 이동 시 부드러운 흐름. */}
       <TutorialProgressBar columns={columns} totalTeamsCount={totalTeamsCount} />
 
-      <TutorialKanban columns={columns} />
+      <TutorialKanban columns={columns} onResolveHand={resolveHand} />
     </>);
 
 }
@@ -965,7 +1001,7 @@ function TutorialProgressBar({ columns, totalTeamsCount }) {
 //   (구: 전체 칸 합산 단일 페이지네이션 → 폐기. 컬럼별로 팀 수가 달라 합산 페이징은 부적절.)
 const TUTORIAL_PER_COL = 10;
 
-function TutorialKanban({ columns }) {
+function TutorialKanban({ columns, onResolveHand }) {
   return (
     <div>
       <div style={{
@@ -976,14 +1012,14 @@ function TutorialKanban({ columns }) {
         gap: 0
       }}>
         {columns.map((col, i) =>
-        <TutorialKanbanColumn key={col.id} column={col} index={i} isLast={i === columns.length - 1} />
+        <TutorialKanbanColumn key={col.id} column={col} index={i} isLast={i === columns.length - 1} onResolveHand={onResolveHand} />
         )}
       </div>
     </div>);
 
 }
 
-function TutorialKanbanColumn({ column, index, isLast }) {
+function TutorialKanbanColumn({ column, index, isLast, onResolveHand }) {
   const { paged, page, totalPages, onPrev, onNext } = useColumnPaging(column.teams, TUTORIAL_PER_COL);
   return (
     <div style={{
@@ -1041,7 +1077,9 @@ function TutorialKanbanColumn({ column, index, isLast }) {
           // key에 step 포함 → 팀이 이동하면 wrapper remount → entrance keyframe 재생.
           // 초기 마운트 시점엔 _moved=false이므로 클래스 미부여(애니메이션 없음).
           <div key={`${t.name}-${t.step}`} className={t._moved ? 'jt-kanban-card-enter' : undefined}>
-            <RosterRow t={t} />
+            {t.handRaisedSec != null
+              ? <TutorialHandRaisedCard t={t} onResolve={onResolveHand} />
+              : <RosterRow t={t} />}
           </div>
         )}
       </div>
@@ -2033,39 +2071,48 @@ function HandRaisedPostit({ team, onResolve }) {
         }}>
           {elapsed} 전
         </span>
-        <button
-          type="button"
-          data-action="resolve-hand-raise"
-          onClick={(e) => {
-            e.stopPropagation();
-            onResolve && onResolve(team.name);
-          }}
-          title="해결됨으로 표시 — 이 손들기를 끕니다"
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 3,
-            height: 18, padding: '0 9px',
-            border: '1px solid var(--c-stache)',
-            background: 'var(--c-canvas)',
-            color: 'var(--c-stache)',
-            borderRadius: 'var(--r-pill)',
-            fontFamily: 'inherit',
-            fontSize: 11, fontWeight: 700,
-            letterSpacing: '-0.005em',
-            cursor: 'pointer',
-            transition: 'background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard)'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--c-stache)';
-            e.currentTarget.style.color = 'var(--c-canvas)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--c-canvas)';
-            e.currentTarget.style.color = 'var(--c-stache)';
-          }}>
-          {Icon.check(11)} 해결
-        </button>
+        <HandResolveChip teamName={team.name} onResolve={onResolve} />
       </div>
     </div>);
+
+}
+
+// 손들기 [✓ 해결] chip — 운영자 액션. b2-started 손든 카드 + 튜토리얼 칸반 손든 카드 공용.
+// e.stopPropagation()으로 카드 클릭(open-team)과 분리. hover 시 stache fill 반전.
+function HandResolveChip({ teamName, onResolve }) {
+  return (
+    <button
+      type="button"
+      data-action="resolve-hand-raise"
+      onClick={(e) => {
+        e.stopPropagation();
+        onResolve && onResolve(teamName);
+      }}
+      title="해결됨으로 표시 — 이 손들기를 끕니다"
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 3,
+        height: 18, padding: '0 9px',
+        border: '1px solid var(--c-stache)',
+        background: 'var(--c-canvas)',
+        color: 'var(--c-stache)',
+        borderRadius: 'var(--r-pill)',
+        fontFamily: 'inherit',
+        fontSize: 11, fontWeight: 700,
+        letterSpacing: '-0.005em',
+        cursor: 'pointer',
+        flexShrink: 0,
+        transition: 'background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard)'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'var(--c-stache)';
+        e.currentTarget.style.color = 'var(--c-canvas)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'var(--c-canvas)';
+        e.currentTarget.style.color = 'var(--c-stache)';
+      }}>
+      {Icon.check(11)} 해결
+    </button>);
 
 }
 
@@ -2074,6 +2121,56 @@ function formatHandRaisedElapsed(sec) {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return s === 0 ? `${m}분` : `${m}분 ${s}초`;
+}
+
+// ── 튜토리얼 칸반 손든 팀 카드 (2026-06-22) ───────────────────────
+// 사용자 결정: 튜토리얼 운영자 화면(b2-tutorial-running)에서도 손든 팀을 노출.
+//   · 정렬: 각 step 컬럼에서 손든 팀이 맨 위(오래 기다린 순) — TutorialProgressView sortHandRaisedFirst.
+//   · 시각: helmet-soft 노랑 tint + ✋ + 팀명 / 경과시간 + [✓ 해결]. b2-started HandRaisedPostit와 동일 어휘.
+//   · 크기: RosterRow(일반 튜토리얼 카드)와 동일 — minHeight 60 · padding 8/10. 팀원 아바타는 생략(사용자 룰).
+function TutorialHandRaisedCard({ t, onResolve }) {
+  const elapsed = formatHandRaisedElapsed(t.handRaisedSec);
+  const rot = postitRotation(t.name);
+  return (
+    <div
+      className="jt-postit-card jt-postit-card-static"
+      aria-label={`${t.name} 팀 — 손들기 ${elapsed} 전`}
+      title={`${t.name} · 손든지 ${elapsed} 전`}
+      style={{
+        '--postit-rot': rot,
+        '--postit-tint': 'var(--c-helmet-soft)',
+        background: 'var(--c-helmet-soft)',
+        borderRadius: 'var(--r-xs)',
+        padding: '8px 10px',
+        display: 'flex', flexDirection: 'column', gap: 6,
+        minHeight: 60
+      }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <span style={{ color: 'var(--c-helmet-deep)', display: 'inline-flex', flexShrink: 0 }}>
+          {Icon.hand(13)}
+        </span>
+        <span title={t.name} style={{
+          flex: 1, minWidth: 0,
+          fontSize: 12.5, fontWeight: 700,
+          color: 'var(--c-stache)', letterSpacing: '-0.005em',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
+        }}>{t.name}</span>
+      </div>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6,
+        marginTop: 'auto'
+      }}>
+        <span className="jt-mono" style={{
+          fontSize: 10.5, fontWeight: 700,
+          color: 'var(--c-helmet-deep)',
+          letterSpacing: '0.02em'
+        }}>
+          {elapsed} 전
+        </span>
+        <HandResolveChip teamName={t.name} onResolve={onResolve} />
+      </div>
+    </div>);
+
 }
 
 // ── 챙겨야 할 팀 (정체) 포스트잇 ─────────────────────────────

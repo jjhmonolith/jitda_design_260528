@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 
   <!-- 단일 소스: tokens.css 직접 로드 (2026-05-27 전환). 아래 인라인 <style>은 renewal-specific override만 유지. -->
-  <link rel="stylesheet" href="tokens.css?v=20260612mascot" />
+  <link rel="stylesheet" href="tokens.css?v=20260623consentv3b" />
 
   <style>
 
@@ -518,12 +518,12 @@
   <div id="root"></div>
 
   <script type="text/babel" src="design-canvas.jsx"></script>
-  <script type="text/babel" src="shared.jsx?v=20260622directory"></script>
+  <script type="text/babel" src="shared.jsx?v=20260622tutgallery"></script>
   <script type="text/babel" src="auth.jsx?v=20260615resp"></script>
-  <script type="text/babel" src="operator.jsx?v=20260622dir5"></script>
-  <script type="text/babel" src="participant.jsx?v=20260622tutgallery"></script>
-  <script type="text/babel" src="gallery.jsx?v=20260622tutgallery"></script>
-  <script type="text/babel" src="dialogs.jsx"></script>
+  <script type="text/babel" src="operator.jsx?v=20260622handraise2"></script>
+  <script type="text/babel" src="participant.jsx?v=20260622handraise2"></script>
+  <script type="text/babel" src="gallery.jsx?v=20260623gallerystates4"></script>
+  <script type="text/babel" src="dialogs.jsx?v=20260623consentv3d"></script>
   <!-- 심사 영역 통합 (2026-06-10): judge.jsx → judging.jsx -->
   <script type="text/babel" src="judging.jsx?v=20260615finish"></script>
 
@@ -658,6 +658,10 @@
 
             <DCArtboard id="b2-tutorial-running" label="B-2 · ② 튜토리얼 진행 — 완료율 모니터" width={1280} height={920}>
               <div className="jt-art"><B2DashboardTutorialRunning /></div>
+            </DCArtboard>
+
+            <DCArtboard id="b2-tutorial-running-preview" label="B-2 · ② 튜토리얼 진행 — 팀 작품 미리보기 모달" width={1280} height={920}>
+              <div className="jt-art"><B2TutorialRunningPreview /></div>
             </DCArtboard>
 
             <DCArtboard id="b2-hack-waiting" label="B-2 · ④ 해커톤 대기 — 시작 직전" width={1280} height={920}>
@@ -797,6 +801,10 @@
               <div className="jt-art"><D1GalleryEmpty /></div>
             </DCArtboard>
 
+            <DCArtboard id="d1-search-empty" label="D-1 · 검색 결과 없음" width={1280} height={820}>
+              <div className="jt-art"><D1GallerySearchEmpty /></div>
+            </DCArtboard>
+
             <DCArtboard id="d1-loading" label="D-1 · 로딩 상태 (스켈레톤)" width={1280} height={820}>
               <div className="jt-art"><D1GalleryLoading /></div>
             </DCArtboard>
@@ -888,6 +896,35 @@
 
             <DCArtboard id="e4-rejected-v2-large" label="E-4 v2 · 합의 무산 (10인)" width={1280} height={820}>
               <div className="jt-art"><E4ConsensusVote stateVariant="rejected-v2" teamSize="large" /></div>
+            </DCArtboard>
+
+            {/* E-4 v3 — 카드형 리디자인 (2026-06-23): 내용 스냅샷 주인공 + soft scrim + caution-strip 타이머. v2와 공존. */}
+            <DCArtboard id="e4-v3" label="E-4 v3 · 전송 동의 (내용 스냅샷)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVoteV3 stateVariant="voting-v3" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4-v3-large" label="E-4 v3 · 전송 동의 (10인 · 큰 팀)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVoteV3 stateVariant="voting-v3" teamSize="large" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4-waiting-v3" label="E-4 v3 · 동의 후 대기" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVoteV3 stateVariant="waiting-v3" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4-waiting-v3-large" label="E-4 v3 · 동의 후 대기 (10인 · 큰 팀)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVoteV3 stateVariant="waiting-v3" teamSize="large" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4-rejected-v3" label="E-4 v3 · 무산 (거절·취소)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVoteV3 stateVariant="rejected-v3" reason="cancelled" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4-expired-v3" label="E-4 v3 · 무산 (시간초과)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVoteV3 stateVariant="rejected-v3" reason="expired" /></div>
+            </DCArtboard>
+
+            <DCArtboard id="e4-left-v3" label="E-4 v3 · 무산 (팀원 이탈)" width={1280} height={820}>
+              <div className="jt-art"><E4ConsensusVoteV3 stateVariant="rejected-v3" reason="left" /></div>
             </DCArtboard>
 
 

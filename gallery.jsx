@@ -42,8 +42,12 @@ const GALLERY_PROJECTS = [
 { team: '코드밍아웃', members: 4, title: '강의 자동 요약기', tagline: '오늘 수업 한 줄로', likes: 8, iLiked: false, live: true },
 { team: 'null pointer', members: 3, title: '시간표 자동 생성', tagline: '학기 시작 첫날의 구원', likes: 7, iLiked: false, live: true },
 { team: '노유진', members: 1, title: '나만의 영단어장', tagline: '하루 10개 반복 학습', likes: 5, iLiked: false, live: true },
-{ team: '류재석', members: 1, title: '운동 기록 일지', tagline: '벤치프레스 다음 무게는?', likes: 3, iLiked: false, live: false },
-{ team: '손미래', members: 1, title: '독서록 자동 요약', tagline: '읽은 책을 한 줄로', likes: 2, iLiked: false, live: true }];
+// cardState — 카드 썸네일 빈 상태 분기 (2026-06-23):
+//   · 'asleep'   : 공개됐으나 서버 미가동 → 라이브 미리보기 스냅샷 불가. 참가자 화면에선 눌러서 깨우기 가능.
+//   · 'building' : 아직 산출물 미완성/미제출 → 종료 후 전원 자동공개 시 운영자·참가자 양쪽에 빈 슬롯으로 노출.
+//   미지정(=ready)이면 기존 LivePreview 썸네일.
+{ team: '류재석', members: 1, title: '운동 기록 일지', tagline: '벤치프레스 다음 무게는?', likes: 3, iLiked: false, live: false, cardState: 'asleep' },
+{ team: '손미래', members: 1, title: '독서록 자동 요약', tagline: '읽은 책을 한 줄로', likes: 0, iLiked: false, live: false, cardState: 'building' }];
 
 
 
@@ -130,17 +134,20 @@ function BackLink({ label, dataAction }) {
 }
 
 // ─── 서브 헤더 (제목 + 통계 + 검색) ────────────────────
-function GallerySubHeader({ status, total, query = '', tutorialMode, backLabel, backDataAction }) {
+// titleOverride / subOverride — 검색 결과 없음(D1GallerySearchEmpty) 등 status 표준 문구를 대체할 때.
+//   subOverride 를 명시(null 포함)하면 status별 기본 sub 대신 그 값을 사용.
+function GallerySubHeader({ status, total, query = '', tutorialMode, backLabel, backDataAction, titleOverride, subOverride }) {
   const titleByStatus = {
     running: <>공개된 {total}개 프로젝트</>,
     ended: <>최종 {total}개 작품</>,
     tutorial: <>튜토리얼 결과 {total}건</>
   };
-  const sub = {
-    running: '마음에 드는 프로젝트엔 ❤️ 좋아요로 응원해주세요. 마감 시간까지 자유롭게 둘러볼 수 있어요.',
+  const baseSub = {
+    running: '마음에 드는 프로젝트엔 ❤️ 로 응원해주세요. 마감 시간까지 자유롭게 둘러볼 수 있어요.',
     ended: '해커톤이 종료되어 모든 팀의 작품이 자동으로 공개됐어요. 마음에 드는 작품엔 ❤️ 로 응원을 남겨주세요.',
-    tutorial: '공개·비공개 구분 없이 모든 팀의 튜토리얼 결과를 둘러볼 수 있어요. 좋아요·댓글 없이 열람만 가능하고, 본행사가 시작되면 사라집니다.'
+    tutorial: null  // 2026-06-22: 안내 subtext 삭제 (사용자 결정)
   }[status];
+  const sub = subOverride !== undefined ? subOverride : baseSub;
 
   // 해커톤 진행 상태 — 색상 + 도트로 이중 인코딩.
   const statusPill = {
@@ -201,9 +208,15 @@ function GallerySubHeader({ status, total, query = '', tutorialMode, backLabel, 
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24 }}>
         <div style={{ minWidth: 0 }}>
           <h1 style={{ fontSize: 26, lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {titleByStatus[status] || `${total}개 프로젝트`}
+            {titleOverride || titleByStatus[status] || `${total}개 프로젝트`}
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--c-slate)', marginTop: 4, maxWidth: 580, lineHeight: 1.55 }}>{sub}</p>
+          {/* 튜토리얼은 안내 subtext 없음 (sub=null) — 빈 <p> 미렌더 (2026-06-22). */}
+          {sub &&
+          <p style={{
+            color: 'var(--c-slate)', marginTop: 4, lineHeight: 1.55,
+            fontSize: 13, maxWidth: 580,
+          }}>{sub}</p>
+          }
         </div>
         <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
           <div style={{ position: 'relative' }}>
@@ -256,22 +269,117 @@ function CommentMeta({ count }) {
 
 }
 
+// ─── 카드 썸네일 빈 상태 (2026-06-23) ──────────────────────────
+// LivePreview(컬러 그라데이션 가짜 미리보기)를 그릴 수 없는 두 경우를 위한 16:10 placeholder.
+//   · building : 아직 산출물을 만드는 중(미완성/미제출). 운영자 전원 노출·종료 후 자동공개 시 빈 슬롯.
+//   · asleep   : 공개됐으나 서버가 잠들어(미가동) 미리보기 스냅샷 불가.
+// ready 카드의 채도 높은 그라데이션과 확실히 구분되게 무채색 도면(blueprint) 톤 + 점선 프레임 사용.
+// interactive: 참가자 맥락의 asleep 카드(눌러서 깨우기 가능)면 안내 문구를 행동 유도로 바꿈.
+// asleep(잠듦) 전용 차가운 격자 — 활동 없는 "꺼진 화면" 어휘.
+const THUMB_GRID =
+  'linear-gradient(rgba(45,42,36,0.06) 1px, transparent 1px) 0 0/16px 16px,' +
+  'linear-gradient(90deg, rgba(45,42,36,0.06) 1px, transparent 1px) 0 0/16px 16px,';
+// building(준비 중) 전용 따뜻한 hazard 사선 — 공사장 어휘로 흰 카드·격자 배경과 확실히 구분.
+const THUMB_HAZARD =
+  'repeating-linear-gradient(45deg, var(--c-helmet-soft) 0, var(--c-helmet-soft) 11px, #fffdf2 11px, #fffdf2 22px)';
+function CardEmptyThumb({ state, interactive }) {
+  const cfg = {
+    building: {
+      bg: THUMB_HAZARD,
+      chip: { label: '준비 중', fg: 'var(--c-stache)', bg: 'var(--c-helmet)' },
+      iconBg: 'var(--c-helmet)', iconFg: 'var(--c-stache)', iconBorder: 'none',
+      title: '아직 만드는 중이에요',
+      titleColor: 'var(--c-ink)',
+      sub: '팀이 산출물을 완성하면 여기에 보여요',
+      subColor: 'var(--c-ink-3)',
+      // 공사 어휘 — 렌치/도구 (feather tool)
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+        </svg>)
+    },
+    asleep: {
+      bg: THUMB_GRID + 'var(--c-stone-2)',
+      chip: { label: '서버 잠듦', fg: 'var(--c-slate)', bg: 'var(--c-stone)' },
+      iconBg: 'var(--c-canvas)', iconFg: 'var(--c-ink-3)', iconBorder: '1.5px dashed var(--c-hairline-strong)',
+      title: '미리보기를 불러올 수 없어요',
+      titleColor: 'var(--c-ink-2)',
+      sub: interactive ? '눌러서 앱을 깨워볼 수 있어요' : '서버가 잠들어 있어요',
+      subColor: interactive ? 'var(--c-amber)' : 'var(--c-muted)',
+      // 잠듦 — 달 (feather moon)
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+        </svg>)
+    }
+  }[state];
+  const subStrong = state === 'asleep' && interactive;
+
+  return (
+    <div style={{
+      position: 'relative', aspectRatio: '16 / 10',
+      background: cfg.bg,
+      borderBottom: '1px solid var(--c-hairline)',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 6, padding: '12px 16px', textAlign: 'center', overflow: 'hidden'
+    }}>
+      {/* 상태 칩 — LivePreview 뱃지 자리(우상단)와 동일 위치 */}
+      <span style={{
+        position: 'absolute', top: 6, right: 6,
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        fontSize: 9, fontFamily: 'var(--font-mono)',
+        padding: '2px 6px', borderRadius: 2,
+        background: cfg.chip.bg, color: cfg.chip.fg,
+        letterSpacing: '0.06em', fontWeight: 700
+      }}>
+        <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', opacity: 0.85 }} />
+        {cfg.chip.label}
+      </span>
+
+      {/* 아이콘 칩 — building은 채운 노랑(눈에 띔), asleep은 점선 프레임 빈 슬롯 어휘 */}
+      <div style={{
+        width: 42, height: 42, borderRadius: 9,
+        border: cfg.iconBorder,
+        background: cfg.iconBg, color: cfg.iconFg,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: state === 'building' ? '0 2px 6px rgba(20,19,15,0.12)' : 'none'
+      }}>{cfg.icon}</div>
+
+      <div style={{ fontSize: 12, fontWeight: 800, color: cfg.titleColor, lineHeight: 1.3 }}>{cfg.title}</div>
+      <div style={{
+        fontSize: 10, color: cfg.subColor,
+        lineHeight: 1.4, fontWeight: subStrong ? 700 : 500
+      }}>{cfg.sub}</div>
+    </div>);
+
+}
+
 // 갤러리에서 사용 — 운영자 RosterRow와 동일한 .jt-postit-card 어휘.
 // 회전: 팀명 hash 4-variant (postitRotation). tint: 단일 흰색 (§18-27 단일색 정책).
 // LivePreview 16:10 썸네일이 카드 식별자 역할이라 색 식별은 불필요 + RosterRow와 시각 위계 통일.
 // ❤️·💬는 카드 내부 메타 표시만 — 카드 전체 클릭으로 D-2 진입 (hit-area 경합 회피).
 // tutorial: 튜토리얼 갤러리 — 열람 전용. 좋아요·댓글 메타 숨김 (2026-06-22).
-function GalleryCard({ p, mine, dim, tutorial }) {
+// cardState(2026-06-23): 'asleep'/'building'이면 CardEmptyThumb로 교체.
+//   · building : 열 산출물이 없음 → 항상 비활성(dim·클릭 불가).
+//   · asleep   : 운영자 뷰(emptyInteractive=false)에선 비활성, 참가자 뷰(true)에선 눌러서 깨우기 가능.
+function GalleryCard({ p, mine, dim, tutorial, emptyInteractive = false }) {
+  const state = p.cardState || (p.live === false ? 'asleep' : 'ready');
+  const empty = state !== 'ready';
+  const clickable = !empty || (state === 'asleep' && emptyInteractive);
+  const isDim = dim || (empty && !clickable);
   // 댓글 수 mock (제목 길이로 결정)
   const commentCount = p.commentCount ?? Math.max(0, (p.likes / 4 | 0) - 1);
   const rot = postitRotation(p.team);
   return (
     <div
-      data-action="open-card"
-      role="button"
-      tabIndex={0}
-      className="jt-postit-card"
-      aria-label={`${p.title} · ${p.team} 프로젝트 상세 보기`}
+      data-action={clickable ? 'open-card' : undefined}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      aria-disabled={clickable ? undefined : 'true'}
+      className={`jt-postit-card${clickable ? '' : ' jt-postit-card-static'}`}
+      aria-label={clickable
+        ? `${p.title} · ${p.team} 프로젝트 상세 보기`
+        : `${p.title} · ${p.team} — ${state === 'building' ? '준비 중' : '미리보기 불가'}`}
       style={{
         '--postit-rot': rot,
         '--postit-tint': 'var(--c-canvas)',
@@ -279,7 +387,8 @@ function GalleryCard({ p, mine, dim, tutorial }) {
         borderRadius: 'var(--r-xs)',
         display: 'flex', flexDirection: 'column',
         position: 'relative',
-        opacity: dim ? 0.5 : 1,
+        opacity: isDim ? 0.6 : 1,
+        cursor: clickable ? undefined : 'default',
       }}>
       {/* 썸네일은 overflow:hidden 래퍼로 카드 상단 모서리 정렬 — 부모 overflow는 풀어둠(tape ::before 보존) */}
       <div style={{
@@ -287,7 +396,9 @@ function GalleryCard({ p, mine, dim, tutorial }) {
         borderTopLeftRadius: 'var(--r-xs)',
         borderTopRightRadius: 'var(--r-xs)'
       }}>
-        <LivePreview teamName={p.team} badge={null} />
+        {empty
+          ? <CardEmptyThumb state={state} interactive={clickable} />
+          : <LivePreview teamName={p.team} badge={null} />}
       </div>
 
       {mine && (
@@ -309,7 +420,7 @@ function GalleryCard({ p, mine, dim, tutorial }) {
             color: 'var(--c-ink)',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>{p.title}</span>
-          {!tutorial &&
+          {!tutorial && !empty &&
           <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center' }}>
             <LikeMeta count={p.likes} iLiked={p.iLiked} />
           </span>
@@ -325,7 +436,7 @@ function GalleryCard({ p, mine, dim, tutorial }) {
             {p.team} <span style={{ color: 'var(--c-hairline-strong)', margin: '0 2px' }}>·</span>
             <span className="jt-mono" style={{ fontSize: 11 }}>{p.members}명</span>
           </span>
-          {!tutorial &&
+          {!tutorial && !empty &&
           <span style={{ flexShrink: 0 }}>
             <CommentMeta count={commentCount} />
           </span>
@@ -381,7 +492,9 @@ function D1GalleryListEnded({ role = 'participant' } = {}) {
           backLabel={isOperator ? '대시보드로 돌아가기' : '대기실로'}
           backDataAction={isOperator ? 'back-to-dashboard' : undefined} />
 
-        <GalleryGrid projects={GALLERY_PROJECTS} mineTeam={isOperator ? null : '터미널 사파리'} />
+        {/* 종료 후 전원 자동공개 — 미완성(building)·서버잠듦(asleep) 팀도 빈 카드로 노출.
+            운영자 뷰: 빈 카드 모두 dim·비활성. 참가자 뷰: asleep은 눌러서 깨우기 가능. */}
+        <GalleryGrid projects={GALLERY_PROJECTS} mineTeam={isOperator ? null : '터미널 사파리'} emptyInteractive={!isOperator} />
         <Pagination page={1} perPage={12} total={12} prevDisabled nextDisabled />
       </div>
     </div>);
@@ -462,6 +575,65 @@ function D1GalleryEmpty() {
 
 }
 
+// (3b) 검색 결과 없음 — 검색어 입력 후 일치하는 프로젝트가 없을 때 (2026-06-23)
+//   · 헤더 검색창에 입력어가 그대로 남아 있어 무엇을 검색했는지 확인 가능.
+//   · 빈 상태 카드(D1GalleryEmpty)와 동일 어휘 — 아이콘만 검색(돋보기)으로, 카피는 결과 없음 안내.
+function D1GallerySearchEmpty({ query = '블록체인 투표' }) {
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: GRID_BG }}>
+      <GalleryHeader count={0} role="participant" user={PARTICIPANT_USER} />
+
+      <div style={{
+        flex: 1, padding: '24px clamp(20px, 4vw, 48px)', overflow: 'auto',
+        display: 'flex', flexDirection: 'column'
+      }}>
+        <GallerySubHeader
+          status="running"
+          total={0}
+          query={query}
+          backLabel="바이브코딩으로"
+          titleOverride={<>검색 결과</>}
+          subOverride={null} />
+
+        {/* 빈 상태 카드 — 본문 영역 vertical center */}
+        <div style={{
+          flex: 1, minHeight: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div
+            className="jt-postit-card jt-postit-card-static jt-postit-tape-xl"
+            style={{
+              width: 'min(560px, 88vw)',
+              minHeight: 320,
+              padding: '52px 44px',
+              borderRadius: 'var(--r-xs)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 14, textAlign: 'center',
+              '--postit-rot': 'var(--postit-rot-c)',
+              '--postit-tint': 'var(--c-canvas)'
+            }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: 10,
+              background: 'var(--c-stone)', color: 'var(--c-ink-3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>{Icon.search(26)}</div>
+            <div style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.4 }}>
+              ‘<span style={{ color: 'var(--c-helmet-deep)' }}>{query}</span>’ 검색 결과가 없어요
+            </div>
+            <div style={{ fontSize: 13, color: 'var(--c-slate)', lineHeight: 1.6, maxWidth: 380 }}>
+              프로젝트명 또는 팀명으로 다시 검색해보세요.
+              <br />철자나 띄어쓰기가 맞는지 확인해주세요.
+            </div>
+            <button data-action="clear-search" className="jt-btn jt-btn-secondary" style={{ marginTop: 6, gap: 6 }}>
+              {Icon.x(13)} 검색어 지우고 전체 보기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>);
+
+}
+
 // (4) 로딩 상태
 function D1GalleryLoading() {
   return (
@@ -528,7 +700,8 @@ function D1GalleryLoading() {
 }
 
 // GalleryGrid — postit 카드 회전(±1.4°) + hover translateY(-3px) 여유 위해 gap 16 → 20.
-function GalleryGrid({ projects, mineTeam, tutorial }) {
+// emptyInteractive: asleep(서버 잠듦) 카드를 눌러서 깨우기 가능하게 할지 — 참가자 뷰 true, 운영자 뷰 false.
+function GalleryGrid({ projects, mineTeam, tutorial, emptyInteractive = false }) {
   return (
     <div style={{
       display: 'grid',
@@ -536,7 +709,7 @@ function GalleryGrid({ projects, mineTeam, tutorial }) {
       gap: 20
     }}>
       {projects.map((p, i) =>
-      <GalleryCard key={i} p={p} mine={p.team === mineTeam} tutorial={tutorial} />
+      <GalleryCard key={i} p={p} mine={p.team === mineTeam} tutorial={tutorial} emptyInteractive={emptyInteractive} />
       )}
     </div>);
 
@@ -965,6 +1138,8 @@ function DetailInfoPane({ project, mine, tutorial = false, tab = 'info', comment
                 padding: '22px 22px 10px',
                 width: '100%'
               }}>
+              {/* 튜토리얼 작품엔 목적·사용법 설명이 없음 — 작품 설명(원페이저)은 본행사 산출물 제출 시 AI 자동 생성되기 때문. 튜토리얼 상세는 미리보기 + 팀 멤버만 (2026-06-22). */}
+              {!tutorial && <>
               <Section index={1} icon="📋" label="목적">
               <p style={{ fontSize: 13, color: 'var(--c-ink-2)', lineHeight: 1.6, margin: 0 }}>{purpose}</p>
             </Section>
@@ -996,8 +1171,9 @@ function DetailInfoPane({ project, mine, tutorial = false, tab = 'info', comment
               )}
               </ol>
             </Section>
+            </>}
 
-            <Section index={3} icon="👥" label="팀 멤버">
+            <Section index={tutorial ? 1 : 3} icon="👥" label="팀 멤버">
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 {['김민준', '이서윤', '박지호', '최유나'].slice(0, project.members).map((m, i) => {
                 const colors = ['var(--c-helmet)', 'var(--c-blue)', 'var(--c-mint)', 'var(--c-amber)'];
@@ -1781,9 +1957,60 @@ function D2GalleryDetailMine() {
   return <D2Shell idx={0} mine={true} previewState="loaded" tab="info" />;
 }
 
-// 튜토리얼 갤러리 상세 — 열람 전용 (좋아요·댓글·공개설정 모두 제거). status="tutorial"로 D2Shell 분기 (2026-06-22).
+// 튜토리얼 작품 미리보기 모달 (2026-06-22 재설계 + 재사용 추출).
+// 사용자 결정: "오른쪽 정보 패널 쓸모없음. 댓글·추가정보 다 없으니 왼쪽 미리보기 + 브라우저 UI만 모달로."
+// → 2-pane(D2Shell) 폐기. 브라우저 창(SafariChrome + 라이브 미리보기)만 dim 배경 위 모달 카드로.
+// background: 모달 뒤로 비치는 화면 (튜토리얼 갤러리 / 운영자 대시보드 등). closeAction: 배경·신호등 클릭 시 발동할 data-action.
+// 모달 내부 클릭은 noop data-action 래퍼로 흡수(닫힘 방지). 신호등(SafariChrome closeAction)은 noop보다 안쪽이라 닫기 우선.
+function TutorialPreviewModal({ background, closeAction, idx = 0 }) {
+  const project = GALLERY_PROJECTS[idx];
+  return (
+    <div style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
+      {/* 뒤 배경 — 모달 뒤로 비침 (상호작용 차단) */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        {background}
+      </div>
+
+      {/* Backdrop — 바깥 클릭 시 닫기 */}
+      <div
+        data-action={closeAction}
+        style={{
+          position: 'absolute', inset: 0, zIndex: 'var(--z-modal, 100)',
+          background: 'var(--c-backdrop)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 'clamp(24px, 5vh, 64px)',
+        }}>
+        {/* 모달 카드 = 브라우저 창. noop data-action으로 내부 클릭 흡수. 신호등 closeAction은 닫기. */}
+        <div
+          data-action="tutorial-modal-noop"
+          role="dialog" aria-label={`${project.title} 미리보기`}
+          style={{
+            width: 'min(1160px, 94vw)', height: '100%', maxHeight: 880,
+            background: 'var(--c-canvas)',
+            border: '1px solid var(--c-hairline)',
+            borderRadius: 10, overflow: 'hidden',
+            boxShadow: 'var(--shadow-modal)',
+            display: 'flex', flexDirection: 'column',
+            position: 'relative',
+          }}>
+          <SafariChrome url={appUrl(project)} closeAction={closeAction} />
+          <PreviewLoaded project={project} />
+        </div>
+      </div>
+    </div>);
+
+}
+
+// 튜토리얼 갤러리(D-1)에서 작품 카드 클릭 → 미리보기 모달. 닫기: 갤러리 목록으로.
 function D2GalleryDetailTutorial() {
-  return <D2Shell idx={0} mine={false} previewState="loaded" status="tutorial" />;
+  return <TutorialPreviewModal background={<D1GalleryTutorial />} closeAction="back-to-list" />;
+}
+
+// 운영자 튜토리얼 진행 대시보드(b2-tutorial-running) 위에 뜨는 미리보기 모달.
+// 운영자가 칸반 팀 카드를 누르면 화면 이동 없이 "여기서 모달만" 떠야 함 (2026-06-22 사용자 지시).
+// 배경 = B2DashboardTutorialRunning(operator.jsx 전역, viewer 로드 순서상 gallery 전에 정의됨). 닫기: 대시보드로.
+function B2TutorialRunningPreview() {
+  return <TutorialPreviewModal background={<B2DashboardTutorialRunning />} closeAction="close-preview" />;
 }
 
 // 댓글 탭 — 통합 액션(댓글 N · 댓글 달기) + 댓글 4건. 답글 있는 댓글엔 요약 줄 자동 노출.
@@ -1825,8 +2052,8 @@ function D2GalleryDetailCommentsDelete() {
 }
 
 Object.assign(window, {
-  D1GalleryList, D1GalleryListEnded, D1GalleryTutorial, D1GalleryEmpty, D1GalleryLoading,
-  D2GalleryDetail, D2GalleryDetailLoading, D2GalleryDetailFirst, D2GalleryDetailLast, D2GalleryDetailMine, D2GalleryDetailTutorial,
+  D1GalleryList, D1GalleryListEnded, D1GalleryTutorial, D1GalleryEmpty, D1GallerySearchEmpty, D1GalleryLoading,
+  D2GalleryDetail, D2GalleryDetailLoading, D2GalleryDetailFirst, D2GalleryDetailLast, D2GalleryDetailMine, D2GalleryDetailTutorial, B2TutorialRunningPreview,
   D2GalleryDetailComments, D2GalleryDetailCommentsEmpty,
   D2GalleryDetailCommentsThread, D2GalleryDetailCommentsThreadCompose,
   D2GalleryDetailCommentsMenu, D2GalleryDetailCommentsEdit, D2GalleryDetailCommentsDelete

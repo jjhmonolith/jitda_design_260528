@@ -1432,6 +1432,26 @@
 .oc-send-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); }
 .oc-send-btn.is-label { width: auto; height: 32px; padding: 0 14px; border-radius: 999px; gap: 6px; font-family: var(--font-body); font-size: 12.5px; font-weight: 700; }
 
+/* 손들기 토글 — composer 액션 바(전송 옆). 본행사 C-3/C-4 한정. (2026-06-22)
+   정상=중립(canvas+hairline) / 손든=helmet 브랜드 노랑 filled. 손든 상태는 검은 전송 버튼 옆에서 강하게 대비. */
+.oc-hand-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 32px; padding: 0 13px; border-radius: 999px;
+  border: 1px solid var(--c-hairline-strong);
+  background: var(--c-canvas); color: var(--c-ink-2);
+  font-family: var(--font-body); font-size: 12.5px; font-weight: 600;
+  white-space: nowrap; cursor: pointer;
+  transition: var(--trans-hover), var(--trans-press), var(--trans-elev);
+}
+.oc-hand-btn:hover { background: var(--c-stone); border-color: var(--c-ink-3); color: var(--c-ink); }
+.oc-hand-btn:active { transform: scale(0.96); }
+.oc-hand-btn:focus-visible { outline: var(--focus-ring-width) solid var(--focus-ring-color); outline-offset: var(--focus-ring-offset); }
+.oc-hand-btn.is-raised {
+  background: var(--c-helmet); border-color: var(--c-helmet); color: var(--c-stache); font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+.oc-hand-btn.is-raised:hover { background: var(--c-helmet-deep); border-color: var(--c-helmet-deep); box-shadow: var(--shadow-md); }
+
 /* composer 카드 — 입력 포커스 시 ink 테두리 + helmet 소프트 링 (jt-input 어휘) */
 .oc-composer { transition: border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard); }
 .oc-composer:focus-within { border-color: var(--c-ink); box-shadow: var(--focus-ring-soft); }
@@ -2080,4 +2100,159 @@
   .jt-switch::after { transition: none !important; }
   .jt-checkbox { transition: none !important; }
   .jt-tab-underline { transition: none !important; }
+}
+
+/* ============================================================
+   전송 동의 v3 — E-4 카드형 리디자인 (2026-06-23)
+   ------------------------------------------------------------
+   dialogs.jsx E4ConsensusVoteV3 전용 어휘. 거대 ring(v2)과 공존.
+   핵심: "전송될 내용 스냅샷"이 주인공 + soft scrim(캔버스 비침) +
+   상단 caution-strip 타이머 바(남은 시간만큼 축소, 5초 이내 빨강 두근두근).
+   색·radius·shadow·motion 토큰만 사용 — 하드코딩 hex 금지.
+   ============================================================ */
+
+/* ④ soft scrim — 완전 암전(0.96) 대신 0.58 + blur, 뒤 캔버스가 비쳐 보임 */
+.jt-consent-scrim {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(20, 19, 15, 0.58);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: var(--z-modal);
+}
+
+/* 카드 진입 모션 — 버튼에서 자라나듯 아래에서 떠오름(transform-origin 6시) */
+.jt-consent-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--c-paper);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
+  transform-origin: 50% 100%;
+  animation: jt-consent-rise var(--dur-slow) var(--ease-spring) both;
+}
+@keyframes jt-consent-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.965); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* 상단 caution-strip 타이머 바 — 남은 시간만큼 가로로 줄어든다.
+   노랑 줄무늬 위에 동일 위상의 빨강 레이어를 겹쳐 opacity만 크로스페이드 →
+   검정 줄무늬는 그대로, 컬러 밴드만 노랑→빨강으로 녹는다. */
+.jt-consent-strip {
+  position: relative;
+  height: 12px;
+  width: 100%;
+  flex-shrink: 0;
+  background: var(--c-stone);
+  overflow: hidden;
+  border-radius: var(--r-md) var(--r-md) 0 0;
+}
+.jt-consent-strip-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  transition: width 1s linear;
+  /* 트레일링(우측) 경계를 줄무늬와 평행한 -45° 사선으로 잘라
+     "수직 컷"이 아니라 "줄무늬 단위로 비스듬히 줄어드는" 느낌.
+     높이 12px → 수평 12px 오프셋 = 45° (줄무늬와 평행). 좌상단 라운딩은 부모 overflow:hidden이 담당. */
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+}
+.jt-consent-strip-layer {
+  position: absolute;
+  inset: 0;
+  /* background-image 사용 — 단축 background는 background-size를 auto로 리셋해
+     두 레이어(노랑/빨강)의 줄무늬 스케일·위상이 어긋난다(왼쪽 끝 겹침 artifact). */
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--c-helmet) 0 14.1421356px,
+    var(--c-ink) 14.1421356px 28.2842712px
+  );
+  background-size: 40px 100%;
+  animation: jt-caution-scroll 1.6s linear infinite;
+  will-change: background-position;
+}
+.jt-consent-strip-layer.is-red {
+  /* background-image만 교체 → 부모의 background-size:40px·animation 위상 유지 → 노랑과 정확히 겹침 */
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--c-safety) 0 14.1421356px,
+    var(--c-ink) 14.1421356px 28.2842712px
+  );
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+.jt-consent-strip-layer.is-red.on { opacity: 1; }
+
+/* 5초 이내 긴급 — 카드 전체가 두근두근(심장박동) 글로우 + 안쪽 빨간 sheen */
+.jt-consent-card.is-urgent { animation: jt-consent-rise var(--dur-slow) var(--ease-spring) both, jt-heartbeat 0.92s ease-in-out infinite; }
+@keyframes jt-heartbeat {
+  0%   { box-shadow: var(--shadow-modal), 0 0 0 0 rgba(255, 107, 31, 0); }
+  12%  { box-shadow: var(--shadow-modal), 0 0 0 4px rgba(255, 107, 31, 0.40), 0 0 46px 10px rgba(255, 60, 30, 0.34); }
+  26%  { box-shadow: var(--shadow-modal), 0 0 0 2px rgba(255, 107, 31, 0.16), 0 0 24px 5px rgba(255, 60, 30, 0.14); }
+  40%  { box-shadow: var(--shadow-modal), 0 0 0 5px rgba(255, 107, 31, 0.46), 0 0 56px 12px rgba(255, 60, 30, 0.40); }
+  100% { box-shadow: var(--shadow-modal), 0 0 0 0 rgba(255, 107, 31, 0); }
+}
+.jt-consent-card.is-urgent::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  border-radius: inherit;
+  box-shadow: inset 0 0 64px 2px rgba(255, 60, 30, 0.20), inset 0 0 16px 0 rgba(255, 107, 31, 0.22);
+  animation: jt-urgent-sheen 0.92s ease-in-out infinite;
+}
+@keyframes jt-urgent-sheen { 0%, 100% { opacity: 0.28; } 12% { opacity: 0.9; } 40% { opacity: 1; } }
+
+/* 본문 전환(voting↔waiting) — transform만 → 애니메이션 멈춰도 항상 보임 */
+.jt-consent-body-in { animation: jt-consent-body-in 340ms var(--ease-decelerate) both; }
+@keyframes jt-consent-body-in { from { transform: translateY(8px); } to { transform: none; } }
+
+/* 동의 체크 팝 · "동의함" pill 진입 · 동의 순간 행 민트 플래시 */
+@keyframes jt-check-pop { 0% { transform: scale(0); } 65% { transform: scale(1.3); } 100% { transform: scale(1); } }
+.jt-check-pop { animation: jt-check-pop 320ms var(--ease-spring) both; }
+@keyframes jt-pill-in { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: none; } }
+.jt-pill-in { animation: jt-pill-in 300ms ease both; }
+@keyframes jt-consent-row-flash { 0% { background: var(--c-mint-wash); } 100% { background: transparent; } }
+.jt-consent-row-flash { animation: jt-consent-row-flash 760ms ease-out both; }
+
+/* 키보드 칩 — 단축키 표기(⌘↵ · Esc) */
+.kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--c-ink-2);
+  background: var(--c-stone);
+  border: 1px solid var(--c-hairline-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 4px 6px;
+}
+
+/* 가는 스크롤바 — 프롬프트 스냅샷 내부 */
+.jt-snap-scroll { scrollbar-width: thin; scrollbar-color: var(--c-hairline-strong) transparent; }
+.jt-snap-scroll::-webkit-scrollbar { width: 8px; }
+.jt-snap-scroll::-webkit-scrollbar-thumb { background: var(--c-hairline-strong); border-radius: var(--r-pill); }
+
+@media (prefers-reduced-motion: reduce) {
+  .jt-consent-card,
+  .jt-consent-card.is-urgent,
+  .jt-consent-card.is-urgent::after,
+  .jt-consent-strip-layer,
+  .jt-consent-body-in,
+  .jt-consent-row-flash,
+  .jt-check-pop,
+  .jt-pill-in { animation: none !important; }
+  .jt-consent-card.is-urgent {
+    box-shadow: var(--shadow-modal), 0 0 0 3px rgba(255, 107, 31, 0.4), 0 0 40px 8px rgba(255, 60, 30, 0.3);
+  }
 }
